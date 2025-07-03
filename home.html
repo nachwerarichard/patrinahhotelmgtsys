@@ -144,7 +144,7 @@
                                 <th class="py-2 px-4">Amount (UGX)</th>
                                 <th class="py-2 px-4">Date</th>
                                 <th class="py-2 px-4">Receipt ID</th>
-                                <th class="py-2 px-4">Receipt ID</th>
+                                <th class="py-2 px-4">Source</th>
                                 <th class="py-2 px-4">Responsible</th>
                                 <th class="py-2 px-4">Actions</th>
                             </tr>
@@ -252,6 +252,45 @@
 
     <!-- Add/Edit Expense Modal -->
     <div id="expense-modal" class="modal fixed inset-0 bg-black bg-opacity-50 items-center justify-center">
+        <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
+            <h2 id="expense-modal-title" class="text-2xl font-bold mb-6">Add Expense</h2>
+            <form id="expense-form">
+                <input type="hidden" id="expense-id">
+                <div class="mb-4">
+                    <label for="expense-description" class="block text-sm font-medium text-gray-700">Description</label>
+                    <input type="text" id="expense-description" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
+                </div>
+                <div class="mb-4">
+                    <label for="expense-amount" class="block text-sm font-medium text-gray-700">Amount (UGX)</label>
+                    <input type="number" id="expense-amount" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
+                </div>
+                <div class="mb-4">
+                    <label for="expense-receipt" class="block text-sm font-medium text-gray-700">Receipt ID</label>
+                    <input type="text" id="expense-receipt" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                </div>
+                <div class="mb-4">
+                    <label for="expense-receipt" class="block text-sm font-medium text-gray-700">Source</label>
+                    <select id="item-type" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
+                        <option value="bar">Bar</option>
+                        <option value="accommodation">Accommodation</option>
+                        <option value="restaurant">Restaurant</option>
+                        <option value="conference">Conference</option>
+                        <option value="gardens">Gardens</option>
+                    </select>
+                </div>
+                 <div class="mb-4">
+                    <label for="expense-responsible" class="block text-sm font-medium text-gray-700">Responsible Person</label>
+                    <input type="text" id="expense-responsible" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
+                </div>
+                <div class="flex justify-end space-x-4">
+                    <button type="button" id="cancel-expense-btn" class="bg-gray-300 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-400">Cancel</button>
+                    <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="sales-modal" class="modal fixed inset-0 bg-black bg-opacity-50 items-center justify-center">
         <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
             <h2 id="expense-modal-title" class="text-2xl font-bold mb-6">Add Expense</h2>
             <form id="expense-form">
