@@ -1,0 +1,17 @@
+    
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .sidebar {
+            transition: transform 0.3s ease-in-out;
+        }
+        .main-content {
+            transition: margin-left 0.3s ease-in-out;
+        }
+        .modal {
+            display: none;
+        }
+        .modal.active {
+            display: flex;
+        }
+    
