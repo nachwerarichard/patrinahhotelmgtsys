@@ -1,4 +1,4 @@
-  <script type="module">
+
         // Firebase Imports
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -375,5 +375,3 @@
                 renderExpenses();
             });
         };
-
-    </script>
