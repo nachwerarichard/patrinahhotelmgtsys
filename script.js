@@ -114,7 +114,7 @@
             openModal(expenseModal);
         });
         addSaleBtn.addEventListener('click', () => {
-            expenseForm.reset();
+            saleForm.reset();
             document.getElementById('sales-id').value = '';
             document.getElementById('sales-modal-title').textContent = 'Add Sales';
             openModal(salesModal);
