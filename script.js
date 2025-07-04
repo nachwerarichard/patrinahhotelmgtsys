@@ -46,6 +46,8 @@
 
         const addItemBtn = document.getElementById('add-item-btn');
         const addExpenseBtn = document.getElementById('add-expense-btn');
+        const addSaleBtn = document.getElementById('add-sale-btn');
+
         const itemModal = document.getElementById('item-modal');
         const expenseModal = document.getElementById('expense-modal');
         const cancelItemBtn = document.getElementById('cancel-item-btn');
@@ -103,6 +105,12 @@
             document.getElementById('expense-id').value = '';
             document.getElementById('expense-modal-title').textContent = 'Add Expense';
             openModal(expenseModal);
+        });
+        addSaleBtn.addEventListener('click', () => {
+            expenseForm.reset();
+            document.getElementById('sales-id').value = '';
+            document.getElementById('sales-modal-title').textContent = 'Add Sales';
+            openModal(salesModal);
         });
 
         cancelItemBtn.addEventListener('click', () => closeModal(itemModal));
