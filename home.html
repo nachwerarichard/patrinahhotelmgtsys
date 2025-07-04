@@ -11,7 +11,6 @@
 </head>
 <body class="bg-gray-100">
 
-    <!-- Sidebar -->
     <div id="sidebar" class="sidebar fixed top-0 left-0 h-full w-64 bg-gray-800 text-white p-5 z-20">
         <h2 class="text-2xl font-bold mb-10">Hotel MS</h2>
         <nav>
@@ -36,13 +35,11 @@
         </nav>
     </div>
 
-    <!-- Main Content -->
     <div id="main-content" class="main-content ml-64 p-8">
         <button id="sidebar-toggle" class="md:hidden mb-4 p-2 bg-gray-800 text-white rounded-md">
             <i class="fas fa-bars"></i>
         </button>
         
-        <!-- Dashboard Section -->
         <div id="dashboard" class="page-content">
             <h1 class="text-3xl font-bold mb-6">Dashboard</h1>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -60,28 +57,25 @@
                 </div>
                 <div class="bg-white p-6 rounded-lg shadow-md">
                     <h2 class="text-lg font-semibold text-gray-600">Total Balance</h2>
-                    <p id="dashboard-balance" class="text-2xl font-bold text-indigo-500">UGX 0</p>
+                    <p id="dashboard-total-balance" class="text-2xl font-bold text-indigo-500">UGX 0</p>
                 </div>
-                  <div class="bg-white p-6 rounded-lg shadow-md">
+                    <div class="bg-white p-6 rounded-lg shadow-md">
                     <h2 class="text-lg font-semibold text-gray-600">Performance</h2>
-                    <p id="dashboard-balance" class="text-2xl font-bold text-indigo-500">Bar</p>
-                    <p id="dashboard-balance" class="text-2xl font-bold text-indigo-500">Accommodation</p>
-                    <p id="dashboard-balance" class="text-2xl font-bold text-indigo-500">Restaurant</p>
-                    <p id="dashboard-balance" class="text-2xl font-bold text-indigo-500">Gardens</p>
-                    <p id="dashboard-balance" class="text-2xl font-bold text-indigo-500">Conference</p>
+                    <p id="dashboard-bar-performance" class="text-2xl font-bold text-indigo-500">Bar</p>
+                    <p id="dashboard-accommodation-performance" class="text-2xl font-bold text-indigo-500">Accommodation</p>
+                    <p id="dashboard-restaurant-performance" class="text-2xl font-bold text-indigo-500">Restaurant</p>
+                    <p id="dashboard-gardens-performance" class="text-2xl font-bold text-indigo-500">Gardens</p>
+                    <p id="dashboard-conference-performance" class="text-2xl font-bold text-indigo-500">Conference</p>
                 </div>
             </div>
         </div>
 
-        <!-- Bar Section -->
         <div id="bar" class="page-content hidden">
             <h1 class="text-3xl font-bold mb-6">Bar Management</h1>
-            <!-- Date Filter -->
             <div class="bg-white p-4 rounded-lg shadow-md mb-6">
-                <label for="date-filter" class="block text-sm font-medium text-gray-700">Show data for date:</label>
-                <input type="date" id="date-filter" class="mt-1 block w-full md:w-1/4 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                <label for="date-filter-bar" class="block text-sm font-medium text-gray-700">Show data for date:</label>
+                <input type="date" id="date-filter-bar" class="mt-1 block w-full md:w-1/4 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
             </div>
-            <!-- Summary Cards -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                 <div class="bg-white p-6 rounded-lg shadow-md">
                     <h2 class="text-lg font-semibold text-gray-600">Total Sales</h2>
@@ -97,11 +91,10 @@
                 </div>
             </div>
 
-            <!-- Inventory Management -->
             <div class="bg-white p-6 rounded-lg shadow-md mb-6">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-xl font-bold">Inventory</h2>
-                    <button id="add-item-btn" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">Add Item</button>
+                    <button id="add-item-btn-bar" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">Add Item</button>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full bg-white">
@@ -115,18 +108,16 @@
                                 <th class="py-2 px-4">Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="inventory-table-body">
-                            <!-- JS will populate this -->
-                        </tbody>
+                        <tbody id="inventory-table-body-bar">
+                            </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- Expenses Management -->
             <div class="bg-white p-6 rounded-lg shadow-md mb-6">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-xl font-bold">Expenses</h2>
-                    <button id="add-expense-btn" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">Add Expense</button>
+                    <button id="add-expense-btn-bar" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">Add Expense</button>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full bg-white">
@@ -141,17 +132,15 @@
                                 <th class="py-2 px-4">Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="expenses-table-body">
-                           <!-- JS will populate this -->
-                        </tbody>
+                        <tbody id="expenses-table-body-bar">
+                           </tbody>
                     </table>
                 </div>
             </div>
-            <!-- Sales Management -->
             <div class="bg-white p-6 rounded-lg shadow-md mb-6">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-xl font-bold">Sales</h2>
-                    <button id="add-sale-btn" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">Add Sale</button>
+                    <button id="add-sale-btn-bar" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">Add Sale</button>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full bg-white">
@@ -167,33 +156,31 @@
                                 <th class="py-2 px-4">%Profit</th>
                             </tr>
                         </thead>
-                        <tbody id="sales-table-body">
-                           <!-- JS will populate this -->
-                        </tbody>
+                        <tbody id="sales-table-body-bar">
+                           </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- Cash Management -->
             <div class="bg-white p-6 rounded-lg shadow-md">
                 <h2 class="text-xl font-bold mb-4">Cash Management</h2>
-                <form id="cash-form">
+                <form id="cash-form-bar">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label for="cash-at-hand" class="block text-sm font-medium text-gray-700">Cash at Hand (UGX)</label>
-                            <input type="number" id="cash-at-hand" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <label for="cash-at-hand-bar" class="block text-sm font-medium text-gray-700">Cash at Hand (UGX)</label>
+                            <input type="number" id="cash-at-hand-bar" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                         </div>
                         <div>
-                            <label for="cash-banked" class="block text-sm font-medium text-gray-700">Cash Banked (UGX)</label>
-                            <input type="number" id="cash-banked" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <label for="cash-banked-bar" class="block text-sm font-medium text-gray-700">Cash Banked (UGX)</label>
+                            <input type="number" id="cash-banked-bar" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                         </div>
                         <div>
-                            <label for="banked-receipt-id" class="block text-sm font-medium text-gray-700">Banked Receipt ID</label>
-                            <input type="text" id="banked-receipt-id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <label for="banked-receipt-id-bar" class="block text-sm font-medium text-gray-700">Banked Receipt ID</label>
+                            <input type="text" id="banked-receipt-id-bar" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                         </div>
                         <div>
-                            <label for="responsible-person" class="block text-sm font-medium text-gray-700">Responsible Person</label>
-                            <input type="text" id="responsible-person" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <label for="responsible-person-bar" class="block text-sm font-medium text-gray-700">Responsible Person</label>
+                            <input type="text" id="responsible-person-bar" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                         </div>
                     </div>
                     <button type="submit" class="mt-4 bg-indigo-500 text-white px-4 py-2 rounded-lg hover:bg-indigo-600">Save Cash Record</button>
@@ -201,35 +188,31 @@
             </div>
         </div>
 
-        <!-- Other Sections (Placeholders) -->
         <div id="restaurant" class="page-content hidden">
-          <h1 class="text-3xl font-bold mb-6">Restaurant Management</h1>
-            <!-- Date Filter -->
+            <h1 class="text-3xl font-bold mb-6">Restaurant Management</h1>
             <div class="bg-white p-4 rounded-lg shadow-md mb-6">
-                <label for="date-filter" class="block text-sm font-medium text-gray-700">Show data for date:</label>
-                <input type="date" id="date-filter" class="mt-1 block w-full md:w-1/4 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                <label for="date-filter-restaurant" class="block text-sm font-medium text-gray-700">Show data for date:</label>
+                <input type="date" id="date-filter-restaurant" class="mt-1 block w-full md:w-1/4 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
             </div>
-            <!-- Summary Cards -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                 <div class="bg-white p-6 rounded-lg shadow-md">
                     <h2 class="text-lg font-semibold text-gray-600">Total Sales</h2>
-                    <p id="bar-total-sales" class="text-2xl font-bold text-green-500">UGX 0</p>
+                    <p id="restaurant-total-sales" class="text-2xl font-bold text-green-500">UGX 0</p>
                 </div>
                 <div class="bg-white p-6 rounded-lg shadow-md">
                     <h2 class="text-lg font-semibold text-gray-600">Total Expenses</h2>
-                    <p id="bar-total-expenses" class="text-2xl font-bold text-red-500">UGX 0</p>
+                    <p id="restaurant-total-expenses" class="text-2xl font-bold text-red-500">UGX 0</p>
                 </div>
                 <div class="bg-white p-6 rounded-lg shadow-md">
                     <h2 class="text-lg font-semibold text-gray-600">Balance</h2>
-                    <p id="bar-balance" class="text-2xl font-bold text-blue-500">UGX 0</p>
+                    <p id="restaurant-balance" class="text-2xl font-bold text-blue-500">UGX 0</p>
                 </div>
             </div>
 
-            <!-- Inventory Management -->
             <div class="bg-white p-6 rounded-lg shadow-md mb-6">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-xl font-bold">Inventory</h2>
-                    <button id="add-item-btn" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">Add Item</button>
+                    <button id="add-item-btn-restaurant" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">Add Item</button>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full bg-white">
@@ -243,18 +226,16 @@
                                 <th class="py-2 px-4">Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="inventory-table-body">
-                            <!-- JS will populate this -->
-                        </tbody>
+                        <tbody id="inventory-table-body-restaurant">
+                            </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- Expenses Management -->
             <div class="bg-white p-6 rounded-lg shadow-md mb-6">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-xl font-bold">Expenses</h2>
-                    <button id="add-expense-btn" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">Add Expense</button>
+                    <button id="add-expense-btn-restaurant" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">Add Expense</button>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full bg-white">
@@ -269,77 +250,75 @@
                                 <th class="py-2 px-4">Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="expenses-table-body">
-                           <!-- JS will populate this -->
-                        </tbody>
+                        <tbody id="expenses-table-body-restaurant">
+                           </tbody>
                     </table>
                 </div>
             </div>
-            <!-- Sales Management -->
             <div class="bg-white p-6 rounded-lg shadow-md mb-6">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-xl font-bold">Sales</h2>
-                    <button id="add-sale-btn" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">Add Sale</button>
+                    <button id="add-sale-btn-restaurant" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">Add Sale</button>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full bg-white">
                         <thead class="bg-gray-200">
                             <tr>
-                                <th class="py-2 px-4">Description</th>
-                                <th class="py-2 px-4">Amount (UGX)</th>
-                                <th class="py-2 px-4">Date</th>
-                                <th class="py-2 px-4">Receipt ID</th>
-                                <th class="py-2 px-4">Responsible</th>
-                                <th class="py-2 px-4">Actions</th>
+                                <th class="py-2 px-4">Item</th>
+                                <th class="py-2 px-4">Number</th>
+                                <th class="py-2 px-4">Buying Price(BP)</th>
+                                <th class="py-2 px-4">Selling Price(SP)</th>
+                                <th class="py-2 px-4">Sum (BP)</th>
+                                <th class="py-2 px-4">Sum (SP)</th>
+                                <th class="py-2 px-4">Profit</th>
+                                <th class="py-2 px-4">%Profit</th>
                             </tr>
                         </thead>
-                        <tbody id="expenses-table-body">
-                           <!-- JS will populate this -->
-                        </tbody>
+                        <tbody id="sales-table-body-restaurant">
+                           </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- Cash Management -->
             <div class="bg-white p-6 rounded-lg shadow-md">
                 <h2 class="text-xl font-bold mb-4">Cash Management</h2>
-                <form id="cash-form">
+                <form id="cash-form-restaurant">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label for="cash-at-hand" class="block text-sm font-medium text-gray-700">Cash at Hand (UGX)</label>
-                            <input type="number" id="cash-at-hand" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <label for="cash-at-hand-restaurant" class="block text-sm font-medium text-gray-700">Cash at Hand (UGX)</label>
+                            <input type="number" id="cash-at-hand-restaurant" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                         </div>
                         <div>
-                            <label for="cash-banked" class="block text-sm font-medium text-gray-700">Cash Banked (UGX)</label>
-                            <input type="number" id="cash-banked" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <label for="cash-banked-restaurant" class="block text-sm font-medium text-gray-700">Cash Banked (UGX)</label>
+                            <input type="number" id="cash-banked-restaurant" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                         </div>
                         <div>
-                            <label for="banked-receipt-id" class="block text-sm font-medium text-gray-700">Banked Receipt ID</label>
-                            <input type="text" id="banked-receipt-id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <label for="banked-receipt-id-restaurant" class="block text-sm font-medium text-gray-700">Banked Receipt ID</label>
+                            <input type="text" id="banked-receipt-id-restaurant" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                         </div>
                         <div>
-                            <label for="responsible-person" class="block text-sm font-medium text-gray-700">Responsible Person</label>
-                            <input type="text" id="responsible-person" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <label for="responsible-person-restaurant" class="block text-sm font-medium text-gray-700">Responsible Person</label>
+                            <input type="text" id="responsible-person-restaurant" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                         </div>
                     </div>
                     <button type="submit" class="mt-4 bg-indigo-500 text-white px-4 py-2 rounded-lg hover:bg-indigo-600">Save Cash Record</button>
                 </form>
             </div>
         </div>
+
         <div id="accommodation" class="page-content hidden">
             <h1 class="text-3xl font-bold mb-6">Accommodation Management</h1>
-            
-        </div>
+            </div>
 
-        
-        <div id="gardens" class="page-content hidden"><h1 class="text-3xl font-bold mb-6">Garden Management</h1>
-        </div>
+        <div id="gardens" class="page-content hidden">
+            <h1 class="text-3xl font-bold mb-6">Garden Management</h1>
+            </div>
 
-        <div id="conference" class="page-content hidden"><h1 class="text-3xl font-bold"><h1 class="text-3xl font-bold mb-6">Conference Management</h1>
-            <!-- Date Filter -->
-        </div>
-    <!-- Modals -->
-    <!-- Add/Edit Item Modal -->
+        <div id="conference" class="page-content hidden">
+            <h1 class="text-3xl font-bold mb-6">Conference Management</h1>
+            </div>
+    </div>
+
     <div id="item-modal" class="modal fixed inset-0 bg-black bg-opacity-50 items-center justify-center">
         <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
             <h2 id="item-modal-title" class="text-2xl font-bold mb-6">Add Item</h2>
@@ -374,7 +353,6 @@
         </div>
     </div>
 
-    <!-- Add/Edit Expense Modal -->
     <div id="expense-modal" class="modal fixed inset-0 bg-black bg-opacity-50 items-center justify-center">
         <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
             <h2 id="expense-modal-title" class="text-2xl font-bold mb-6">Add Expense</h2>
@@ -393,8 +371,8 @@
                     <input type="text" id="expense-receipt" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
                 </div>
                 <div class="mb-4">
-                    <label for="expense-receipt" class="block text-sm font-medium text-gray-700">Source</label>
-                    <select id="item-type" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
+                    <label for="expense-source" class="block text-sm font-medium text-gray-700">Source</label>
+                    <select id="expense-source" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
                         <option value="bar">Bar</option>
                         <option value="accommodation">Accommodation</option>
                         <option value="restaurant">Restaurant</option>
@@ -402,7 +380,7 @@
                         <option value="gardens">Gardens</option>
                     </select>
                 </div>
-                 <div class="mb-4">
+                   <div class="mb-4">
                     <label for="expense-responsible" class="block text-sm font-medium text-gray-700">Responsible Person</label>
                     <input type="text" id="expense-responsible" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
                 </div>
@@ -418,22 +396,25 @@
         <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
             <h2 id="sales-modal-title" class="text-2xl font-bold mb-6">Add Sale</h2>
             <form id="sale-form">
-                <input type="hidden" id="expense-id">
-                <div class="mb-4">
-                    <label for="expense-description" class="block text-sm font-medium text-gray-700">Item</label>
-                    <input type="text" id="sale-description" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
+                <input type="hidden" id="sale-id"> <div class="mb-4">
+                    <label for="sale-item" class="block text-sm font-medium text-gray-700">Item</label> <input type="text" id="sale-item" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
                 </div>
                 <div class="mb-4">
-                    <label for="expense-amount" class="block text-sm font-medium text-gray-700">Amount (UGX)</label>
-                    <input type="number" id="expense-amount" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
+                    <label for="sale-number" class="block text-sm font-medium text-gray-700">Number</label> <input type="number" id="sale-number" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
                 </div>
                 <div class="mb-4">
-                    <label for="expense-receipt" class="block text-sm font-medium text-gray-700">Receipt ID</label>
-                    <input type="text" id="expense-receipt" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                    <label for="sale-buying-price" class="block text-sm font-medium text-gray-700">Buying Price (UGX)</label>
+                    <input type="number" id="sale-buying-price" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
                 </div>
-                 <div class="mb-4">
-                    <label for="expense-responsible" class="block text-sm font-medium text-gray-700">Responsible Person</label>
-                    <input type="text" id="expense-responsible" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
+                <div class="mb-4">
+                    <label for="sale-selling-price" class="block text-sm font-medium text-gray-700">Selling Price (UGX)</label>
+                    <input type="number" id="sale-selling-price" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
+                </div>
+                <div class="mb-4">
+                    <label for="sale-receipt-id" class="block text-sm font-medium text-gray-700">Receipt ID</label> <input type="text" id="sale-receipt-id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                </div>
+                   <div class="mb-4">
+                    <label for="sale-responsible" class="block text-sm font-medium text-gray-700">Responsible Person</label> <input type="text" id="sale-responsible" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
                 </div>
                 <div class="flex justify-end space-x-4">
                     <button type="button" id="cancel-sale-btn" class="bg-gray-300 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-400">Cancel</button>
@@ -443,12 +424,10 @@
         </div>
     </div>
     
-    <!-- Low Stock Notification -->
     <div id="low-stock-notification" class="hidden fixed bottom-5 right-5 bg-yellow-400 text-yellow-800 p-4 rounded-lg shadow-lg">
         <p><i class="fas fa-exclamation-triangle mr-2"></i><span id="low-stock-message"></span></p>
     </div>
 
-
-    <script type="module" src= "script2.js">  </script>
+    <script type="module" src="script2.js" defer></script>
 </body>
 </html>
