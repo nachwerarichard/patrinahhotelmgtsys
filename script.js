@@ -50,14 +50,21 @@
 
         const itemModal = document.getElementById('item-modal');
         const expenseModal = document.getElementById('expense-modal');
+        const SalesModal = document.getElementById('sales-modal');
+
         const cancelItemBtn = document.getElementById('cancel-item-btn');
         const cancelExpenseBtn = document.getElementById('cancel-expense-btn');
+        const cancelSalesBtn = document.getElementById('cancel-sale-btn');
+
         const itemForm = document.getElementById('item-form');
         const expenseForm = document.getElementById('expense-form');
+        const saleForm = document.getElementById('sale-form');
+
         const cashForm = document.getElementById('cash-form');
         
         const inventoryTableBody = document.getElementById('inventory-table-body');
         const expensesTableBody = document.getElementById('expenses-table-body');
+        const SalesTableBody = document.getElementById('sales-table-body');
 
         const barTotalSalesEl = document.getElementById('bar-total-sales');
         const barTotalExpensesEl = document.getElementById('bar-total-expenses');
