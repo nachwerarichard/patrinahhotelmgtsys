@@ -188,3 +188,60 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+
+
+// script4.js
+
+// ... existing code (DOM loaded listener, modal handling, forms, etc.)
+
+// Add this to the end of the DOMContentLoaded block
+
+const updateDashboardPerformance = () => {
+  const sections = ['bar', 'restaurant', 'accommodation', 'gardens', 'conference'];
+  sections.forEach(section => {
+    const salesRows = document.querySelectorAll(`#sales-table-body-${section} tr`);
+    const expensesRows = document.querySelectorAll(`#expenses-table-body-${section} tr`);
+
+    let totalSales = 0;
+    let totalExpenses = 0;
+
+    salesRows.forEach(row => {
+      totalSales += parseInt(row.getAttribute('data-sumsp') || 0);
+    });
+
+    expensesRows.forEach(row => {
+      totalExpenses += parseInt(row.getAttribute('data-amount') || 0);
+    });
+
+    const balance = totalSales - totalExpenses;
+    const elem = document.getElementById(`dashboard-${section}-performance`);
+    if (elem) {
+      elem.textContent = `${section.charAt(0).toUpperCase() + section.slice(1)}: ${formatUGX(balance)}`;
+    }
+  });
+
+  // Update total balance
+  let total = 0;
+  document.querySelectorAll('.page-content').forEach(page => {
+    const id = page.id;
+    const sales = document.querySelectorAll(`#sales-table-body-${id} tr`);
+    const expenses = document.querySelectorAll(`#expenses-table-body-${id} tr`);
+
+    let sumSales = 0;
+    let sumExpenses = 0;
+
+    sales.forEach(row => sumSales += parseInt(row.getAttribute('data-sumsp') || 0));
+    expenses.forEach(row => sumExpenses += parseInt(row.getAttribute('data-amount') || 0));
+
+    total += (sumSales - sumExpenses);
+  });
+  const balanceElem = document.getElementById('dashboard-total-balance');
+  if (balanceElem) balanceElem.textContent = formatUGX(total);
+};
+
+// Call updateDashboardPerformance anytime relevant data is updated
+const originalUpdateSummary = updateSummary;
+updateSummary = (section) => {
+  originalUpdateSummary(section);
+  updateDashboardPerformance();
+};
