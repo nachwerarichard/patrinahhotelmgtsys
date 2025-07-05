@@ -8,29 +8,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="stylesheet" href="styles.css"/>
-        <style>
-        /* Custom styles for smooth transitions and responsiveness */
-        body {
-            font-family: "Inter", sans-serif;
-            background-color: #1a202c; /* Dark background */
-            color: #e2e8f0; /* Light text */
-        }
-        .nav-link {
-            transition: background-color 0.2s ease-in-out;
-        }
-        .inventory-submenu {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease-out;
-        }
-        .inventory-submenu.active {
-            max-height: 500px; /* Adjust as needed to fit all content */
-            transition: max-height 0.5s ease-in;
-        }
-        .content-area {
-            min-height: 200px; /* Ensure content area has some height */
-        }
-    </style>
 </head>
 <body class="bg-gray-100">
 
@@ -58,31 +35,6 @@
             <a href="#" class="nav-link flex items-center py-3 px-4 rounded-lg hover:bg-gray-700" data-target="conference">
                 <i class="fas fa-users mr-3"></i> Conference
             </a>
-                       <div class="mt-6">
-            <a href="#" id="main-inventory-toggle" class="flex items-center justify-between py-2 px-4 rounded-lg hover:bg-gray-700 cursor-pointer">
-                <p class="uppercase text-sm font-semibold text-gray-300">Inventory</p>
-                <i class="fas fa-chevron-down text-gray-400 transition-transform duration-300" id="inventory-chevron"></i>
-            </a>
-
-            <!-- Sub-Inventory Links (Initially hidden) -->
-            <div id="inventory-submenu" class="inventory-submenu ml-4 mt-2">
-                <a href="#" class="nav-link flex items-center py-2 px-4 rounded-lg hover:bg-gray-700" data-inventory-type="bar">
-                    <i class="fas fa-wine-glass mr-3 text-blue-300"></i> Bar Inventory
-                </a>
-                <a href="#" class="nav-link flex items-center py-2 px-4 rounded-lg hover:bg-gray-700" data-inventory-type="restaurant">
-                    <i class="fas fa-drumstick-bite mr-3 text-green-300"></i> Restaurant Inventory
-                </a>
-                <a href="#" class="nav-link flex items-center py-2 px-4 rounded-lg hover:bg-gray-700" data-inventory-type="accommodation">
-                    <i class="fas fa-bed mr-3 text-purple-300"></i> Accommodation Inventory
-                </a>
-                <a href="#" class="nav-link flex items-center py-2 px-4 rounded-lg hover:bg-gray-700" data-inventory-type="gardens">
-                    <i class="fas fa-tree mr-3 text-yellow-300"></i> Garden Inventory
-                </a>
-                <a href="#" class="nav-link flex items-center py-2 px-4 rounded-lg hover:bg-gray-700" data-inventory-type="conference">
-                    <i class="fas fa-chalkboard-teacher mr-3 text-red-300"></i> Conference Inventory
-                </a>
-            </div>
-        </div>
         </nav>
     </div>
 
@@ -90,63 +42,7 @@
         <button id="sidebar-toggle" class="md:hidden mb-4 p-2 bg-gray-800 text-white rounded-md">
             <i class="fas fa-bars"></i>
         </button>
-        <div id="inventory-restaurant" class="page-content hidden">
-            <h1 class="text-3xl font-bold mb-6">Restaurant Inventory</h1>
-            <form class="bg-white p-6 rounded-lg shadow-md space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Ingredient</label>
-                    <input type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Stock Level</label>
-                    <input type="number" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Unit Cost</label>
-                    <input type="number" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                </div>
-                <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">Add Ingredient</button>
-            </form>
-        </div>
-
-        <div id="inventory-gardens" class="page-content hidden">
-            <h1 class="text-3xl font-bold mb-6">Garden Inventory</h1>
-            <form class="bg-white p-6 rounded-lg shadow-md space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Tool Name</label>
-                    <input type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Quantity</label>
-                    <input type="number" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Condition</label>
-                    <input type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                </div>
-                <button type="submit" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700">Add Tool</button>
-            </form>
-        </div>
-
-        <div id="inventory-conference" class="page-content hidden">
-            <h1 class="text-3xl font-bold mb-6">Conference Inventory</h1>
-            <form class="bg-white p-6 rounded-lg shadow-md space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Item Name</label>
-                    <input type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Quantity</label>
-                    <input type="number" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Usage Area</label>
-                    <input type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                </div>
-                <button type="submit" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700">Add Item</button>
-            </form>
-        </div>
-    </div>
+        
         <div id="dashboard" class="page-content">
             <h1 class="text-3xl font-bold mb-6">Dashboard</h1>
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -556,125 +452,5 @@
     </div>
 
     <script type="module" src="script8.js" defer></script>
-    
-    <script>
-                // Get references to DOM elements
-        const mainInventoryToggle = document.getElementById('main-inventory-toggle');
-        const inventorySubmenu = document.getElementById('inventory-submenu');
-        const inventoryChevron = document.getElementById('inventory-chevron');
-        const inventoryLinks = document.querySelectorAll('#inventory-submenu .nav-link');
-        const inventoryContent = document.getElementById('inventory-content');
-
-        // Sample data for each inventory type
-        const inventoryData = {
-            bar: {
-                title: "Bar Inventory Details",
-                items: [
-                    { name: "Whiskey", quantity: "10 Bottles", status: "In Stock" },
-                    { name: "Beer (Local)", quantity: "50 Cases", status: "In Stock" },
-                    { name: "Wine (Red)", quantity: "15 Bottles", status: "Low Stock" },
-                    { name: "Vodka", quantity: "8 Bottles", status: "In Stock" }
-                ]
-            },
-            restaurant: {
-                title: "Restaurant Inventory Details",
-                items: [
-                    { name: "Fresh Vegetables", quantity: "20 kg", status: "In Stock" },
-                    { name: "Meat (Beef)", quantity: "5 kg", status: "Low Stock" },
-                    { name: "Poultry (Chicken)", quantity: "12 kg", status: "In Stock" },
-                    { name: "Spices", quantity: "Various", status: "In Stock" }
-                ]
-            },
-            accommodation: {
-                title: "Accommodation Inventory Details",
-                items: [
-                    { name: "Linens (Clean)", quantity: "100 Sets", status: "In Stock" },
-                    { name: "Towels (Fresh)", quantity: "150 Pieces", status: "In Stock" },
-                    { name: "Toiletries", quantity: "Bulk", status: "In Stock" },
-                    { name: "Guest Supplies", quantity: "Various", status: "In Stock" }
-                ]
-            },
-            gardens: {
-                title: "Garden Inventory Details",
-                items: [
-                    { name: "Fertilizer", quantity: "5 Bags", status: "In Stock" },
-                    { name: "Gardening Tools", quantity: "Complete Set", status: "In Stock" },
-                    { name: "Flower Seeds", quantity: "Various Packs", status: "In Stock" },
-                    { name: "Pest Control Spray", quantity: "2 Bottles", status: "Low Stock" }
-                ]
-            },
-            conference: {
-                title: "Conference Inventory Details",
-                items: [
-                    { name: "Projectors", quantity: "3 Units", status: "In Stock" },
-                    { name: "Microphones", quantity: "10 Units", status: "In Stock" },
-                    { name: "Whiteboards", quantity: "5 Units", status: "In Stock" },
-                    { name: "Stationery Kits", quantity: "50 Kits", status: "In Stock" }
-                ]
-            }
-        };
-
-        /**
-         * Toggles the visibility of the sub-inventory menu.
-         */
-        mainInventoryToggle.addEventListener('click', (e) => {
-            e.preventDefault(); // Prevent default link behavior
-            inventorySubmenu.classList.toggle('active'); // Toggle the 'active' class for max-height transition
-            inventoryChevron.classList.toggle('rotate-180'); // Rotate chevron icon
-        });
-
-        /**
-         * Handles clicks on sub-inventory links to display relevant data.
-         */
-        inventoryLinks.forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault(); // Prevent default link behavior
-
-                // Remove 'active' class from previously selected link
-                document.querySelector('.nav-link.bg-gray-600')?.classList.remove('bg-gray-600');
-                // Add 'active' class to the clicked link
-                link.classList.add('bg-gray-600');
-
-                const inventoryType = link.dataset.inventoryType; // Get the inventory type from data-attribute
-                const data = inventoryData[inventoryType]; // Retrieve data based on type
-
-                if (data) {
-                    // Build the HTML content for the selected inventory
-                    let htmlContent = `<h2 class="text-2xl font-semibold mb-4 text-blue-300">${data.title}</h2>`;
-                    htmlContent += `<div class="overflow-x-auto">`;
-                    htmlContent += `<table class="min-w-full bg-gray-800 rounded-lg overflow-hidden shadow-md">`;
-                    htmlContent += `<thead class="bg-gray-700"><tr>`;
-                    htmlContent += `<th class="py-3 px-4 text-left text-xs font-medium uppercase tracking-wider text-gray-300 rounded-tl-lg">Item</th>`;
-                    htmlContent += `<th class="py-3 px-4 text-left text-xs font-medium uppercase tracking-wider text-gray-300">Quantity</th>`;
-                    htmlContent += `<th class="py-3 px-4 text-left text-xs font-medium uppercase tracking-wider text-gray-300 rounded-tr-lg">Status</th>`;
-                    htmlContent += `</tr></thead>`;
-                    htmlContent += `<tbody class="divide-y divide-gray-700">`;
-
-                    data.items.forEach(item => {
-                        let statusColor = 'text-green-400';
-                        if (item.status === 'Low Stock') {
-                            statusColor = 'text-yellow-400';
-                        } else if (item.status === 'Out of Stock') {
-                            statusColor = 'text-red-400';
-                        }
-
-                        htmlContent += `<tr>`;
-                        htmlContent += `<td class="py-3 px-4 whitespace-nowrap text-gray-200">${item.name}</td>`;
-                        htmlContent += `<td class="py-3 px-4 whitespace-nowrap text-gray-200">${item.quantity}</td>`;
-                        htmlContent += `<td class="py-3 px-4 whitespace-nowrap ${statusColor}">${item.status}</td>`;
-                        htmlContent += `</tr>`;
-                    });
-
-                    htmlContent += `</tbody>`;
-                    htmlContent += `</table>`;
-                    htmlContent += `</div>`;
-
-                    inventoryContent.innerHTML = htmlContent; // Update the content area
-                } else {
-                    inventoryContent.innerHTML = `<p class="text-red-400">No data available for this inventory type.</p>`;
-                }
-            });
-        });
-    </script>
 </body>
 </html>
