@@ -46,31 +46,99 @@
         <div id="dashboard" class="page-content">
             <h1 class="text-3xl font-bold mb-6">Dashboard</h1>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <h2 class="text-lg font-semibold text-gray-600">Today's Sales</h2>
-                    <p id="today-sales" class="text-2xl font-bold text-green-500">UGX 0</p>
-                </div>
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <h2 class="text-lg font-semibold text-gray-600">Weekly Sales</h2>
-                    <p id="weekly-sales" class="text-2xl font-bold text-blue-500">UGX 0</p>
-                </div>
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <h2 class="text-lg font-semibold text-gray-600">Monthly Sales</h2>
-                    <p id="monthly-sales" class="text-2xl font-bold text-purple-500">UGX 0</p>
-                </div>
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <h2 class="text-lg font-semibold text-gray-600">Total Balance</h2>
-                    <p id="dashboard-total-balance" class="text-2xl font-bold text-indigo-500">UGX 0</p>
-                </div>
-                    <div class="bg-white p-6 rounded-lg shadow-md">
-                    <h2 class="text-lg font-semibold text-gray-600">Performance</h2>
-                    <p id="dashboard-bar-performance" class="text-2xl font-bold text-indigo-500">Bar</p>
-                    <p id="dashboard-accommodation-performance" class="text-2xl font-bold text-indigo-500">Accommodation</p>
-                    <p id="dashboard-restaurant-performance" class="text-2xl font-bold text-indigo-500">Restaurant</p>
-                    <p id="dashboard-gardens-performance" class="text-2xl font-bold text-indigo-500">Gardens</p>
-                    <p id="dashboard-conference-performance" class="text-2xl font-bold text-indigo-500">Conference</p>
-                </div>
+
+    <div class="bg-white p-6 rounded-lg shadow-md col-span-full">
+        <h2 class="text-lg font-semibold text-gray-600 mb-4">Select Period</h2>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+                <label for="date-selector" class="block text-sm font-medium text-gray-700">Select Date:</label>
+                <input type="date" id="date-selector" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
             </div>
+            <div>
+                <label for="week-selector" class="block text-sm font-medium text-gray-700">Select Week:</label>
+                <input type="week" id="week-selector" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+            </div>
+            <div>
+                <label for="month-selector" class="block text-sm font-medium text-gray-700">Select Month:</label>
+                <input type="month" id="month-selector" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+            </div>
+            <div>
+                <label for="year-selector" class="block text-sm font-medium text-gray-700">Select Year:</label>
+                <input type="number" id="year-selector" min="2000" max="2100" step="1" value="2025" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-lg font-semibold text-gray-600">Today's Sales</h2>
+        <p id="today-sales" class="text-2xl font-bold text-green-500">UGX 0</p>
+    </div>
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-lg font-semibold text-gray-600">Weekly Sales</h2>
+        <p id="weekly-sales" class="text-2xl font-bold text-blue-500">UGX 0</p>
+    </div>
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-lg font-semibold text-gray-600">Monthly Sales</h2>
+        <p id="monthly-sales" class="text-2xl font-bold text-purple-500">UGX 0</p>
+    </div>
+
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-lg font-semibold text-gray-600">Today's Expenses</h2>
+        <p id="today-expenses" class="text-2xl font-bold text-red-500">UGX 0</p>
+    </div>
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-lg font-semibold text-gray-600">Weekly Expenses</h2>
+        <p id="weekly-expenses" class="text-2xl font-bold text-red-500">UGX 0</p>
+    </div>
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-lg font-semibold text-gray-600">Monthly Expenses</h2>
+        <p id="monthly-expenses" class="text-2xl font-bold text-red-500">UGX 0</p>
+    </div>
+
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-lg font-semibold text-gray-600">Today's Balance</h2>
+        <p id="today-balance" class="text-2xl font-bold text-indigo-500">UGX 0</p>
+    </div>
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-lg font-semibold text-gray-600">Weekly Balance</h2>
+        <p id="weekly-balance" class="text-2xl font-bold text-indigo-500">UGX 0</p>
+    </div>
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-lg font-semibold text-gray-600">Monthly Balance</h2>
+        <p id="monthly-balance" class="text-2xl font-bold text-indigo-500">UGX 0</p>
+    </div>
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-lg font-semibold text-gray-600">Total Balance</h2>
+        <p id="dashboard-total-balance" class="text-2xl font-bold text-indigo-500">UGX 0</p>
+    </div>
+
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-lg font-semibold text-gray-600">Daily Performance</h2>
+        <p id="daily-bar-performance" class="text-xl font-bold text-gray-700">Bar: 0%</p>
+        <p id="daily-accommodation-performance" class="text-xl font-bold text-gray-700">Accommodation: 0%</p>
+        <p id="daily-restaurant-performance" class="text-xl font-bold text-gray-700">Restaurant: 0%</p>
+        <p id="daily-gardens-performance" class="text-xl font-bold text-gray-700">Gardens: 0%</p>
+        <p id="daily-conference-performance" class="text-xl font-bold text-gray-700">Conference: 0%</p>
+    </div>
+
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-lg font-semibold text-gray-600">Weekly Performance</h2>
+        <p id="weekly-bar-performance" class="text-xl font-bold text-gray-700">Bar: 0%</p>
+        <p id="weekly-accommodation-performance" class="text-xl font-bold text-gray-700">Accommodation: 0%</p>
+        <p id="weekly-restaurant-performance" class="text-xl font-bold text-gray-700">Restaurant: 0%</p>
+        <p id="weekly-gardens-performance" class="text-xl font-bold text-gray-700">Gardens: 0%</p>
+        <p id="weekly-conference-performance" class="text-xl font-bold text-gray-700">Conference: 0%</p>
+    </div>
+
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-lg font-semibold text-gray-600">Monthly Performance</h2>
+        <p id="monthly-bar-performance" class="text-xl font-bold text-gray-700">Bar: 0%</p>
+        <p id="monthly-accommodation-performance" class="text-xl font-bold text-gray-700">Accommodation: 0%</p>
+        <p id="monthly-restaurant-performance" class="text-xl font-bold text-gray-700">Restaurant: 0%</p>
+        <p id="monthly-gardens-performance" class="text-xl font-bold text-gray-700">Gardens: 0%</p>
+        <p id="monthly-conference-performance" class="text-xl font-bold text-gray-700">Conference: 0%</p>
+    </div>
+</div>
         </div>
 
         <div id="bar" class="page-content hidden">
