@@ -35,6 +35,19 @@
             <a href="#" class="nav-link flex items-center py-3 px-4 rounded-lg hover:bg-gray-700" data-target="conference">
                 <i class="fas fa-users mr-3"></i> Conference
             </a>
+            <div class="mt-4">
+  <button onclick="toggleSubInventory()" class="w-full flex justify-between items-center py-3 px-4 rounded-lg hover:bg-gray-700">
+    <span><i class="fas fa-boxes-stacked mr-3"></i> Inventory</span>
+    <i id="inventory-toggle-icon" class="fas fa-chevron-down"></i>
+  </button>
+  <div id="sub-inventory-links" class="ml-6 mt-2 hidden">
+    <a href="#" class="block py-2 px-2 rounded hover:bg-gray-700" data-target="inventory-bar">Bar Inventory</a>
+    <a href="#" class="block py-2 px-2 rounded hover:bg-gray-700" data-target="inventory-restaurant">Restaurant Inventory</a>
+    <a href="#" class="block py-2 px-2 rounded hover:bg-gray-700" data-target="inventory-gardens">Gardens Inventory</a>
+    <a href="#" class="block py-2 px-2 rounded hover:bg-gray-700" data-target="inventory-conference">Conference Inventory</a>
+    <a href="#" class="block py-2 px-2 rounded hover:bg-gray-700" data-target="inventory-accommodation">Accommodation Inventory</a>
+  </div>
+</div>
         </nav>
     </div>
 
@@ -42,7 +55,33 @@
         <button id="sidebar-toggle" class="md:hidden mb-4 p-2 bg-gray-800 text-white rounded-md">
             <i class="fas fa-bars"></i>
         </button>
-        
+        <div id="inventory-bar" class="page-content hidden">
+  <h1 class="text-2xl font-bold mb-4">Bar Inventory</h1>
+  <div class="bg-white p-4 rounded shadow">
+    <button class="mb-4 bg-blue-500 text-white px-4 py-2 rounded">Add Bar Item</button>
+    <table class="min-w-full bg-white">
+      <thead class="bg-gray-200">
+        <tr>
+          <th class="py-2 px-4">Item</th>
+          <th class="py-2 px-4">Quantity</th>
+          <th class="py-2 px-4">Price</th>
+          <th class="py-2 px-4">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="py-2 px-4">Whiskey</td>
+          <td class="py-2 px-4">20</td>
+          <td class="py-2 px-4">10,000</td>
+          <td class="py-2 px-4">
+            <button class="bg-yellow-500 text-white px-2 py-1 rounded">Edit</button>
+            <button class="bg-red-500 text-white px-2 py-1 rounded">Delete</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
         <div id="dashboard" class="page-content">
             <h1 class="text-3xl font-bold mb-6">Dashboard</h1>
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -491,7 +530,15 @@
     <div id="low-stock-notification" class="hidden fixed bottom-5 right-5 bg-yellow-400 text-yellow-800 p-4 rounded-lg shadow-lg">
         <p><i class="fas fa-exclamation-triangle mr-2"></i><span id="low-stock-message"></span></p>
     </div>
-
+<script>
+  function toggleSubInventory() {
+    const submenu = document.getElementById("sub-inventory-links");
+    const icon = document.getElementById("inventory-toggle-icon");
+    submenu.classList.toggle("hidden");
+    icon.classList.toggle("fa-chevron-down");
+    icon.classList.toggle("fa-chevron-up");
+  }
+</script>
     <script type="module" src="script8.js" defer></script>
 </body>
 </html>
