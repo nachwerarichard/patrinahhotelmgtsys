@@ -28,97 +28,119 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Add Sale Button Listeners
   sections.forEach(section => {
-    document.getElementById(`add-sale-btn-${section}`).addEventListener('click', () => {
-      openSaleModal(section);
-    });
+    const btn = document.getElementById(`add-sale-btn-${section}`);
+    if (btn) {
+      btn.addEventListener('click', () => {
+        openSaleModal(section);
+      });
+    }
   });
 
   // Open Sale Modal
   const openSaleModal = (section) => {
     const modal = document.getElementById('sales-modal');
-    modal.classList.remove('hidden');
-    modal.dataset.section = section;
+    if (modal) {
+      modal.classList.remove('hidden');
+      modal.dataset.section = section;
+    }
   };
 
   // Close Sale Modal
-  document.getElementById('cancel-sale-btn').addEventListener('click', () => {
-    document.getElementById('sales-modal').classList.add('hidden');
-    document.getElementById('sale-form').reset();
-  });
+  const cancelSaleBtn = document.getElementById('cancel-sale-btn');
+  if (cancelSaleBtn) {
+    cancelSaleBtn.addEventListener('click', () => {
+      document.getElementById('sales-modal').classList.add('hidden');
+      document.getElementById('sale-form').reset();
+    });
+  }
 
   // Sale Form Submission
-  document.getElementById('sale-form').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const section = document.getElementById('sales-modal').dataset.section;
-    const item = document.getElementById('sale-item').value;
-    const number = parseInt(document.getElementById('sale-number').value);
-    const bp = parseInt(document.getElementById('sale-buying-price').value);
-    const sp = parseInt(document.getElementById('sale-selling-price').value);
+  const saleForm = document.getElementById('sale-form');
+  if (saleForm) {
+    saleForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const section = document.getElementById('sales-modal').dataset.section;
+      const item = document.getElementById('sale-item').value;
+      const number = parseInt(document.getElementById('sale-number').value);
+      const bp = parseInt(document.getElementById('sale-buying-price').value);
+      const sp = parseInt(document.getElementById('sale-selling-price').value);
 
-    const sumBP = bp * number;
-    const sumSP = sp * number;
-    const profit = sumSP - sumBP;
-    const percentProfit = bp > 0 ? ((profit / sumBP) * 100).toFixed(1) : '0';
+      const sumBP = bp * number;
+      const sumSP = sp * number;
+      const profit = sumSP - sumBP;
+      const percentProfit = bp > 0 ? ((profit / sumBP) * 100).toFixed(1) : '0';
 
-    const row = document.createElement('tr');
-    row.setAttribute('data-sumsp', sumSP);
-    row.innerHTML = `
-      <td class="py-2 px-4">${item}</td>
-      <td class="py-2 px-4">${number}</td>
-      <td class="py-2 px-4">${bp}</td>
-      <td class="py-2 px-4">${sp}</td>
-      <td class="py-2 px-4">${sumBP}</td>
-      <td class="py-2 px-4">${sumSP}</td>
-      <td class="py-2 px-4">${profit}</td>
-      <td class="py-2 px-4">${percentProfit}%</td>
-    `;
-    document.getElementById(`sales-table-body-${section}`).appendChild(row);
-    document.getElementById('sales-modal').classList.add('hidden');
-    e.target.reset();
-    updateSummary(section);
-  });
+      const row = document.createElement('tr');
+      row.setAttribute('data-sumsp', sumSP);
+      row.innerHTML = `
+        <td class="py-2 px-4">${item}</td>
+        <td class="py-2 px-4">${number}</td>
+        <td class="py-2 px-4">${bp}</td>
+        <td class="py-2 px-4">${sp}</td>
+        <td class="py-2 px-4">${sumBP}</td>
+        <td class="py-2 px-4">${sumSP}</td>
+        <td class="py-2 px-4">${profit}</td>
+        <td class="py-2 px-4">${percentProfit}%</td>
+      `;
+      document.getElementById(`sales-table-body-${section}`).appendChild(row);
+      document.getElementById('sales-modal').classList.add('hidden');
+      e.target.reset();
+      updateSummary(section);
+    });
+  }
 
   // Add Expense Button Listeners
   sections.forEach(section => {
-    document.getElementById(`add-expense-btn-${section}`).addEventListener('click', () => {
-      openExpenseModal(section);
-    });
+    const btn = document.getElementById(`add-expense-btn-${section}`);
+    if (btn) {
+      btn.addEventListener('click', () => {
+        openExpenseModal(section);
+      });
+    }
   });
 
   const openExpenseModal = (section) => {
     const modal = document.getElementById('expense-modal');
-    modal.classList.remove('hidden');
-    document.getElementById('expense-source').value = section;
+    if (modal) {
+      modal.classList.remove('hidden');
+      document.getElementById('expense-source').value = section;
+    }
   };
 
-  document.getElementById('cancel-expense-btn').addEventListener('click', () => {
-    document.getElementById('expense-modal').classList.add('hidden');
-    document.getElementById('expense-form').reset();
-  });
+  const cancelExpenseBtn = document.getElementById('cancel-expense-btn');
+  if (cancelExpenseBtn) {
+    cancelExpenseBtn.addEventListener('click', () => {
+      document.getElementById('expense-modal').classList.add('hidden');
+      document.getElementById('expense-form').reset();
+    });
+  }
 
-  document.getElementById('expense-form').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const source = document.getElementById('expense-source').value;
-    const description = document.getElementById('expense-description').value;
-    const amount = parseInt(document.getElementById('expense-amount').value);
+  const expenseForm = document.getElementById('expense-form');
+  if (expenseForm) {
+    expenseForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const source = document.getElementById('expense-source').value;
+      const description = document.getElementById('expense-description').value;
+      const amount = parseInt(document.getElementById('expense-amount').value);
 
-    const row = document.createElement('tr');
-    row.setAttribute('data-source', source);
-    row.setAttribute('data-amount', amount);
-    row.innerHTML = `
-      <td class="py-2 px-4">${description}</td>
-      <td class="py-2 px-4">${amount}</td>
-      <td class="py-2 px-4">-</td>
-      <td class="py-2 px-4">-</td>
-      <td class="py-2 px-4">${source}</td>
-      <td class="py-2 px-4">-</td>
-      <td class="py-2 px-4">-</td>
-    `;
-    document.getElementById(`expenses-table-body-${source}`).appendChild(row);
-    document.getElementById('expense-modal').classList.add('hidden');
-    e.target.reset();
-    updateSummary(source);
-  });
+      const row = document.createElement('tr');
+      row.setAttribute('data-source', source);
+      row.setAttribute('data-amount', amount);
+      row.innerHTML = `
+        <td class="py-2 px-4">${description}</td>
+        <td class="py-2 px-4">${amount}</td>
+        <td class="py-2 px-4">-</td>
+        <td class="py-2 px-4">-</td>
+        <td class="py-2 px-4">${source}</td>
+        <td class="py-2 px-4">-</td>
+        <td class="py-2 px-4">-</td>
+      `;
+      document.getElementById(`expenses-table-body-${source}`).appendChild(row);
+      document.getElementById('expense-modal').classList.add('hidden');
+      e.target.reset();
+      updateSummary(source);
+    });
+  }
 
   const updateSummary = (section) => {
     let totalSales = 0;
