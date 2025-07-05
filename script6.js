@@ -197,50 +197,44 @@ document.addEventListener('DOMContentLoaded', () => {
 // Add this to the end of the DOMContentLoaded block
 
 const updateDashboardPerformance = () => {
-  const sections = ['bar', 'restaurant', 'accommodation', 'gardens', 'conference'];
-  let totalBalance = 0;
-  const sectionBalances = {};
+  let totalExpenses = 0;
+  const sectionExpenses = {};
 
   sections.forEach(section => {
-    const salesRows = document.querySelectorAll(`#sales-table-body-${section} tr`);
     const expensesRows = document.querySelectorAll(`#expenses-table-body-${section} tr`);
-
-    let totalSales = 0;
-    salesRows.forEach(row => {
-      totalSales += parseInt(row.getAttribute('data-sumsp') || 0);
-    });
-
-    let totalExpenses = 0;
+    let total = 0;
     expensesRows.forEach(row => {
       const source = row.getAttribute('data-source');
       if (source === section) {
-        totalExpenses += parseInt(row.getAttribute('data-amount') || 0);
+        total += parseInt(row.getAttribute('data-amount') || 0);
       }
     });
-
-    const balance = totalSales - totalExpenses;
-    sectionBalances[section] = balance;
-    totalBalance += balance;
+    sectionExpenses[section] = total;
+    totalExpenses += total;
   });
 
-  // Now update each section's percentage of total performance
+  // Update dashboard performance based on expense contribution
   sections.forEach(section => {
-    const balance = sectionBalances[section];
-    const percentage = totalBalance > 0 ? ((balance / totalBalance) * 100).toFixed(1) : 0;
+    const expense = sectionExpenses[section];
+    const percentage = totalExpenses > 0 ? ((expense / totalExpenses) * 100).toFixed(1) : 0;
     const elem = document.getElementById(`dashboard-${section}-performance`);
     if (elem) {
       elem.textContent = `${section.charAt(0).toUpperCase() + section.slice(1)}: ${percentage}%`;
     }
   });
 
-  // Update total balance
+  // Optionally still update total balance if desired
+  let totalBalance = 0;
+  sections.forEach(section => {
+    let sales = 0;
+    document.querySelectorAll(`#sales-table-body-${section} tr`).forEach(row => {
+      sales += parseInt(row.getAttribute('data-sumsp') || 0);
+    });
+
+    const expenses = sectionExpenses[section];
+    totalBalance += sales - expenses;
+  });
+
   const balanceElem = document.getElementById('dashboard-total-balance');
   if (balanceElem) balanceElem.textContent = formatUGX(totalBalance);
-};
-
-// Ensure the performance is updated after summary changes
-const originalUpdateSummary = updateSummary;
-updateSummary = (section) => {
-  originalUpdateSummary(section);
-  updateDashboardPerformance();
 };
