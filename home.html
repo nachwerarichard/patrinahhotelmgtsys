@@ -530,6 +530,28 @@
     <div id="low-stock-notification" class="hidden fixed bottom-5 right-5 bg-yellow-400 text-yellow-800 p-4 rounded-lg shadow-lg">
         <p><i class="fas fa-exclamation-triangle mr-2"></i><span id="low-stock-message"></span></p>
     </div>
+    <script>
+  // Navigation click handler for inventory dropdown items
+  document.querySelectorAll('[data-target]').forEach(link => {
+    link.addEventListener('click', function (e) {
+      e.preventDefault();
+
+      const targetId = this.getAttribute('data-target');
+
+      // Hide all sections
+      document.querySelectorAll('.page-content').forEach(section => {
+        section.classList.add('hidden');
+      });
+
+      // Show the selected section
+      const targetSection = document.getElementById(targetId);
+      if (targetSection) {
+        targetSection.classList.remove('hidden');
+      }
+    });
+  });
+</script>
+
 <script>
   function toggleSubInventory() {
     const submenu = document.getElementById("sub-inventory-links");
@@ -538,6 +560,7 @@
     icon.classList.toggle("fa-chevron-down");
     icon.classList.toggle("fa-chevron-up");
   }
+    
 </script>
     <script type="module" src="script8.js" defer></script>
 </body>
