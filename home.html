@@ -11,45 +11,45 @@
 </head>
 <body class="bg-gray-100">
 
-    <div id="sidebar" class="sidebar fixed top-0 left-0 h-full w-64 bg-gray-800 text-white p-5 z-20">
-          <div class="text-center mb-10">
-        <img src="patrina.png" alt="Patrinah Hotel Logo" class="h-6 w-6 mx-auto mb-4 rounded-full object-cover">
-        <h2 class="text-2xl font-bold">Patrinah Hotel</h2>
-       </div>
-        <nav>
-            <a href="#" class="nav-link active-link flex items-center py-3 px-4 rounded-lg hover:bg-gray-700" data-target="dashboard">
-                <i class="fas fa-tachometer-alt mr-3"></i> Dashboard
-            </a>
-            <a href="#" class="nav-link flex items-center py-3 px-4 rounded-lg hover:bg-gray-700" data-target="bar">
-                <i class="fas fa-martini-glass-citrus mr-3"></i> Bar
-            </a>
-            <a href="#" class="nav-link flex items-center py-3 px-4 rounded-lg hover:bg-gray-700" data-target="restaurant">
-                <i class="fas fa-utensils mr-3"></i> Restaurant
-            </a>
-            <a href="#" class="nav-link flex items-center py-3 px-4 rounded-lg hover:bg-gray-700" data-target="accommodation">
-                <i class="fas fa-bed mr-3"></i> Accommodation
-            </a>
-            <a href="#" class="nav-link flex items-center py-3 px-4 rounded-lg hover:bg-gray-700" data-target="gardens">
-                <i class="fas fa-leaf mr-3"></i> Gardens
-            </a>
-            <a href="#" class="nav-link flex items-center py-3 px-4 rounded-lg hover:bg-gray-700" data-target="conference">
-                <i class="fas fa-users mr-3"></i> Conference
-            </a>
-            <div class="mt-4">
-  <button onclick="toggleSubInventory()" class="w-full flex justify-between items-center py-3 px-4 rounded-lg hover:bg-gray-700">
-    <span><i class="fas fa-boxes-stacked mr-3"></i> Inventory</span>
-    <i id="inventory-toggle-icon" class="fas fa-chevron-down"></i>
-  </button>
-  <div id="sub-inventory-links" class="ml-6 mt-2 hidden">
-    <a href="#" class="block py-2 px-2 rounded hover:bg-gray-700" data-target="inventory-bar">Bar Inventory</a>
-    <a href="#" class="block py-2 px-2 rounded hover:bg-gray-700" data-target="inventory-restaurant">Restaurant Inventory</a>
-    <a href="#" class="block py-2 px-2 rounded hover:bg-gray-700" data-target="inventory-gardens">Gardens Inventory</a>
-    <a href="#" class="block py-2 px-2 rounded hover:bg-gray-700" data-target="inventory-conference">Conference Inventory</a>
-    <a href="#" class="block py-2 px-2 rounded hover:bg-gray-700" data-target="inventory-accommodation">Accommodation Inventory</a>
-  </div>
+   <div id="sidebar" class="sidebar fixed top-0 left-0 h-full w-64 bg-gray-800 text-white p-5 z-20 overflow-y-auto">
+          <div class="text-center mb-10">
+        <img src="patrina.png" alt="Patrinah Hotel Logo" class="h-6 w-6 mx-auto mb-4 rounded-full object-cover">
+        <h2 class="text-2xl font-bold">Patrinah Hotel</h2>
+       </div>
+        <nav>
+            <a href="#" class="nav-link active-link flex items-center py-3 px-4 rounded-lg hover:bg-gray-700" data-target="dashboard">
+                <i class="fas fa-tachometer-alt mr-3"></i> Dashboard
+            </a>
+            <a href="#" class="nav-link flex items-center py-3 px-4 rounded-lg hover:bg-gray-700" data-target="bar">
+                <i class="fas fa-martini-glass-citrus mr-3"></i> Bar
+            </a>
+            <a href="#" class="nav-link flex items-center py-3 px-4 rounded-lg hover:bg-gray-700" data-target="restaurant">
+                <i class="fas fa-utensils mr-3"></i> Restaurant
+            </a>
+            <a href="#" class="nav-link flex items-center py-3 px-4 rounded-lg hover:bg-gray-700" data-target="accommodation">
+                <i class="fas fa-bed mr-3"></i> Accommodation
+            </a>
+            <a href="#" class="nav-link flex items-center py-3 px-4 rounded-lg hover:bg-gray-700" data-target="gardens">
+                <i class="fas fa-leaf mr-3"></i> Gardens
+            </a>
+            <a href="#" class="nav-link flex items-center py-3 px-4 rounded-lg hover:bg-gray-700" data-target="conference">
+                <i class="fas fa-users mr-3"></i> Conference
+            </a>
+            <div class="mt-4">
+  <button onclick="toggleSubInventory()" class="w-full flex justify-between items-center py-3 px-4 rounded-lg hover:bg-gray-700">
+    <span><i class="fas fa-boxes-stacked mr-3"></i> Inventory</span>
+    <i id="inventory-toggle-icon" class="fas fa-chevron-down"></i>
+  </button>
+  <div id="sub-inventory-links" class="ml-6 mt-2 hidden">
+    <a href="#" class="block py-2 px-2 rounded hover:bg-gray-700" data-target="inventory-bar">Bar Inventory</a>
+    <a href="#" class="block py-2 px-2 rounded hover:bg-gray-700" data-target="inventory-restaurant">Restaurant Inventory</a>
+    <a href="#" class="block py-2 px-2 rounded hover:bg-gray-700" data-target="inventory-gardens">Gardens Inventory</a>
+    <a href="#" class="block py-2 px-2 rounded hover:bg-gray-700" data-target="inventory-conference">Conference Inventory</a>
+    <a href="#" class="block py-2 px-2 rounded hover:bg-gray-700" data-target="inventory-accommodation">Accommodation Inventory</a>
+  </div>
 </div>
-        </nav>
-    </div>
+        </nav>
+    </div>
 
     <div id="main-content" class="main-content ml-64 p-8">
         <button id="sidebar-toggle" class="md:hidden mb-4 p-2 bg-gray-800 text-white rounded-md">
