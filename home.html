@@ -57,18 +57,64 @@
         </button>
         <div id="inventory-bar" class="page-content hidden">
             <h1 class="text-2xl font-bold mb-4">Bar Inventory</h1>
+            <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold">Inventory</h2>
+                    <button id="add-item-btn-bar" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">Add Item</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white">
+                        <thead class="bg-gray-200">
+                            <tr>
+                                <th class="py-2 px-4">Name</th>
+                                <th class="py-2 px-4">Type</th>
+                                <th class="py-2 px-4">Quantity</th>
+                                <th class="py-2 px-4">Price (UGX)</th>
+                                <th class="py-2 px-4">Date Added</th>
+                                <th class="py-2 px-4">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventory-table-body-bar">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+
          </div>
          <div id="inventory-restaurant" class="page-content hidden">
-            <h1 class="text-2xl font-bold mb-4">Bar Inventory</h1>
+            <h1 class="text-2xl font-bold mb-4">Restaurant Inventory</h1>
+             <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold">Inventory</h2>
+                    <button id="add-item-btn-restaurant" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">Add Item</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white">
+                        <thead class="bg-gray-200">
+                            <tr>
+                                <th class="py-2 px-4">Name</th>
+                                <th class="py-2 px-4">Type</th>
+                                <th class="py-2 px-4">Quantity</th>
+                                <th class="py-2 px-4">Price (UGX)</th>
+                                <th class="py-2 px-4">Date Added</th>
+                                <th class="py-2 px-4">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventory-table-body-restaurant">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+
          </div>
                 <div id="inventory-gardens" class="page-content hidden">
-            <h1 class="text-2xl font-bold mb-4">Bar Inventory</h1>
+            <h1 class="text-2xl font-bold mb-4">Gardens Inventory</h1>
          </div>
                 <div id="inventory-conference" class="page-content hidden">
-            <h1 class="text-2xl font-bold mb-4">Bar Inventory</h1>
+            <h1 class="text-2xl font-bold mb-4">Conference Inventory</h1>
          </div>
                 <div id="inventory-accommodation" class="page-content hidden">
-            <h1 class="text-2xl font-bold mb-4">Bar Inventory</h1>
+            <h1 class="text-2xl font-bold mb-4">Accommodation Inventory</h1>
          </div>
         <div id="dashboard" class="page-content">
             <h1 class="text-3xl font-bold mb-6">Dashboard</h1>
