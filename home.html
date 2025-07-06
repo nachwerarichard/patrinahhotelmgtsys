@@ -80,7 +80,7 @@
                     <table class="min-w-full bg-white">
                         <thead class="bg-gray-200">
                             <tr>
-                                <th class="py-2 px-4">Name</th>
+                                <th class="py-2 px-4">Particulars</th>
                                 <th class="py-2 px-4">Opening stock</th>
                                 <th class="py-2 px-4">Purchases</th>
                                 <th class="py-2 px-4">Total Stock</th>
@@ -434,6 +434,9 @@
 
     <div id="item-modal" class="modal fixed inset-0 bg-black bg-opacity-50 items-center justify-center">
         <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
+            <div class="mb-4 w-1/2 md:w-1/4"> <label for="date-selector" class="block text-sm font-medium text-gray-700">Select Date:</label>
+                <input type="date" id="date-selector" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+            </div>
             <h2 id="item-modal-title" class="text-2xl font-bold mb-6">Add Item</h2>
             <form id="item-form">
                 <input type="hidden" id="item-id">
