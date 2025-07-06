@@ -8,7 +8,21 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="stylesheet" href="styles.css"/>
-  
+    <style>
+        /* Add this to your main CSS file */
+.scrollbar-hidden {
+    /* For Chrome, Safari, and Opera */
+    &::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* For IE and Edge */
+    -ms-overflow-style: none;
+
+    /* For Firefox */
+    scrollbar-width: none;
+}
+    </style>
 </head>
 <body class="bg-gray-100">
 
@@ -548,8 +562,7 @@
     <div id="low-stock-notification" class="hidden fixed bottom-5 right-5 bg-yellow-400 text-yellow-800 p-4 rounded-lg shadow-lg">
         <p><i class="fas fa-exclamation-triangle mr-2"></i><span id="low-stock-message"></span></p>
     </div>
-   <script >
-        
+    <script>
   // Navigation click handler for inventory dropdown items
   document.querySelectorAll('[data-target]').forEach(link => {
     link.addEventListener('click', function (e) {
@@ -569,7 +582,9 @@
       }
     });
   });
+</script>
 
+<script>
   function toggleSubInventory() {
     const submenu = document.getElementById("sub-inventory-links");
     const icon = document.getElementById("inventory-toggle-icon");
@@ -578,7 +593,7 @@
     icon.classList.toggle("fa-chevron-up");
   }
     
-   </script>
+</script>
     <script type="module" src="script8.js" defer></script>
 </body>
 </html>
