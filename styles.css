@@ -15,3 +15,18 @@
             display: flex;
         }
     
+  
+      
+.scrollbar-hidden {
+    /* For Chrome, Safari, and Opera */
+    &::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* For IE and Edge */
+    -ms-overflow-style: none;
+
+    /* For Firefox */
+    scrollbar-width: none;
+}
+    
