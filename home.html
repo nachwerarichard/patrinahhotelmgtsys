@@ -7,6 +7,17 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+  .input {
+    @apply w-full rounded-md border-gray-300 shadow-sm p-2;
+  }
+  .btn-primary {
+    @apply bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700;
+  }
+  .btn-secondary {
+    @apply bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400;
+  }
+</style>
 </head>
 
 <body class="bg-gray-100">
@@ -178,6 +189,69 @@
 
   <!-- Include Modal Files (Item, Expense, Sale) -->
   <!-- ...MODALS CODE WOULD FOLLOW... (same as your original, with cleaned input IDs) -->
+<!-- ===== MODALS ===== -->
+
+<!-- Add Inventory Modal -->
+<div id="inventory-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+    <h2 class="text-xl font-bold mb-4">Add Inventory Item</h2>
+    <form id="inventory-form">
+      <div class="grid gap-3">
+        <input type="text" placeholder="Particulars" id="inv-item" required class="input" />
+        <input type="number" placeholder="Opening Stock" id="inv-open" required class="input" />
+        <input type="number" placeholder="Purchases" id="inv-purchase" required class="input" />
+        <input type="number" placeholder="Sales" id="inv-sales" required class="input" />
+        <input type="number" placeholder="Spoilage" id="inv-spoilage" required class="input" />
+      </div>
+      <div class="flex justify-end mt-4 gap-2">
+        <button type="button" onclick="closeModal('inventory-modal')" class="btn-secondary">Cancel</button>
+        <button type="submit" class="btn-primary">Add</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Add Expense Modal -->
+<div id="expense-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+    <h2 class="text-xl font-bold mb-4">Add Expense</h2>
+    <form id="expense-form">
+      <div class="grid gap-3">
+        <input type="text" placeholder="Description" id="exp-desc" required class="input" />
+        <input type="number" placeholder="Amount (UGX)" id="exp-amt" required class="input" />
+        <input type="text" placeholder="Receipt ID" id="exp-receipt" required class="input" />
+        <input type="text" placeholder="Source" id="exp-source" required class="input" />
+        <input type="text" placeholder="Responsible Person" id="exp-person" required class="input" />
+      </div>
+      <div class="flex justify-end mt-4 gap-2">
+        <button type="button" onclick="closeModal('expense-modal')" class="btn-secondary">Cancel</button>
+        <button type="submit" class="btn-primary">Add</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Add Sale Modal -->
+<div id="sale-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+    <h2 class="text-xl font-bold mb-4">Add Sale</h2>
+    <form id="sale-form">
+      <div class="grid gap-3">
+        <input type="text" placeholder="Item" id="sale-item" required class="input" />
+        <input type="number" placeholder="Number Sold" id="sale-number" required class="input" />
+        <input type="number" placeholder="Buying Price (BP)" id="sale-bp" required class="input" />
+        <input type="number" placeholder="Selling Price (SP)" id="sale-sp" required class="input" />
+      </div>
+      <div class="flex justify-end mt-4 gap-2">
+        <button type="button" onclick="closeModal('sale-modal')" class="btn-secondary">Cancel</button>
+        <button type="submit" class="btn-primary">Add</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ====== Modal & Form Styling ====== -->
+
 
   <!-- Notifications -->
   <div id="low-stock-notification" class="hidden fixed bottom-5 right-5 bg-yellow-400 text-yellow-800 p-4 rounded-lg shadow-lg">
@@ -310,6 +384,124 @@
 </script>
 
   <!-- Script -->
+  <script>
+  // Modal toggle
+  const openModal = (id) => document.getElementById(id).classList.remove('hidden');
+  const closeModal = (id) => document.getElementById(id).classList.add('hidden');
+
+  document.getElementById("add-item-btn-bar").addEventListener("click", () => openModal('inventory-modal'));
+  document.getElementById("add-expense-btn-bar").addEventListener("click", () => openModal('expense-modal'));
+  document.getElementById("add-sale-btn-bar").addEventListener("click", () => openModal('sale-modal'));
+
+  // Inventory Submit
+  document.getElementById("inventory-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    const item = document.getElementById("inv-item").value;
+    const open = parseInt(document.getElementById("inv-open").value);
+    const purchase = parseInt(document.getElementById("inv-purchase").value);
+    const sales = parseInt(document.getElementById("inv-sales").value);
+    const spoil = parseInt(document.getElementById("inv-spoilage").value);
+    const total = open + purchase;
+    const closeStock = total - sales - spoil;
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="py-2 px-4">${item}</td>
+      <td class="py-2 px-4">${open}</td>
+      <td class="py-2 px-4">${purchase}</td>
+      <td class="py-2 px-4">${total}</td>
+      <td class="py-2 px-4">${sales}</td>
+      <td class="py-2 px-4">${spoil}</td>
+      <td class="py-2 px-4">${closeStock}</td>
+    `;
+    document.getElementById("inventory-table-body-bar").appendChild(tr);
+
+    if (closeStock < 10) {
+      document.getElementById("low-stock-message").textContent = `${item} is low on stock!`;
+      document.getElementById("low-stock-notification").classList.remove("hidden");
+      setTimeout(() => {
+        document.getElementById("low-stock-notification").classList.add("hidden");
+      }, 4000);
+    }
+
+    this.reset();
+    closeModal('inventory-modal');
+  });
+
+  // Expense Submit
+  document.getElementById("expense-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    const desc = document.getElementById("exp-desc").value;
+    const amt = document.getElementById("exp-amt").value;
+    const rcpt = document.getElementById("exp-receipt").value;
+    const src = document.getElementById("exp-source").value;
+    const resp = document.getElementById("exp-person").value;
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="py-2 px-4">${desc}</td>
+      <td class="py-2 px-4">${amt}</td>
+      <td class="py-2 px-4">${new Date().toISOString().split("T")[0]}</td>
+      <td class="py-2 px-4">${rcpt}</td>
+      <td class="py-2 px-4">${src}</td>
+      <td class="py-2 px-4">${resp}</td>
+      <td class="py-2 px-4 text-red-500 cursor-pointer">Delete</td>
+    `;
+    document.getElementById("expenses-table-body-bar").appendChild(tr);
+    this.reset();
+    closeModal('expense-modal');
+    updateBarTotals();
+  });
+
+  // Sale Submit
+  document.getElementById("sale-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    const item = document.getElementById("sale-item").value;
+    const num = parseInt(document.getElementById("sale-number").value);
+    const bp = parseFloat(document.getElementById("sale-bp").value);
+    const sp = parseFloat(document.getElementById("sale-sp").value);
+
+    const sumBp = num * bp;
+    const sumSp = num * sp;
+    const profit = sumSp - sumBp;
+    const profitPercent = ((profit / sumBp) * 100).toFixed(2);
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="py-2 px-4">${item}</td>
+      <td class="py-2 px-4">${num}</td>
+      <td class="py-2 px-4">${bp}</td>
+      <td class="py-2 px-4">${sp}</td>
+      <td class="py-2 px-4">${sumBp}</td>
+      <td class="py-2 px-4">${sumSp}</td>
+      <td class="py-2 px-4">${profit}</td>
+      <td class="py-2 px-4">${profitPercent}%</td>
+    `;
+    document.getElementById("sales-table-body-bar").appendChild(tr);
+    this.reset();
+    closeModal('sale-modal');
+    updateBarTotals();
+  });
+
+  // Reuse this function from earlier
+  function updateBarTotals() {
+    let totalSales = 0;
+    let totalExpenses = 0;
+
+    document.querySelectorAll('#sales-table-body-bar tr').forEach(row => {
+      totalSales += Number(row.children[5].innerText) || 0;
+    });
+
+    document.querySelectorAll('#expenses-table-body-bar tr').forEach(row => {
+      totalExpenses += Number(row.children[1].innerText) || 0;
+    });
+
+    document.getElementById('bar-total-sales').innerText = `UGX ${totalSales.toLocaleString()}`;
+    document.getElementById('bar-total-expenses').innerText = `UGX ${totalExpenses.toLocaleString()}`;
+    document.getElementById('bar-balance').innerText = `UGX ${(totalSales - totalExpenses).toLocaleString()}`;
+  }
+</script>
+
 </body>
 </html>
 
