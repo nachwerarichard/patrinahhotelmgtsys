@@ -18,24 +18,11 @@
         <h2 class="text-2xl font-bold">Patrinah Hotel</h2>
     </div>
     <nav>
-       <!-- <a href="#" class="nav-link active-link flex items-center py-3 px-4 rounded-lg hover:bg-gray-700" data-target="dashboard">
-            <i class="fas fa-tachometer-alt mr-3"></i> Dashboard
-        </a>-->
+      
         <a href="#" class="nav-link flex items-center py-3 px-4 rounded-lg hover:bg-gray-700" data-target="bar">
             <i class="fas fa-martini-glass-citrus mr-3"></i> Bar
         </a>
-        <!--<a href="#" class="nav-link flex items-center py-3 px-4 rounded-lg hover:bg-gray-700" data-target="restaurant">
-            <i class="fas fa-utensils mr-3"></i> Restaurant
-        </a>-->
-        <!--<a href="#" class="nav-link flex items-center py-3 px-4 rounded-lg hover:bg-gray-700" data-target="accommodation">
-            <i class="fas fa-bed mr-3"></i> Accommodation
-        </a>-->
-        <!--<a href="#" class="nav-link flex items-center py-3 px-4 rounded-lg hover:bg-gray-700" data-target="gardens">
-            <i class="fas fa-leaf mr-3"></i> Gardens
-        </a>-->
-       <!-- <a href="#" class="nav-link flex items-center py-3 px-4 rounded-lg hover:bg-gray-700" data-target="conference">
-            <i class="fas fa-users mr-3"></i> Conference
-        </a>-->
+       
         <div class="mt-4">
             <button onclick="toggleSubInventory()" class="w-full flex justify-between items-center py-3 px-4 rounded-lg hover:bg-gray-700">
                 <span><i class="fas fa-boxes-stacked mr-3"></i> Inventory</span>
@@ -43,10 +30,7 @@
             </button>
             <div id="sub-inventory-links" class="ml-6 mt-2 hidden">
                 <a href="#" class="block py-2 px-2 rounded hover:bg-gray-700" data-target="inventory-bar">Bar Inventory</a>
-               <!-- <a href="#" class="block py-2 px-2 rounded hover:bg-gray-700" data-target="inventory-restaurant">Restaurant Inventory</a>
-                <a href="#" class="block py-2 px-2 rounded hover:bg-gray-700" data-target="inventory-gardens">Gardens Inventory</a>
-                <a href="#" class="block py-2 px-2 rounded hover:bg-gray-700" data-target="inventory-conference">Conference Inventory</a>
-                <a href="#" class="block py-2 px-2 rounded hover:bg-gray-700" data-target="inventory-accommodation">Accommodation Inventory</a>-->            </div>
+                          </div>
         </div>
     </nav>
 </div>
@@ -84,133 +68,7 @@
             </div>
 
          </div>
-         <!--<div id="inventory-restaurant" class="page-content hidden">
-            <h1 class="text-2xl font-bold mb-4">Restaurant Inventory</h1>
-             <div class="bg-white p-6 rounded-lg shadow-md mb-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-bold">Inventory</h2>
-                    <button id="add-item-btn-restaurant" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">Add Item</button>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full bg-white">
-                        <thead class="bg-gray-200">
-                            <tr>
-                                <th class="py-2 px-4">Name</th>
-                                <th class="py-2 px-4">Type</th>
-                                <th class="py-2 px-4">Quantity</th>
-                                <th class="py-2 px-4">Price (UGX)</th>
-                                <th class="py-2 px-4">Date Added</th>
-                                <th class="py-2 px-4">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="inventory-table-body-restaurant">
-                            </tbody>
-                    </table>
-                </div>
-            </div>
-
-         </div>
-                <div id="inventory-gardens" class="page-content hidden">
-            <h1 class="text-2xl font-bold mb-4">Gardens Inventory</h1>
-         </div>
-                <div id="inventory-conference" class="page-content hidden">
-            <h1 class="text-2xl font-bold mb-4">Conference Inventory</h1>
-         </div>
-                <div id="inventory-accommodation" class="page-content hidden">
-            <h1 class="text-2xl font-bold mb-4">Accommodation Inventory</h1>
-         </div>
-<div id="dashboard" class="page-content">
-    <h1 class="text-3xl font-bold mb-6">Dashboard</h1>
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-
-        <div class="bg-white p-6 rounded-lg shadow-md col-span-full">
-            <h2 class="text-lg font-semibold text-gray-600 mb-4">Daily Overview</h2>
-            <div class="mb-4 w-1/2 md:w-1/4"> <label for="date-selector" class="block text-sm font-medium text-gray-700">Select Date:</label>
-                <input type="date" id="date-selector" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-4">
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <h2 class="text-lg font-semibold text-gray-600">Day's Sales</h2>
-                    <p id="today-sales" class="text-2xl font-bold text-green-500">UGX 0</p>
-                </div>
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <h2 class="text-lg font-semibold text-gray-600">Day's Expenses</h2>
-                    <p id="today-expenses" class="text-2xl font-bold text-red-500">UGX 0</p>
-                </div>
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <h2 class="text-lg font-semibold text-gray-600">Day's Balance</h2>
-                    <p id="today-balance" class="text-2xl font-bold text-indigo-500">UGX 0</p>
-                </div>
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <h2 class="text-lg font-semibold text-gray-600">Day's Performance</h2>
-                    <p id="daily-bar-performance" class="text-xl font-bold text-gray-700">Bar: 0%</p>
-                    <p id="daily-accommodation-performance" class="text-xl font-bold text-gray-700">Accommodation: 0%</p>
-                    <p id="daily-restaurant-performance" class="text-xl font-bold text-gray-700">Restaurant: 0%</p>
-                    <p id="daily-gardens-performance" class="text-xl font-bold text-gray-700">Gardens: 0%</p>
-                    <p id="daily-conference-performance" class="text-xl font-bold text-gray-700">Conference: 0%</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-white p-6 rounded-lg shadow-md col-span-full">
-            <h2 class="text-lg font-semibold text-gray-600 mb-4">Weekly Overview</h2>
-            <div class="mb-4 w-1/2 md:w-1/4"> <label for="week-selector" class="block text-sm font-medium text-gray-700">Select Week:</label>
-                <input type="week" id="week-selector" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-4">
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <h2 class="text-lg font-semibold text-gray-600">Weekly Sales</h2>
-                    <p id="weekly-sales" class="text-2xl font-bold text-blue-500">UGX 0</p>
-                </div>
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <h2 class="text-lg font-semibold text-gray-600">Weekly Expenses</h2>
-                    <p id="weekly-expenses" class="text-2xl font-bold text-red-500">UGX 0</p>
-                </div>
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <h2 class="text-lg font-semibold text-gray-600">Weekly Balance</h2>
-                    <p id="weekly-balance" class="text-2xl font-bold text-indigo-500">UGX 0</p>
-                </div>
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <h2 class="text-lg font-semibold text-gray-600">Weekly Performance</h2>
-                    <p id="weekly-bar-performance" class="text-xl font-bold text-gray-700">Bar: 0%</p>
-                    <p id="weekly-accommodation-performance" class="text-xl font-bold text-gray-700">Accommodation: 0%</p>
-                    <p id="weekly-restaurant-performance" class="text-xl font-bold text-gray-700">Restaurant: 0%</p>
-                    <p id="weekly-gardens-performance" class="text-xl font-bold text-gray-700">Gardens: 0%</p>
-                    <p id="weekly-conference-performance" class="text-xl font-bold text-gray-700">Conference: 0%</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-white p-6 rounded-lg shadow-md col-span-full">
-            <h2 class="text-lg font-semibold text-gray-600 mb-4">Monthly Overview</h2>
-            <div class="mb-4 w-1/2 md:w-1/4"> <label for="month-selector" class="block text-sm font-medium text-gray-700">Select Month:</label>
-                <input type="month" id="month-selector" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-4">
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <h2 class="text-lg font-semibold text-gray-600">Monthly Sales</h2>
-                    <p id="monthly-sales" class="text-2xl font-bold text-purple-500">UGX 0</p>
-                </div>
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <h2 class="text-lg font-semibold text-gray-600">Monthly Expenses</h2>
-                    <p id="monthly-expenses" class="text-2xl font-bold text-red-500">UGX 0</p>
-                </div>
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <h2 class="text-lg font-semibold text-gray-600">Monthly Balance</h2>
-                    <p id="monthly-balance" class="text-2xl font-bold text-indigo-500">UGX 0</p>
-                </div>
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <h2 class="text-lg font-semibold text-gray-600">Monthly Performance</h2>
-                    <p id="monthly-bar-performance" class="text-xl font-bold text-gray-700">Bar: 0%</p>
-                    <p id="monthly-accommodation-performance" class="text-xl font-bold text-gray-700">Accommodation: 0%</p>
-                    <p id="monthly-restaurant-performance" class="text-xl font-bold text-gray-700">Restaurant: 0%</p>
-                    <p id="monthly-gardens-performance" class="text-xl font-bold text-gray-700">Gardens: 0%</p>
-                    <p id="monthly-conference-performance" class="text-xl font-bold text-gray-700">Conference: 0%</p>
-                </div>
-            </div>
-        </div>
-
-    </div>-->
+        
 </div>
         <div id="bar" class="page-content hidden">
             <h1 class="text-3xl font-bold mb-6">Bar Management</h1>
@@ -308,119 +166,7 @@
                 </form>
             </div>
         </div>
-    <!--
-
-        <div id="restaurant" class="page-content hidden">
-            <h1 class="text-3xl font-bold mb-6">Restaurant Management</h1>
-            <div class="bg-white p-4 rounded-lg shadow-md mb-6">
-                <label for="date-filter-restaurant" class="block text-sm font-medium text-gray-700">Show data for date:</label>
-                <input type="date" id="date-filter-restaurant" class="mt-1 block w-full md:w-1/4 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <h2 class="text-lg font-semibold text-gray-600">Total Sales</h2>
-                    <p id="restaurant-total-sales" class="text-2xl font-bold text-green-500">UGX 0</p>
-                </div>
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <h2 class="text-lg font-semibold text-gray-600">Total Expenses</h2>
-                    <p id="restaurant-total-expenses" class="text-2xl font-bold text-red-500">UGX 0</p>
-                </div>
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <h2 class="text-lg font-semibold text-gray-600">Balance</h2>
-                    <p id="restaurant-balance" class="text-2xl font-bold text-blue-500">UGX 0</p>
-                </div>
-            </div>
-
-
-            
-
-            <div class="bg-white p-6 rounded-lg shadow-md mb-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-bold">Expenses</h2>
-                    <button id="add-expense-btn-restaurant" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">Add Expense</button>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full bg-white">
-                        <thead class="bg-gray-200">
-                            <tr>
-                                <th class="py-2 px-4">Description</th>
-                                <th class="py-2 px-4">Amount (UGX)</th>
-                                <th class="py-2 px-4">Date</th>
-                                <th class="py-2 px-4">Receipt ID</th>
-                                <th class="py-2 px-4">Source</th>
-                                <th class="py-2 px-4">Responsible</th>
-                                <th class="py-2 px-4">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="expenses-table-body-restaurant">
-                           </tbody>
-                    </table>
-                </div>
-            </div>
-            <div class="bg-white p-6 rounded-lg shadow-md mb-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-bold">Sales</h2>
-                    <button id="add-sale-btn-restaurant" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">Add Sale</button>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full bg-white">
-                        <thead class="bg-gray-200">
-                            <tr>
-                                <th class="py-2 px-4">Item</th>
-                                <th class="py-2 px-4">Number</th>
-                                <th class="py-2 px-4">Buying Price(BP)</th>
-                                <th class="py-2 px-4">Selling Price(SP)</th>
-                                <th class="py-2 px-4">Sum (BP)</th>
-                                <th class="py-2 px-4">Sum (SP)</th>
-                                <th class="py-2 px-4">Profit</th>
-                                <th class="py-2 px-4">%Profit</th>
-                            </tr>
-                        </thead>
-                        <tbody id="sales-table-body-restaurant">
-                           </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="bg-white p-6 rounded-lg shadow-md">
-                <h2 class="text-xl font-bold mb-4">Cash Management</h2>
-                <form id="cash-form-restaurant">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="cash-at-hand-restaurant" class="block text-sm font-medium text-gray-700">Cash at Hand (UGX)</label>
-                            <input type="number" id="cash-at-hand-restaurant" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                        </div>
-                        <div>
-                            <label for="cash-banked-restaurant" class="block text-sm font-medium text-gray-700">Cash Banked (UGX)</label>
-                            <input type="number" id="cash-banked-restaurant" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                        </div>
-                        <div>
-                            <label for="banked-receipt-id-restaurant" class="block text-sm font-medium text-gray-700">Banked Receipt ID</label>
-                            <input type="text" id="banked-receipt-id-restaurant" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                        </div>
-                        <div>
-                            <label for="responsible-person-restaurant" class="block text-sm font-medium text-gray-700">Responsible Person</label>
-                            <input type="text" id="responsible-person-restaurant" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                        </div>
-                    </div>
-                    <button type="submit" class="mt-4 bg-indigo-500 text-white px-4 py-2 rounded-lg hover:bg-indigo-600">Save Cash Record</button>
-                </form>
-            </div>
-        </div>
-
-        <div id="accommodation" class="page-content hidden">
-            <h1 class="text-3xl font-bold mb-6">Accommodation Management</h1>
-            </div>
-
-        <div id="gardens" class="page-content hidden">
-            <h1 class="text-3xl font-bold mb-6">Garden Management</h1>
-            </div>
-
-        <div id="conference" class="page-content hidden">
-            <h1 class="text-3xl font-bold mb-6">Conference Management</h1>
-            </div>
-    </div>-->
-
+   
     <div id="item-modal" class="modal fixed inset-0 bg-black bg-opacity-50 items-center justify-center">
         <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
             <div class="mb-4 w-1/2 md:w-1/4"> <label for="date-selector" class="block text-sm font-medium text-gray-700">Select Date:</label>
@@ -433,15 +179,7 @@
                     <label for="item-name" class="block text-sm font-medium text-gray-700">Particular</label>
                     <input type="text" id="item-name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
                 </div>
-               <!-- <div class="mb-4">
-                    <label for="item-type" class="block text-sm font-medium text-gray-700">Item Type</label>
-                    <select id="item-type" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
-                        <option value="Soft Drink">Soft Drink</option>
-                        <option value="Hard Drink">Hard Drink</option>
-                        <option value="Beer">Beer</option>
-                        <option value="Wine">Wine</option>
-                    </select>
-                </div>-->
+              
                 <div class="mb-4">
                     <label for="item-quantity" class="block text-sm font-medium text-gray-700">Opening Stock</label>
                     <input type="number" id="item-quantity" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
