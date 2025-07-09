@@ -21,6 +21,16 @@
 </head>
 
 <body class="bg-gray-100">
+  <div id="login-screen" class="fixed inset-0 flex items-center justify-center bg-gray-100 z-50">
+  <div class="bg-white p-8 rounded-lg shadow-lg w-80">
+    <h2 class="text-2xl font-bold mb-4 text-center">Admin Login</h2>
+    <input id="username" type="text" placeholder="Username" class="mb-4 w-full px-3 py-2 border rounded" />
+    <input id="password" type="password" placeholder="Password" class="mb-4 w-full px-3 py-2 border rounded" />
+    <button onclick="login()" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Login</button>
+    <p id="login-error" class="text-red-500 text-sm mt-3 hidden">Invalid credentials. Try again.</p>
+  </div>
+</div>
+
   <!-- Sidebar -->
   <div id="sidebar" class="sidebar fixed top-0 left-0 h-full w-64 bg-gray-800 text-white p-5 z-20 overflow-y-scroll scrollbar-hidden">
     <div class="text-center mb-10">
@@ -45,7 +55,7 @@
   </div>
 
   <!-- Main Content -->
-  <div id="main-content" class="main-content ml-64 p-8">
+  <div id="main-content" class="main-content ml-64 p-8 hidden">
     <button id="sidebar-toggle" class="md:hidden mb-4 p-2 bg-gray-800 text-white rounded-md">
       <i class="fas fa-bars"></i>
     </button>
@@ -577,6 +587,62 @@ document.getElementById('date-filter-bar').addEventListener('change', fetchSales
 }
 
   </script>
+  <SCRIPT>
+  let authHeader = '';
+
+function login() {
+  const username = document.getElementById('username').value;
+  const password = document.getElementById('password').value;
+
+  const encoded = btoa(`${username}:${password}`);
+  authHeader = `Basic ${encoded}`;
+
+  // Try a test call to verify
+  fetch('/sales', {
+    headers: {
+      'Authorization': authHeader
+    }
+  })
+    .then(res => {
+      if (!res.ok) throw new Error('Unauthorized');
+      return res.json();
+    })
+    .then(() => {
+      // Hide login and show main content
+      document.getElementById('login-screen').classList.add('hidden');
+      document.getElementById('sidebar').classList.remove('hidden');
+      document.getElementById('main-content').classList.remove('hidden');
+
+      // Save session (optional)
+      localStorage.setItem('authHeader', authHeader);
+    })
+    .catch(() => {
+      document.getElementById('login-error').classList.remove('hidden');
+    });
+}
+</SCRIPT>
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+  const savedAuth = localStorage.getItem('authHeader');
+  if (savedAuth) {
+    authHeader = savedAuth;
+    fetch('/sales', {
+      headers: {
+        'Authorization': authHeader
+      }
+    })
+      .then(res => {
+        if (!res.ok) throw new Error('Unauthorized');
+        return res.json();
+      })
+      .then(() => {
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('sidebar').classList.remove('hidden');
+        document.getElementById('main-content').classList.remove('hidden');
+      });
+  }
+});
+</script>
 </body>
 </html>
 
