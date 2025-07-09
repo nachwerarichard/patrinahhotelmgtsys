@@ -526,6 +526,57 @@ const fetchSalesByDate = async () => {
     
 document.getElementById('date-filter-bar').addEventListener('change', fetchSalesByDate);
   </script>
+  <script>
+    function editSale(id) {
+  const row = document.querySelector(`#sale-${id}`);
+  const cells = row.querySelectorAll('td');
+
+  // Convert cells to inputs for editing
+  cells.forEach((cell, index) => {
+    if (index < 8) { // skip buttons column
+      const value = cell.textContent.trim();
+      cell.innerHTML = `<input class="border px-2 py-1" value="${value}" />`;
+    }
+  });
+
+  // Add a Save button
+  row.querySelector('.actions').innerHTML = `<button onclick="saveSale('${id}')" class="text-green-600 hover:underline">Save</button>`;
+}
+
+    async function saveSale(id) {
+  const row = document.querySelector(`#sale-${id}`);
+  const inputs = row.querySelectorAll('input');
+  
+  const updatedData = {
+    item: inputs[0].value,
+    number: Number(inputs[1].value),
+    buyingPrice: Number(inputs[2].value),
+    sellingPrice: Number(inputs[3].value),
+    sumBP: Number(inputs[4].value),
+    sumSP: Number(inputs[5].value),
+    profit: Number(inputs[6].value),
+    profitPercentage: Number(inputs[7].value)
+  };
+
+  const res = await fetch(`/sales/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Basic ' + btoa('admin:123')
+    },
+    body: JSON.stringify(updatedData)
+  });
+
+  if (res.ok) {
+    const updatedSale = await res.json();
+    alert('Sale updated successfully!');
+    // Re-render table or just update this row
+  } else {
+    alert('Failed to update sale');
+  }
+}
+
+  </script>
 </body>
 </html>
 
