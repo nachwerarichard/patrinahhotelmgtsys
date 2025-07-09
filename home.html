@@ -587,16 +587,15 @@ document.getElementById('date-filter-bar').addEventListener('change', fetchSales
 
   </script>
 
-  /*let authHeader = '';
-function login() {
+<script>
+  function login() {
   const username = document.getElementById('username').value;
   const password = document.getElementById('password').value;
-
   const encoded = btoa(`${username}:${password}`);
-  authHeader = `Basic ${encoded}`;
+  const authHeader = `Basic ${encoded}`;
 
-  // Try a test call to verify
-  fetch('${API_BASE}/sales', {
+  // Try accessing a protected endpoint to verify credentials
+  fetch('https://your-backend.onrender.com/sales', {
     headers: {
       'Authorization': authHeader
     }
@@ -605,19 +604,19 @@ function login() {
       if (!res.ok) throw new Error('Unauthorized');
       return res.json();
     })
-    .then(() => {
-      // Hide login and show main content
+    .then(data => {
+      // Login success
+      localStorage.setItem('authHeader', authHeader);
       document.getElementById('login-screen').classList.add('hidden');
       document.getElementById('sidebar').classList.remove('hidden');
       document.getElementById('main-content').classList.remove('hidden');
-
-      // Save session (optional)
-      localStorage.setItem('authHeader', authHeader);
     })
-    .catch(() => {
+    .catch(err => {
       document.getElementById('login-error').classList.remove('hidden');
     });
-}*/
+}
+
+</script>
   <script>
   document.addEventListener('DOMContentLoaded', () => {
   const savedAuth = localStorage.getItem('authHeader');
