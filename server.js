@@ -90,13 +90,48 @@ app.post('/sales', auth, async (req, res) => {
   const sale = await Sale.create({ ...req.body, date: new Date() });
   res.json(sale);
 });
-app.get('/sales', auth, (req, res) => res.json(Sale.find()));
+app.get('/sales', basicAuth, async (req, res) => {
+  try {
+    const { date } = req.query;
+    let query = {};
+
+    if (date) {
+      const start = new Date(date);
+      const end = new Date(date);
+      end.setHours(23, 59, 59, 999);
+      query.date = { $gte: start, $lte: end };
+    }
+
+    const sales = await Sale.find(query).sort({ date: -1 });
+    res.json(sales);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 app.post('/expenses', auth, async (req, res) => {
   const exp = await Expense.create({ ...req.body, date: new Date() });
   res.json(exp);
 });
-app.get('/expenses', auth, (req, res) => res.json(Expense.find()));
+app.get('/expenses', basicAuth, async (req, res) => {
+  try {
+    const { date } = req.query;
+    let query = {};
+
+    if (date) {
+      const start = new Date(date);
+      const end = new Date(date);
+      end.setHours(23, 59, 59, 999);
+      query.date = { $gte: start, $lte: end };
+    }
+
+    const expenses = await Expense.find(query).sort({ date: -1 });
+    res.json(expenses);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 
 // ✅ CASH MODEL
@@ -124,12 +159,23 @@ app.post('/cash', auth, async (req, res) => {
 // ✅ GET /cash - Get all records
 app.get('/cash', basicAuth, async (req, res) => {
   try {
-    const records = await Cash.find().sort({ date: -1 });
+    const { date } = req.query;
+    let query = {};
+
+    if (date) {
+      const start = new Date(date);
+      const end = new Date(date);
+      end.setHours(23, 59, 59, 999);
+      query.date = { $gte: start, $lte: end };
+    }
+
+    const records = await Cash.find(query).sort({ date: -1 });
     res.json(records);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
+
 
 
 // Server Start
