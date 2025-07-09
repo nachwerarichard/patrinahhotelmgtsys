@@ -7,9 +7,12 @@ const cors = require('cors');
 
 
 const app = express();
-app.use(cors());
 app.use(express.json());
 
+app.use(cors({
+  origin: 'https://endearing-toffee-c8a2aa.netlify.app',
+  credentials: true
+}));
 
 app.use(bodyParser.json());
 
