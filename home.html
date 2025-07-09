@@ -2,295 +2,412 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hotel Management System</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bar & Inventory Management</title>
+  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <style>
-    body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6; /* Light gray background */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-        }
-        /* Custom styles for the message box */
-        .message-box {
-            padding: 1rem;
-            margin-top: 1rem;
-            border-radius: 0.5rem;
-            font-weight: 500;
-            text-align: center;
-        }
-        .message-box.success {
-            background-color: #d1fae5; /* Green-100 */
-            color: #065f46; /* Green-800 */
-            border: 1px solid #34d399; /* Green-400 */
-        }
-        .message-box.error {
-            background-color: #fee2e2; /* Red-100 */
-            color: #991b1b; /* Red-800 */
-            border: 1px solid #ef4444; /* Red-400 */
-        }
-    
-  .input {
-    @apply w-full rounded-md border-gray-300 shadow-sm p-2;
-  }
-  .btn-primary {
-    @apply bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700;
-  }
-  .btn-secondary {
-    @apply bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400;
-  }
-</style>
 </head>
-
-<body class="bg-gray-100">
-  
+<body class="bg-gray-100 min-h-screen flex">
 
   <!-- Sidebar -->
-  <div id="sidebar" class="sidebar fixed top-0 left-0 h-full w-64 bg-gray-800 text-white p-5 z-20 overflow-y-scroll scrollbar-hidden">
-    <div class="text-center mb-10">
-      <img src="patrina.png" alt="Patrinah Hotel Logo" class="h-6 w-6 mx-auto mb-4 rounded-full object-cover" />
-      <h2 class="text-2xl font-bold">Patrinah Hotel</h2>
-    </div>
-    <nav>
-      <a href="#" class="nav-link flex items-center py-3 px-4 rounded-lg hover:bg-gray-700" data-target="bar">
-        <i class="fas fa-martini-glass-citrus mr-3"></i> Bar
-      </a>
-
-      <div class="mt-4">
-        <button onclick="toggleSubInventory()" class="w-full flex justify-between items-center py-3 px-4 rounded-lg hover:bg-gray-700">
-          <span><i class="fas fa-boxes-stacked mr-3"></i> Inventory</span>
-          <i id="inventory-toggle-icon" class="fas fa-chevron-down"></i>
-        </button>
-        <div id="sub-inventory-links" class="ml-6 mt-2 hidden">
-          <a href="#" class="block py-2 px-2 rounded hover:bg-gray-700" data-target="inventory-bar">Bar Inventory</a>
-        </div>
-      </div>
+  <aside id="sidebar" class="w-64 bg-white p-4 shadow-md hidden md:block">
+    <h2 class="text-xl font-bold mb-6">Hotel Management</h2>
+    <nav class="flex flex-col space-y-3">
+      <a href="#" data-target="bar" class="nav-link text-blue-600 hover:underline font-semibold">Bar</a>
+      <a href="#" data-target="inventory-bar" class="nav-link text-blue-600 hover:underline font-semibold">Inventory</a>
     </nav>
-  </div>
+  </aside>
 
   <!-- Main Content -->
-  <div id="main-content" class="main-content ml-64 p-8 ">
-    <button id="sidebar-toggle" class="md:hidden mb-4 p-2 bg-gray-800 text-white rounded-md">
-      <i class="fas fa-bars"></i>
-    </button>
+  <main id="main-content" class="flex-1 p-6">
 
-    <!-- Inventory Page -->
-    <div id="inventory-bar" class="page-content hidden">
-      <h1 class="text-2xl font-bold mb-4">Bar Inventory</h1>
-
-      <div class="mb-4 w-1/2 md:w-1/4">
-        <label for="date-selector" class="block text-sm font-medium text-gray-700">Select Date:</label>
-        <input type="date" id="date-selector" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" />
-      </div>
-
-      <div class="bg-white p-6 rounded-lg shadow-md mb-6">
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="text-xl font-bold">Inventory</h2>
-          <button id="add-item-btn-bar" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">Add Item</button>
-        </div>
-
-        <div class="overflow-x-auto">
-          <table class="min-w-full bg-white">
-            <thead class="bg-gray-200">
-              <tr>
-                <th class="py-2 px-4">Particulars</th>
-                <th class="py-2 px-4">Opening stock</th>
-                <th class="py-2 px-4">Purchases</th>
-                <th class="py-2 px-4">Total Stock</th>
-                <th class="py-2 px-4">Sales</th>
-                <th class="py-2 px-4">Spoilage</th>
-                <th class="py-2 px-4">Closing Stock</th>
-              </tr>
-            </thead>
-            <tbody id="inventory-table-body-bar"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- Bar Page -->
-    <div id="bar" class="page-content hidden">
-      <h1 class="text-3xl font-bold mb-6">Bar Management</h1>
-
-      <!-- Date Filter -->
-      <div class="bg-white p-4 rounded-lg shadow-md mb-6">
-        <label for="date-filter-bar" class="block text-sm font-medium text-gray-700">Show data for date:</label>
-        <input type="date" id="date-filter-bar" class="mt-1 block w-full md:w-1/4 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" />
-      </div>
-
-      <!-- Summary Cards -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        <div class="bg-white p-6 rounded-lg shadow-md">
-          <h2 class="text-lg font-semibold text-gray-600">Total Sales</h2>
-          <p id="bar-total-sales" class="text-2xl font-bold text-green-500">UGX 0</p>
-        </div>
-        <div class="bg-white p-6 rounded-lg shadow-md">
-          <h2 class="text-lg font-semibold text-gray-600">Total Expenses</h2>
-          <p id="bar-total-expenses" class="text-2xl font-bold text-red-500">UGX 0</p>
-        </div>
-        <div class="bg-white p-6 rounded-lg shadow-md">
-          <h2 class="text-lg font-semibold text-gray-600">Balance</h2>
-          <p id="bar-balance" class="text-2xl font-bold text-blue-500">UGX 0</p>
-        </div>
-      </div>
-
-      <!-- Expenses Table -->
-      <div class="bg-white p-6 rounded-lg shadow-md mb-6">
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="text-xl font-bold">Expenses</h2>
-          <button id="add-expense-btn-bar" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">Add Expense</button>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="min-w-full bg-white">
-            <thead class="bg-gray-200">
-              <tr>
-                <th class="py-2 px-4">Description</th>
-                <th class="py-2 px-4">Amount (UGX)</th>
-                <th class="py-2 px-4">Date</th>
-                <th class="py-2 px-4">Receipt ID</th>
-                <th class="py-2 px-4">Source</th>
-                <th class="py-2 px-4">Responsible</th>
-                <th class="py-2 px-4">Actions</th>
-              </tr>
-            </thead>
-            <tbody id="expenses-table-body-bar"></tbody>
-          </table>
-        </div>
-      </div>
+    <!-- Bar Section -->
+    <section id="bar" class="page-content hidden">
+      <h2 class="text-2xl font-bold mb-4">Bar Management</h2>
 
       <!-- Sales Table -->
-      <div class="bg-white p-6 rounded-lg shadow-md mb-6">
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="text-xl font-bold">Sales</h2>
-          <button id="add-sale-btn-bar" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">Add Sale</button>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="min-w-full bg-white">
-            <thead class="bg-gray-200">
-              <tr>
-                <th class="py-2 px-4">Item</th>
-                <th class="py-2 px-4">Number</th>
-                <th class="py-2 px-4">Buying Price(BP)</th>
-                <th class="py-2 px-4">Selling Price(SP)</th>
-                <th class="py-2 px-4">Sum (BP)</th>
-                <th class="py-2 px-4">Sum (SP)</th>
-                <th class="py-2 px-4">Profit</th>
-                <th class="py-2 px-4">%Profit</th>
-              </tr>
-            </thead>
-            <tbody id="sales-table-body-bar"></tbody>
-          </table>
-        </div>
-      </div>
+      <h3 class="text-xl font-semibold mb-2">Sales</h3>
+      <table class="w-full mb-6 table-auto border-collapse border border-gray-300">
+        <thead>
+          <tr class="bg-gray-200">
+            <th class="border border-gray-300 px-4 py-2">Item</th>
+            <th class="border border-gray-300 px-4 py-2">Quantity</th>
+            <th class="border border-gray-300 px-4 py-2">Buying Price</th>
+            <th class="border border-gray-300 px-4 py-2">Selling Price</th>
+            <th class="border border-gray-300 px-4 py-2">Total BP</th>
+            <th class="border border-gray-300 px-4 py-2">Total SP</th>
+            <th class="border border-gray-300 px-4 py-2">Profit</th>
+            <th class="border border-gray-300 px-4 py-2">Profit %</th>
+          </tr>
+        </thead>
+        <tbody id="sales-table-body-bar"></tbody>
+      </table>
 
-      <!-- Cash Management -->
-      <div class="bg-white p-6 rounded-lg shadow-md">
-        <h2 class="text-xl font-bold mb-4">Cash Management</h2>
-        <form id="cash-form-bar">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label for="cash-at-hand-bar" class="block text-sm font-medium text-gray-700">Cash at Hand (UGX)</label>
-              <input type="number" id="cash-at-hand-bar" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
-            </div>
-            <div>
-              <label for="cash-banked-bar" class="block text-sm font-medium text-gray-700">Cash Banked (UGX)</label>
-              <input type="number" id="cash-banked-bar" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
-            </div>
-            <div>
-              <label for="banked-receipt-id-bar" class="block text-sm font-medium text-gray-700">Banked Receipt ID</label>
-              <input type="text" id="banked-receipt-id-bar" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
-            </div>
-            <div>
-              <label for="responsible-person-bar" class="block text-sm font-medium text-gray-700">Responsible Person</label>
-              <input type="text" id="responsible-person-bar" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
-            </div>
-          </div>
-          <button type="submit" class="mt-4 bg-indigo-500 text-white px-4 py-2 rounded-lg hover:bg-indigo-600">Save Cash Record</button>
-        </form>
-      </div>
-    </div>
-  </div>
+      <button id="add-sale-btn-bar" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 mb-6">Add Sale</button>
 
-  <!-- Include Modal Files (Item, Expense, Sale) -->
-  <!-- ...MODALS CODE WOULD FOLLOW... (same as your original, with cleaned input IDs) -->
-<!-- ===== MODALS ===== -->
+      <!-- Expenses Table -->
+      <h3 class="text-xl font-semibold mb-2">Expenses</h3>
+      <table class="w-full mb-6 table-auto border-collapse border border-gray-300">
+        <thead>
+          <tr class="bg-gray-200">
+            <th class="border border-gray-300 px-4 py-2">Description</th>
+            <th class="border border-gray-300 px-4 py-2">Amount</th>
+            <th class="border border-gray-300 px-4 py-2">Date</th>
+            <th class="border border-gray-300 px-4 py-2">Receipt ID</th>
+            <th class="border border-gray-300 px-4 py-2">Source</th>
+            <th class="border border-gray-300 px-4 py-2">Responsible</th>
+            <th class="border border-gray-300 px-4 py-2">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="expenses-table-body-bar"></tbody>
+      </table>
 
-<!-- Add Inventory Modal -->
-<div id="inventory-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-  <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-    <h2 class="text-xl font-bold mb-4">Add Inventory Item</h2>
-    <form id="inventory-form">
-      <div class="grid gap-3">
-        <input type="text" placeholder="Particulars" id="inv-item" required class="input" />
-        <input type="number" placeholder="Opening Stock" id="inv-open" required class="input" />
-        <input type="number" placeholder="Purchases" id="inv-purchase" required class="input" />
-        <input type="number" placeholder="Sales" id="inv-sales" required class="input" />
-        <input type="number" placeholder="Spoilage" id="inv-spoilage" required class="input" />
-      </div>
-      <div class="flex justify-end mt-4 gap-2">
-        <button type="button" onclick="closeModal('inventory-modal')" class="btn-secondary">Cancel</button>
-        <button type="submit" class="btn-primary">Add</button>
-      </div>
-    </form>
-  </div>
-</div>
+      <button id="add-expense-btn-bar" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 mb-6">Add Expense</button>
 
-<!-- Add Expense Modal -->
-<div id="expense-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-  <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-    <h2 class="text-xl font-bold mb-4">Add Expense</h2>
-    <form id="expense-form">
-      <div class="grid gap-3">
-        <input type="text" placeholder="Description" id="exp-desc" required class="input" />
-        <input type="number" placeholder="Amount (UGX)" id="exp-amt" required class="input" />
-        <input type="text" placeholder="Receipt ID" id="exp-receipt" required class="input" />
-        <input type="text" placeholder="Source" id="exp-source" required class="input" />
-        <input type="text" placeholder="Responsible Person" id="exp-person" required class="input" />
+      <!-- Summary -->
+      <div class="flex space-x-6 text-lg font-semibold">
+        <div>Total Sales: <span id="bar-total-sales">UGX 0</span></div>
+        <div>Total Expenses: <span id="bar-total-expenses">UGX 0</span></div>
+        <div>Balance: <span id="bar-balance">UGX 0</span></div>
       </div>
-      <div class="flex justify-end mt-4 gap-2">
-        <button type="button" onclick="closeModal('expense-modal')" class="btn-secondary">Cancel</button>
-        <button type="submit" class="btn-primary">Add</button>
+    </section>
+
+    <!-- Inventory Section -->
+    <section id="inventory-bar" class="page-content hidden">
+      <h2 class="text-2xl font-bold mb-4">Inventory Management</h2>
+
+      <table class="w-full mb-6 table-auto border-collapse border border-gray-300">
+        <thead>
+          <tr class="bg-gray-200">
+            <th class="border border-gray-300 px-4 py-2">Item</th>
+            <th class="border border-gray-300 px-4 py-2">Opening</th>
+            <th class="border border-gray-300 px-4 py-2">Purchases</th>
+            <th class="border border-gray-300 px-4 py-2">Total</th>
+            <th class="border border-gray-300 px-4 py-2">Sales</th>
+            <th class="border border-gray-300 px-4 py-2">Spoilage</th>
+            <th class="border border-gray-300 px-4 py-2">Closing</th>
+          </tr>
+        </thead>
+        <tbody id="inventory-table-body-bar"></tbody>
+      </table>
+
+      <button id="add-item-btn-bar" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Add Inventory Item</button>
+
+      <div id="low-stock-notification" class="hidden bg-yellow-200 border border-yellow-400 text-yellow-800 px-4 py-2 rounded mt-4">
+        <span id="low-stock-message"></span>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Modals -->
+  <!-- Inventory Modal -->
+  <div id="inventory-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+    <form id="inventory-form" class="bg-white p-6 rounded shadow-lg w-80">
+      <h3 class="text-xl font-semibold mb-4">Add Inventory Item</h3>
+      <input id="inv-item" type="text" placeholder="Item Name" required class="w-full border p-2 mb-3" />
+      <input id="inv-open" type="number" placeholder="Opening Stock" min="0" required class="w-full border p-2 mb-3" />
+      <input id="inv-purchase" type="number" placeholder="Purchases" min="0" required class="w-full border p-2 mb-3" />
+      <input id="inv-sales" type="number" placeholder="Sales" min="0" required class="w-full border p-2 mb-3" />
+      <input id="inv-spoilage" type="number" placeholder="Spoilage" min="0" required class="w-full border p-2 mb-4" />
+      <div class="flex justify-between">
+        <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Add</button>
+        <button type="button" onclick="closeModal('inventory-modal')" class="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400">Cancel</button>
       </div>
     </form>
   </div>
-</div>
 
-<!-- Add Sale Modal -->
-<div id="sale-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-  <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-    <h2 class="text-xl font-bold mb-4">Add Sale</h2>
-    <form id="sale-form">
-      <div class="grid gap-3">
-        <input type="text" placeholder="Item" id="sale-item" required class="input" />
-        <input type="number" placeholder="Number Sold" id="sale-number" required class="input" />
-        <input type="number" placeholder="Buying Price (BP)" id="sale-bp" required class="input" />
-        <input type="number" placeholder="Selling Price (SP)" id="sale-sp" required class="input" />
-      </div>
-      <div class="flex justify-end mt-4 gap-2">
-        <button type="button" onclick="closeModal('sale-modal')" class="btn-secondary">Cancel</button>
-        <button type="submit" class="btn-primary">Add</button>
+  <!-- Expense Modal -->
+  <div id="expense-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+    <form id="expense-form" class="bg-white p-6 rounded shadow-lg w-80">
+      <h3 class="text-xl font-semibold mb-4">Add Expense</h3>
+      <input id="exp-desc" type="text" placeholder="Description" required class="w-full border p-2 mb-3" />
+      <input id="exp-amt" type="number" placeholder="Amount" min="0" required class="w-full border p-2 mb-3" />
+      <input id="exp-receipt" type="text" placeholder="Receipt ID" class="w-full border p-2 mb-3" />
+      <input id="exp-source" type="text" placeholder="Source" class="w-full border p-2 mb-3" />
+      <input id="exp-person" type="text" placeholder="Responsible Person" class="w-full border p-2 mb-4" />
+      <div class="flex justify-between">
+        <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">Add</button>
+        <button type="button" onclick="closeModal('expense-modal')" class="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400">Cancel</button>
       </div>
     </form>
   </div>
-</div>
 
-<!-- ====== Modal & Form Styling ====== -->
-
-
-  <!-- Notifications -->
-  <div id="low-stock-notification" class="hidden fixed bottom-5 right-5 bg-yellow-400 text-yellow-800 p-4 rounded-lg shadow-lg">
-    <p><i class="fas fa-exclamation-triangle mr-2"></i><span id="low-stock-message"></span></p>
+  <!-- Sale Modal -->
+  <div id="sale-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+    <form id="sale-form" class="bg-white p-6 rounded shadow-lg w-80">
+      <h3 class="text-xl font-semibold mb-4">Add Sale</h3>
+      <input id="sale-item" type="text" placeholder="Item" required class="w-full border p-2 mb-3" />
+      <input id="sale-number" type="number" placeholder="Quantity" min="1" required class="w-full border p-2 mb-3" />
+      <input id="sale-bp" type="number" placeholder="Buying Price" min="0" step="0.01" required class="w-full border p-2 mb-3" />
+      <input id="sale-sp" type="number" placeholder="Selling Price" min="0" step="0.01" required class="w-full border p-2 mb-4" />
+      <div class="flex justify-between">
+        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Add</button>
+        <button type="button" onclick="closeModal('sale-modal')" class="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400">Cancel</button>
+      </div>
+    </form>
   </div>
 
-<sript src="script1.js"></sript>
-<sript src="script2.js"></sript>
+<script>
+  const API_BASE = 'https://patrinahhotelmgtsys.onrender.com';
+  const headers = {
+    'Content-Type': 'application/json',
+    'Authorization': 'Basic ' + btoa('admin:123') // Change as needed
+  };
+
+  // Sidebar navigation
+  document.querySelectorAll('[data-target]').forEach(link => {
+    link.addEventListener('click', e => {
+      e.preventDefault();
+      const targetId = link.dataset.target;
+      document.querySelectorAll('.page-content').forEach(page => page.classList.add('hidden'));
+      const targetPage = document.getElementById(targetId);
+      if(targetPage) targetPage.classList.remove('hidden');
+    });
+  });
+
+  // Modal open/close helpers
+  function openModal(id) {
+    document.getElementById(id).classList.remove('hidden');
+  }
+  function closeModal(id) {
+    document.getElementById(id).classList.add('hidden');
+  }
+
+  // Load inventory from backend
+  async function loadInventory() {
+    try {
+      const res = await fetch(`${API_BASE}/inventory`, { headers });
+      const inventory = await res.json();
+      const tbody = document.getElementById('inventory-table-body-bar');
+      tbody.innerHTML = '';
+      inventory.forEach(item => {
+        const total = item.opening + item.purchases;
+        const closing = total - item.sales - item.spoilage;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="border px-2 py-1">${item.item}</td>
+          <td class="border px-2 py-1">${item.opening}</td>
+          <td class="border px-2 py-1">${item.purchases}</td>
+          <td class="border px-2 py-1">${total}</td>
+          <td class="border px-2 py-1">${item.sales}</td>
+          <td class="border px-2 py-1">${item.spoilage}</td>
+          <td class="border px-2 py-1">${closing}</td>
+        `;
+        tbody.appendChild(tr);
+
+        // Show low stock notification if any item closing < 10
+        if (closing < 10) {
+          document.getElementById('low-stock-message').textContent = `${item.item} stock is low (${closing})!`;
+          document.getElementById('low-stock-notification').classList.remove('hidden');
+          setTimeout(() => {
+            document.getElementById('low-stock-notification').classList.add('hidden');
+          }, 4000);
+        }
+      });
+    } catch (err) {
+      console.error('Error loading inventory:', err);
+    }
+  }
+
+  // Load expenses from backend
+  async function loadExpenses() {
+    try {
+      const res = await fetch(`${API_BASE}/expenses`, { headers });
+      const expenses = await res.json();
+      const tbody = document.getElementById('expenses-table-body-bar');
+      tbody.innerHTML = '';
+      expenses.forEach(exp => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="border px-2 py-1">${exp.description}</td>
+          <td class="border px-2 py-1">${exp.amount}</td>
+          <td class="border px-2 py-1">${new Date(exp.date).toLocaleDateString()}</td>
+          <td class="border px-2 py-1">${exp.receiptId || ''}</td>
+          <td class="border px-2 py-1">${exp.source || ''}</td>
+          <td class="border px-2 py-1">${exp.responsible || ''}</td>
+          <td class="border px-2 py-1">
+            <button class="text-red-600 hover:underline" onclick="deleteExpense('${exp._id}')">Delete</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    } catch (err) {
+      console.error('Error loading expenses:', err);
+    }
+  }
+
+  // Delete expense
+  async function deleteExpense(id) {
+    if(!confirm('Are you sure you want to delete this expense?')) return;
+    try {
+      const res = await fetch(`${API_BASE}/expenses/${id}`, {
+        method: 'DELETE',
+        headers
+      });
+      if(res.ok) {
+        alert('Expense deleted');
+        loadExpenses();
+        updateBarSummary();
+      } else {
+        alert('Failed to delete expense');
+      }
+    } catch (err) {
+      console.error('Delete expense error:', err);
+    }
+  }
+  window.deleteExpense = deleteExpense; // expose to global for onclick
+
+  // Load sales from backend
+  async function loadSales() {
+    try {
+      const res = await fetch(`${API_BASE}/sales`, { headers });
+      const sales = await res.json();
+      const tbody = document.getElementById('sales-table-body-bar');
+      tbody.innerHTML = '';
+      sales.forEach(sale => {
+        const sumBP = sale.bp * sale.number;
+        const sumSP = sale.sp * sale.number;
+        const profit = sumSP - sumBP;
+        const percent = ((profit / sumBP) * 100).toFixed(2);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="border px-2 py-1">${sale.item}</td>
+          <td class="border px-2 py-1">${sale.number}</td>
+          <td class="border px-2 py-1">${sale.bp}</td>
+          <td class="border px-2 py-1">${sale.sp}</td>
+          <td class="border px-2 py-1">${sumBP}</td>
+          <td class="border px-2 py-1">${sumSP}</td>
+          <td class="border px-2 py-1">${profit}</td>
+          <td class="border px-2 py-1">${percent}%</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    } catch (err) {
+      console.error('Error loading sales:', err);
+    }
+  }
+
+  // Update summary cards
+  async function updateBarSummary() {
+    try {
+      const [expensesRes, salesRes] = await Promise.all([
+        fetch(`${API_BASE}/expenses`, { headers }),
+        fetch(`${API_BASE}/sales`, { headers })
+      ]);
+      const expenses = await expensesRes.json();
+      const sales = await salesRes.json();
+
+      const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
+      const totalSales = sales.reduce((sum, s) => sum + (s.sp * s.number), 0);
+
+      document.getElementById('bar-total-sales').innerText = `UGX ${totalSales.toLocaleString()}`;
+      document.getElementById('bar-total-expenses').innerText = `UGX ${totalExpenses.toLocaleString()}`;
+      document.getElementById('bar-balance').innerText = `UGX ${(totalSales - totalExpenses).toLocaleString()}`;
+    } catch (err) {
+      console.error('Error updating summary:', err);
+    }
+  }
+
+  // Event listeners for add buttons to open modals
+  document.getElementById('add-item-btn-bar').addEventListener('click', () => openModal('inventory-modal'));
+  document.getElementById('add-expense-btn-bar').addEventListener('click', () => openModal('expense-modal'));
+  document.getElementById('add-sale-btn-bar').addEventListener('click', () => openModal('sale-modal'));
+
+  // Inventory form submission
+  document.getElementById('inventory-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const item = document.getElementById('inv-item').value.trim();
+    const opening = parseInt(document.getElementById('inv-open').value);
+    const purchases = parseInt(document.getElementById('inv-purchase').value);
+    const sales = parseInt(document.getElementById('inv-sales').value);
+    const spoilage = parseInt(document.getElementById('inv-spoilage').value);
+
+    try {
+      const res = await fetch(`${API_BASE}/inventory`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ item, opening, purchases, sales, spoilage })
+      });
+      if(res.ok) {
+        alert('Inventory added');
+        closeModal('inventory-modal');
+        loadInventory();
+      } else {
+        alert('Failed to add inventory');
+      }
+    } catch (err) {
+      console.error('Add inventory error:', err);
+    }
+    e.target.reset();
+  });
+
+  // Expense form submission
+  document.getElementById('expense-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const description = document.getElementById('exp-desc').value.trim();
+    const amount = parseFloat(document.getElementById('exp-amt').value);
+    const receiptId = document.getElementById('exp-receipt').value.trim();
+    const source = document.getElementById('exp-source').value.trim();
+    const responsible = document.getElementById('exp-person').value.trim();
+
+    try {
+      const res = await fetch(`${API_BASE}/expenses`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ description, amount, receiptId, source, responsible })
+      });
+      if(res.ok) {
+        alert('Expense added');
+        closeModal('expense-modal');
+        loadExpenses();
+        updateBarSummary();
+      } else {
+        alert('Failed to add expense');
+      }
+    } catch (err) {
+      console.error('Add expense error:', err);
+    }
+    e.target.reset();
+  });
+
+  // Sale form submission
+  document.getElementById('sale-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const item = document.getElementById('sale-item').value.trim();
+    const number = parseInt(document.getElementById('sale-number').value);
+    const bp = parseFloat(document.getElementById('sale-bp').value);
+    const sp = parseFloat(document.getElementById('sale-sp').value);
+
+    try {
+      const res = await fetch(`${API_BASE}/sales`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ item, number, bp, sp })
+      });
+      if(res.ok) {
+        alert('Sale added');
+        closeModal('sale-modal');
+        loadSales();
+        updateBarSummary();
+      } else {
+        alert('Failed to add sale');
+      }
+    } catch (err) {
+      console.error('Add sale error:', err);
+    }
+    e.target.reset();
+  });
+
+  // On page load, show Bar page and load data
+  window.addEventListener('DOMContentLoaded', () => {
+    document.querySelector('[data-target="bar"]').click();
+    loadInventory();
+    loadExpenses();
+    loadSales();
+    updateBarSummary();
+  });
+</script>
 
 </body>
 </html>
-
