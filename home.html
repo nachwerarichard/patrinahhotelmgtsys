@@ -35,7 +35,7 @@
             color: #991b1b; /* Red-800 */
             border: 1px solid #ef4444; /* Red-400 */
         }
-    </style>
+    
   .input {
     @apply w-full rounded-md border-gray-300 shadow-sm p-2;
   }
@@ -348,7 +348,7 @@
                 // Make a fetch request to your protected backend endpoint
                 // IMPORTANT: Replace 'http://localhost:3000/protected' with your actual backend URL
                 // and the specific endpoint you want to protect with this auth middleware.
-                const response = await fetch('http://localhost:3000/protected', {
+                const response = await fetch('https://patrinahhotelmgtsys.onrender.com', {
                     method: 'GET', // Or 'POST', 'PUT', etc., depending on your protected endpoint
                     headers: {
                         'Authorization': `Basic ${credentials}`,
