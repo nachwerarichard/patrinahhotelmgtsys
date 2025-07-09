@@ -90,7 +90,7 @@ app.post('/sales', auth, async (req, res) => {
   const sale = await Sale.create({ ...req.body, date: new Date() });
   res.json(sale);
 });
-app.get('/sales', basicAuth, async (req, res) => {
+app.get('/sales', auth, async (req, res) => {
   try {
     const { date } = req.query;
     let query = {};
