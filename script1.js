@@ -1,3 +1,4 @@
+const API_BASE = 'https://patrinahhotelmgtsys.onrender.com'; // Replace with your actual Render URL
 document.getElementById('add-item-btn-bar').addEventListener('click', async () => {
   const item = prompt('Enter item name:');
   const opening = Number(prompt('Opening stock:'));
