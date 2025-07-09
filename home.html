@@ -510,7 +510,22 @@ const headers = {
     document.getElementById('bar-balance').innerText = `UGX ${(totalSales - totalExpenses).toLocaleString()}`;
   }
 </script>
+  <script>
+const date = document.getElementById('date-filter-bar').value;
 
+const fetchSalesByDate = async () => {
+  const response = await fetch(`/sales?date=${date}`, {
+    headers: {
+      Authorization: 'Basic ' + btoa('admin:123')
+    }
+  });
+  const sales = await response.json();
+  renderSalesTable(sales); // Your own rendering function
+};
+
+    
+document.getElementById('date-filter-bar').addEventListener('change', fetchSalesByDate);
+  </script>
 </body>
 </html>
 
