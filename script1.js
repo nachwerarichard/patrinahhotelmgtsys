@@ -154,3 +154,27 @@ window.addEventListener('DOMContentLoaded', () => {
   loadSales();
   updateBarSummary();
 });
+
+document.getElementById('cash-form-bar').addEventListener('submit', async function (e) {
+  e.preventDefault();
+
+  const atHand = Number(document.getElementById('cash-at-hand-bar').value);
+  const banked = Number(document.getElementById('cash-banked-bar').value);
+  const receiptId = document.getElementById('banked-receipt-id-bar').value;
+  const responsible = document.getElementById('responsible-person-bar').value;
+
+  try {
+    const res = await fetch(`${API_BASE}/cash`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ atHand, banked, receiptId, responsible })
+    });
+
+    if (!res.ok) throw new Error('Failed to save cash record');
+
+    alert('Cash record saved successfully!');
+    document.getElementById('cash-form-bar').reset();
+  } catch (err) {
+    alert('Error: ' + err.message);
+  }
+});
