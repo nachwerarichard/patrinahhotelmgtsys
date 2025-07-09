@@ -597,7 +597,7 @@ function login() {
   authHeader = `Basic ${encoded}`;
 
   // Try a test call to verify
-  fetch('/sales', {
+  fetch('${API_BASE}/sales', {
     headers: {
       'Authorization': authHeader
     }
