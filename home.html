@@ -183,6 +183,131 @@
   <div id="low-stock-notification" class="hidden fixed bottom-5 right-5 bg-yellow-400 text-yellow-800 p-4 rounded-lg shadow-lg">
     <p><i class="fas fa-exclamation-triangle mr-2"></i><span id="low-stock-message"></span></p>
   </div>
+<script>
+  // Sidebar Navigation Logic
+  const navLinks = document.querySelectorAll('[data-target]');
+  const pageContents = document.querySelectorAll('.page-content');
+
+  navLinks.forEach(link => {
+    link.addEventListener('click', e => {
+      e.preventDefault();
+      const targetId = link.dataset.target;
+
+      pageContents.forEach(page => {
+        page.classList.add('hidden');
+      });
+
+      const targetPage = document.getElementById(targetId);
+      if (targetPage) targetPage.classList.remove('hidden');
+    });
+  });
+
+  // Toggle Sub-Inventory
+  function toggleSubInventory() {
+    const links = document.getElementById('sub-inventory-links');
+    const icon = document.getElementById('inventory-toggle-icon');
+    links.classList.toggle('hidden');
+    icon.classList.toggle('fa-chevron-down');
+    icon.classList.toggle('fa-chevron-up');
+  }
+
+  // Add Inventory Item (Sample)
+  document.getElementById('add-item-btn-bar').addEventListener('click', () => {
+    const tableBody = document.getElementById('inventory-table-body-bar');
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td class="py-2 px-4">Example Item</td>
+      <td class="py-2 px-4">10</td>
+      <td class="py-2 px-4">5</td>
+      <td class="py-2 px-4">15</td>
+      <td class="py-2 px-4">8</td>
+      <td class="py-2 px-4">1</td>
+      <td class="py-2 px-4">6</td>
+    `;
+    tableBody.appendChild(row);
+
+    // Notification if stock is low
+    const closingStock = 6;
+    if (closingStock < 10) {
+      const notif = document.getElementById('low-stock-notification');
+      document.getElementById('low-stock-message').innerText = "Stock is below 10 units!";
+      notif.classList.remove('hidden');
+      setTimeout(() => notif.classList.add('hidden'), 4000);
+    }
+  });
+
+  // Add Expense
+  document.getElementById('add-expense-btn-bar').addEventListener('click', () => {
+    const tbody = document.getElementById('expenses-table-body-bar');
+    const row = document.createElement('tr');
+    const amount = Math.floor(Math.random() * 10000) + 1000;
+    row.innerHTML = `
+      <td class="py-2 px-4">Bottles</td>
+      <td class="py-2 px-4">${amount}</td>
+      <td class="py-2 px-4">${new Date().toISOString().split('T')[0]}</td>
+      <td class="py-2 px-4">RCPT123</td>
+      <td class="py-2 px-4">Supplier A</td>
+      <td class="py-2 px-4">Manager</td>
+      <td class="py-2 px-4 text-red-500 cursor-pointer">Delete</td>
+    `;
+    tbody.appendChild(row);
+    updateBarTotals();
+  });
+
+  // Add Sale
+  document.getElementById('add-sale-btn-bar').addEventListener('click', () => {
+    const tbody = document.getElementById('sales-table-body-bar');
+    const number = 5;
+    const bp = 3000;
+    const sp = 5000;
+    const totalBp = number * bp;
+    const totalSp = number * sp;
+    const profit = totalSp - totalBp;
+    const profitPercent = ((profit / totalBp) * 100).toFixed(2);
+
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td class="py-2 px-4">Beer</td>
+      <td class="py-2 px-4">${number}</td>
+      <td class="py-2 px-4">${bp}</td>
+      <td class="py-2 px-4">${sp}</td>
+      <td class="py-2 px-4">${totalBp}</td>
+      <td class="py-2 px-4">${totalSp}</td>
+      <td class="py-2 px-4">${profit}</td>
+      <td class="py-2 px-4">${profitPercent}%</td>
+    `;
+    tbody.appendChild(row);
+    updateBarTotals();
+  });
+
+  // Update Summary Cards (Sales, Expenses, Balance)
+  function updateBarTotals() {
+    let totalSales = 0;
+    let totalExpenses = 0;
+
+    document.querySelectorAll('#sales-table-body-bar tr').forEach(row => {
+      const spCell = row.children[5]; // Sum (SP)
+      if (spCell) totalSales += Number(spCell.innerText) || 0;
+    });
+
+    document.querySelectorAll('#expenses-table-body-bar tr').forEach(row => {
+      const amtCell = row.children[1]; // Amount
+      if (amtCell) totalExpenses += Number(amtCell.innerText) || 0;
+    });
+
+    const balance = totalSales - totalExpenses;
+
+    document.getElementById('bar-total-sales').innerText = `UGX ${totalSales.toLocaleString()}`;
+    document.getElementById('bar-total-expenses').innerText = `UGX ${totalExpenses.toLocaleString()}`;
+    document.getElementById('bar-balance').innerText = `UGX ${balance.toLocaleString()}`;
+  }
+
+  // Responsive Sidebar Toggle (for mobile)
+  document.getElementById('sidebar-toggle').addEventListener('click', () => {
+    const sidebar = document.getElementById('sidebar');
+    sidebar.classList.toggle('-translate-x-full');
+  });
+</script>
 
   <!-- Script -->
 </body>
