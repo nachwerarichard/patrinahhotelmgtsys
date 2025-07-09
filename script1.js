@@ -1,22 +1,32 @@
-const API_BASE = 'https://patrinahhotelmgtsys.onrender.com'; // Replace with your actual Render URL
+const API_BASE = 'https://patrinahhotelmgtsys.onrender.com'; // Replace with your deployed backend API URL
+const headers = {
+  'Content-Type': 'application/json',
+};
+
+// ========== INVENTORY ==========
 document.getElementById('add-item-btn-bar').addEventListener('click', async () => {
   const item = prompt('Enter item name:');
   const opening = Number(prompt('Opening stock:'));
   const purchases = Number(prompt('Purchases:'));
   const sales = Number(prompt('Sales:'));
   const spoilage = Number(prompt('Spoilage:'));
-  
+
+  const totalStock = opening + purchases;
+  const closing = totalStock - (sales + spoilage);
+
   const res = await fetch(`${API_BASE}/inventory`, {
     method: 'POST',
     headers,
-    body: JSON.stringify({ item, opening, purchases, sales, spoilage })
+    body: JSON.stringify({ item, opening, purchases, sales, spoilage, totalStock, closing }),
   });
 
-  const data = await res.json();
-  alert('Inventory item added!');
-  loadInventory(); // Refresh table
+  if (res.ok) {
+    alert('Inventory item added!');
+    loadInventory();
+  } else {
+    alert('Failed to add item.');
+  }
 });
-
 
 async function loadInventory() {
   const res = await fetch(`${API_BASE}/inventory`, { headers });
@@ -31,7 +41,7 @@ async function loadInventory() {
         <td class="py-2 px-4">${item.item}</td>
         <td class="py-2 px-4">${item.opening}</td>
         <td class="py-2 px-4">${item.purchases}</td>
-        <td class="py-2 px-4">${item.opening + item.purchases}</td>
+        <td class="py-2 px-4">${item.totalStock}</td>
         <td class="py-2 px-4">${item.sales}</td>
         <td class="py-2 px-4">${item.spoilage}</td>
         <td class="py-2 px-4">${item.closing}</td>
@@ -40,25 +50,27 @@ async function loadInventory() {
   });
 }
 
-// Call on page load or section show
-loadInventory();
-
-
+// ========== EXPENSES ==========
 document.getElementById('add-expense-btn-bar').addEventListener('click', async () => {
   const description = prompt('Description:');
   const amount = Number(prompt('Amount:'));
   const receiptId = prompt('Receipt ID:');
   const source = prompt('Source:');
   const responsible = prompt('Responsible Person:');
+  const date = new Date(); // capture current date
 
   const res = await fetch(`${API_BASE}/expenses`, {
     method: 'POST',
     headers,
-    body: JSON.stringify({ description, amount, receiptId, source, responsible })
+    body: JSON.stringify({ description, amount, receiptId, source, responsible, date }),
   });
 
-  alert('Expense added!');
-  loadExpenses();
+  if (res.ok) {
+    alert('Expense added!');
+    loadExpenses();
+  } else {
+    alert('Failed to add expense.');
+  }
 });
 
 async function loadExpenses() {
@@ -78,16 +90,20 @@ async function loadExpenses() {
         <td class="py-2 px-4">${exp.source}</td>
         <td class="py-2 px-4">${exp.responsible}</td>
         <td class="py-2 px-4"><button class="text-red-500" onclick="deleteExpense('${exp._id}')">Delete</button></td>
-        <td class="py-2 px-4"><button onclick="editSale('${sale._id}')" class="text-blue-500 hover:underline">Edit</button></td>
       </tr>
     `;
   });
 }
 
 async function deleteExpense(id) {
-  await fetch(`${API_BASE}/expenses/${id}`, { method: 'DELETE', headers });
+  await fetch(`${API_BASE}/expenses/${id}`, {
+    method: 'DELETE',
+    headers,
+  });
   loadExpenses();
 }
+
+// ========== SALES ==========
 document.getElementById('add-sale-btn-bar').addEventListener('click', async () => {
   const item = prompt('Item:');
   const number = Number(prompt('Quantity:'));
@@ -97,12 +113,17 @@ document.getElementById('add-sale-btn-bar').addEventListener('click', async () =
   const res = await fetch(`${API_BASE}/sales`, {
     method: 'POST',
     headers,
-    body: JSON.stringify({ item, number, bp, sp })
+    body: JSON.stringify({ item, number, bp, sp }),
   });
 
-  alert('Sale added!');
-  loadSales();
+  if (res.ok) {
+    alert('Sale added!');
+    loadSales();
+  } else {
+    alert('Failed to add sale.');
+  }
 });
+
 async function loadSales() {
   const res = await fetch(`${API_BASE}/sales`, { headers });
   const sales = await res.json();
@@ -126,17 +147,16 @@ async function loadSales() {
         <td class="py-2 px-4">${sumSP}</td>
         <td class="py-2 px-4">${profit}</td>
         <td class="py-2 px-4">${percent}%</td>
-        <td class="py-2 px-4"><button onclick="editSale('${sale._id}')" class="text-blue-500 hover:underline">Edit</button></td>
       </tr>
     `;
   });
 }
 
-
+// ========== SUMMARY ==========
 async function updateBarSummary() {
   const [expensesRes, salesRes] = await Promise.all([
     fetch(`${API_BASE}/expenses`, { headers }),
-    fetch(`${API_BASE}/sales`, { headers })
+    fetch(`${API_BASE}/sales`, { headers }),
   ]);
 
   const expenses = await expensesRes.json();
@@ -144,20 +164,14 @@ async function updateBarSummary() {
 
   const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
   const totalSales = sales.reduce((sum, s) => sum + (s.sp * s.number), 0);
+  const balance = totalSales - totalExpenses;
 
   document.getElementById('bar-total-sales').innerText = `UGX ${totalSales.toLocaleString()}`;
   document.getElementById('bar-total-expenses').innerText = `UGX ${totalExpenses.toLocaleString()}`;
-  document.getElementById('bar-balance').innerText = `UGX ${(totalSales - totalExpenses).toLocaleString()}`;
+  document.getElementById('bar-balance').innerText = `UGX ${balance.toLocaleString()}`;
 }
 
-
-window.addEventListener('DOMContentLoaded', () => {
-  loadInventory();
-  loadExpenses();
-  loadSales();
-  updateBarSummary();
-});
-
+// ========== CASH RECORD ==========
 document.getElementById('cash-form-bar').addEventListener('submit', async function (e) {
   e.preventDefault();
 
@@ -165,19 +179,28 @@ document.getElementById('cash-form-bar').addEventListener('submit', async functi
   const banked = Number(document.getElementById('cash-banked-bar').value);
   const receiptId = document.getElementById('banked-receipt-id-bar').value;
   const responsible = document.getElementById('responsible-person-bar').value;
+  const date = new Date();
 
   try {
     const res = await fetch(`${API_BASE}/cash`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ atHand, banked, receiptId, responsible })
+      body: JSON.stringify({ atHand, banked, receiptId, responsible, date }),
     });
 
     if (!res.ok) throw new Error('Failed to save cash record');
-
     alert('Cash record saved successfully!');
     document.getElementById('cash-form-bar').reset();
   } catch (err) {
     alert('Error: ' + err.message);
   }
 });
+
+// ========== INITIAL LOAD ==========
+window.addEventListener('DOMContentLoaded', () => {
+  loadInventory();
+  loadExpenses();
+  loadSales();
+  updateBarSummary();
+});
+
