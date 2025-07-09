@@ -16,20 +16,6 @@ app.use(cors({
 
 app.use(bodyParser.json());
 
-// Basic Auth Middleware
-const auth = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  if (!authHeader || !authHeader.startsWith('Basic ')) {
-    res.set('WWW-Authenticate', 'Basic realm="admin area"');
-    return res.status(401).send('Authentication required');
-  }
-  const [user, pass] = Buffer.from(authHeader.split(' ')[1], 'base64')
-                          .toString().split(':');
-  if (user === 'admin' && pass === '123') return next();
-  res.set('WWW-Authenticate', 'Basic realm="admin area"');
-  return res.status(401).send('Invalid credentials');
-};
-
 mongoose.connect(process.env.MONGO_URI).then(() => console.log('MongoDB connected'));
 
 // Schemas
