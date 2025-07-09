@@ -114,7 +114,7 @@ app.post('/expenses', auth, async (req, res) => {
   const exp = await Expense.create({ ...req.body, date: new Date() });
   res.json(exp);
 });
-app.get('/expenses', basicAuth, async (req, res) => {
+app.get('/expenses', auth, async (req, res) => {
   try {
     const { date } = req.query;
     let query = {};
@@ -157,7 +157,7 @@ app.post('/cash', auth, async (req, res) => {
 });
 
 // ✅ GET /cash - Get all records
-app.get('/cash', basicAuth, async (req, res) => {
+app.get('/cash', auth, async (req, res) => {
   try {
     const { date } = req.query;
     let query = {};
@@ -176,7 +176,7 @@ app.get('/cash', basicAuth, async (req, res) => {
   }
 });
 
-app.put('/sales/:id', basicAuth, async (req, res) => {
+app.put('/sales/:id', auth, async (req, res) => {
   try {
     const updated = await Sale.findByIdAndUpdate(req.params.id, req.body, { new: true });
     res.json(updated);
@@ -184,7 +184,7 @@ app.put('/sales/:id', basicAuth, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-app.put('/expenses/:id', basicAuth, async (req, res) => {
+app.put('/expenses/:id', auth, async (req, res) => {
   try {
     const updated = await Expense.findByIdAndUpdate(req.params.id, req.body, { new: true });
     res.json(updated);
@@ -192,7 +192,7 @@ app.put('/expenses/:id', basicAuth, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-app.put('/cash/:id', basicAuth, async (req, res) => {
+app.put('/cash/:id', auth, async (req, res) => {
   try {
     const updated = await Cash.findByIdAndUpdate(req.params.id, req.body, { new: true });
     res.json(updated);
