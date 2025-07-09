@@ -77,6 +77,7 @@ async function loadExpenses() {
         <td class="py-2 px-4">${exp.source}</td>
         <td class="py-2 px-4">${exp.responsible}</td>
         <td class="py-2 px-4"><button class="text-red-500" onclick="deleteExpense('${exp._id}')">Delete</button></td>
+        <td class="py-2 px-4"><button onclick="editSale('${sale._id}')" class="text-blue-500 hover:underline">Edit</button></td>
       </tr>
     `;
   });
@@ -124,6 +125,7 @@ async function loadSales() {
         <td class="py-2 px-4">${sumSP}</td>
         <td class="py-2 px-4">${profit}</td>
         <td class="py-2 px-4">${percent}%</td>
+        <td class="py-2 px-4"><button onclick="editSale('${sale._id}')" class="text-blue-500 hover:underline">Edit</button></td>
       </tr>
     `;
   });
