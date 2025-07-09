@@ -176,6 +176,30 @@ app.get('/cash', basicAuth, async (req, res) => {
   }
 });
 
+app.put('/sales/:id', basicAuth, async (req, res) => {
+  try {
+    const updated = await Sale.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+app.put('/expenses/:id', basicAuth, async (req, res) => {
+  try {
+    const updated = await Expense.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+app.put('/cash/:id', basicAuth, async (req, res) => {
+  try {
+    const updated = await Cash.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 
 // Server Start
