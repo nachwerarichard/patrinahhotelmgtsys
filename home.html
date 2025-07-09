@@ -8,6 +8,34 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <style>
+    body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Light gray background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        /* Custom styles for the message box */
+        .message-box {
+            padding: 1rem;
+            margin-top: 1rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            text-align: center;
+        }
+        .message-box.success {
+            background-color: #d1fae5; /* Green-100 */
+            color: #065f46; /* Green-800 */
+            border: 1px solid #34d399; /* Green-400 */
+        }
+        .message-box.error {
+            background-color: #fee2e2; /* Red-100 */
+            color: #991b1b; /* Red-800 */
+            border: 1px solid #ef4444; /* Red-400 */
+        }
+    </style>
   .input {
     @apply w-full rounded-md border-gray-300 shadow-sm p-2;
   }
@@ -21,15 +49,32 @@
 </head>
 
 <body class="bg-gray-100">
-  <div id="login-screen" class="fixed inset-0 flex items-center justify-center bg-gray-100 z-50">
-  <div class="bg-white p-8 rounded-lg shadow-lg w-80">
-    <h2 class="text-2xl font-bold mb-4 text-center">Admin Login</h2>
-    <input id="username" type="text" placeholder="Username" class="mb-4 w-full px-3 py-2 border rounded" />
-    <input id="password" type="password" placeholder="Password" class="mb-4 w-full px-3 py-2 border rounded" />
-    <button onclick="login()" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Login</button>
-    <p id="login-error" class="text-red-500 text-sm mt-3 hidden">Invalid credentials. Try again.</p>
-  </div>
-</div>
+  <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
+        <h2 class="text-3xl font-bold text-center text-gray-800 mb-6">Login</h2>
+
+        <div id="authForm">
+            <div class="mb-4">
+                <label for="username" class="block text-gray-700 text-sm font-semibold mb-2">Username:</label>
+                <input type="text" id="username" name="username" value="admin"
+                       class="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 ease-in-out"
+                       placeholder="Enter your username">
+            </div>
+
+            <div class="mb-6">
+                <label for="password" class="block text-gray-700 text-sm font-semibold mb-2">Password:</label>
+                <input type="password" id="password" name="password" value="123"
+                       class="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 mb-3 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 ease-in-out"
+                       placeholder="Enter your password">
+            </div>
+
+            <button id="loginButton"
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-200 ease-in-out transform hover:scale-105">
+                Authenticate
+            </button>
+        </div>
+
+        <div id="messageBox" class="message-box hidden"></div>
+    </div>
 
   <!-- Sidebar -->
   <div id="sidebar" class="sidebar fixed top-0 left-0 h-full w-64 bg-gray-800 text-white p-5 z-20 overflow-y-scroll scrollbar-hidden">
@@ -267,6 +312,64 @@
   <div id="low-stock-notification" class="hidden fixed bottom-5 right-5 bg-yellow-400 text-yellow-800 p-4 rounded-lg shadow-lg">
     <p><i class="fas fa-exclamation-triangle mr-2"></i><span id="low-stock-message"></span></p>
   </div>
+
+  <script>
+        // Get references to DOM elements
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const loginButton = document.getElementById('loginButton');
+        const messageBox = document.getElementById('messageBox');
+
+        // Function to display messages in the message box
+        function showMessage(message, type) {
+            messageBox.textContent = message;
+            messageBox.className = `message-box ${type}`; // Add type class for styling
+            messageBox.classList.remove('hidden'); // Make it visible
+        }
+
+        // Event listener for the login button
+        loginButton.addEventListener('click', async () => {
+            const username = usernameInput.value;
+            const password = passwordInput.value;
+
+            // Clear previous messages
+            messageBox.classList.add('hidden');
+            messageBox.textContent = '';
+
+            if (!username || !password) {
+                showMessage('Please enter both username and password.', 'error');
+                return;
+            }
+
+            // Encode credentials to Base64
+            const credentials = btoa(`${username}:${password}`); // btoa() encodes a string in Base64
+
+            try {
+                // Make a fetch request to your protected backend endpoint
+                // IMPORTANT: Replace 'http://localhost:3000/protected' with your actual backend URL
+                // and the specific endpoint you want to protect with this auth middleware.
+                const response = await fetch('http://localhost:3000/protected', {
+                    method: 'GET', // Or 'POST', 'PUT', etc., depending on your protected endpoint
+                    headers: {
+                        'Authorization': `Basic ${credentials}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) { // Check if the response status is 2xx (success)
+                    const data = await response.text(); // Or .json() if your backend sends JSON
+                    showMessage(`Authentication successful! Response: ${data}`, 'success');
+                } else if (response.status === 401) {
+                    showMessage('Authentication failed: Invalid credentials.', 'error');
+                } else {
+                    showMessage(`An error occurred: ${response.status} ${response.statusText}`, 'error');
+                }
+            } catch (error) {
+                console.error('Network or fetch error:', error);
+                showMessage('Could not connect to the server. Please check your network.', 'error');
+            }
+        });
+    </script>
   <script>
 
 const headers = {
