@@ -3,7 +3,13 @@ const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const nodemailer = require('nodemailer');
+const cors = require('cors');
+
+
 const app = express();
+app.use(cors());
+app.use(express.json());
+
 
 app.use(bodyParser.json());
 
@@ -84,13 +90,93 @@ app.post('/sales', auth, async (req, res) => {
   const sale = await Sale.create({ ...req.body, date: new Date() });
   res.json(sale);
 });
-app.get('/sales', auth, (req, res) => res.json(Sale.find()));
+app.get('/sales', basicAuth, async (req, res) => {
+  try {
+    const { date } = req.query;
+    let query = {};
+
+    if (date) {
+      const start = new Date(date);
+      const end = new Date(date);
+      end.setHours(23, 59, 59, 999);
+      query.date = { $gte: start, $lte: end };
+    }
+
+    const sales = await Sale.find(query).sort({ date: -1 });
+    res.json(sales);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 app.post('/expenses', auth, async (req, res) => {
   const exp = await Expense.create({ ...req.body, date: new Date() });
   res.json(exp);
 });
-app.get('/expenses', auth, (req, res) => res.json(Expense.find()));
+app.get('/expenses', basicAuth, async (req, res) => {
+  try {
+    const { date } = req.query;
+    let query = {};
+
+    if (date) {
+      const start = new Date(date);
+      const end = new Date(date);
+      end.setHours(23, 59, 59, 999);
+      query.date = { $gte: start, $lte: end };
+    }
+
+    const expenses = await Expense.find(query).sort({ date: -1 });
+    res.json(expenses);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+// ✅ CASH MODEL
+const cashSchema = new mongoose.Schema({
+  atHand: Number,
+  banked: Number,
+  receiptId: String,
+  responsible: String,
+  date: { type: Date, default: Date.now }
+});
+const Cash = mongoose.model('Cash', cashSchema);
+
+// ✅ POST /cash - Save cash record
+app.post('/cash', auth, async (req, res) => {
+  try {
+    const { atHand, banked, receiptId, responsible } = req.body;
+    const cash = new Cash({ atHand, banked, receiptId, responsible });
+    await cash.save();
+    res.status(201).json(cash);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ✅ GET /cash - Get all records
+app.get('/cash', basicAuth, async (req, res) => {
+  try {
+    const { date } = req.query;
+    let query = {};
+
+    if (date) {
+      const start = new Date(date);
+      const end = new Date(date);
+      end.setHours(23, 59, 59, 999);
+      query.date = { $gte: start, $lte: end };
+    }
+
+    const records = await Cash.find(query).sort({ date: -1 });
+    res.json(records);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
 
 // Server Start
 app.listen(process.env.PORT, () => console.log(`Server running on port ${process.env.PORT}`));
