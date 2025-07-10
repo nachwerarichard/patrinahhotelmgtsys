@@ -3,121 +3,39 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Bar & Inventory Management</title>
-  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+  <title>Hotel Management System</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 min-h-screen flex">
-
   <!-- Sidebar -->
-  <aside id="sidebar" class="w-64 bg-white p-4 shadow-md hidden md:block">
-    <h2 class="text-xl font-bold mb-6">Hotel Management</h2>
+  <aside class="w-64 bg-white p-4 shadow-md hidden md:block">
+    <h2 class="text-xl font-bold mb-6">Hotel Dashboard</h2>
     <nav class="flex flex-col space-y-3">
       <a href="#" data-target="bar" class="nav-link text-blue-600 hover:underline font-semibold">Bar</a>
       <a href="#" data-target="inventory-bar" class="nav-link text-blue-600 hover:underline font-semibold">Inventory</a>
-      <a href="#" data-target="cash-management" class="nav-link text-blue-600 hover:underline font-semibold">Cash</a>
+      <a href="#" data-target="cash-section" class="nav-link text-blue-600 hover:underline font-semibold">Cash</a>
     </nav>
   </aside>
 
   <!-- Main Content -->
-  <main id="main-content" class="flex-1 p-6">
-<section id="cash-management" class="page-content hidden">
-      <h2 class="text-2xl font-bold mb-4">Cash Management</h2>
+  <main class="flex-1 p-6">
+    <input type="date" id="date-filter" class="border p-2 mb-4 rounded" />
 
-      <button id="add-cash-btn" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 mb-4">Add Cash Record</button>
-
-      <table class="w-full mb-6 table-auto border-collapse border border-gray-300">
-        <thead>
-          <tr class="bg-gray-200">
-            <th class="border px-4 py-2">Date</th>
-            <th class="border px-4 py-2">Amount at Hand</th>
-            <th class="border px-4 py-2">Amount Banked</th>
-            <th class="border px-4 py-2">Receipt ID</th>
-            <th class="border px-4 py-2">Responsible</th>
-          </tr>
-        </thead>
-        <tbody id="cash-table-body"></tbody>
-      </table>
-    </section>
-
-    <!-- Date Filter Section -->
-    <section id="filter-section" class="mb-6">
-      <label for="filter-date" class="text-lg font-semibold">Filter by Date:</label>
-      <input type="date" id="filter-date" class="border p-2 rounded" />
-    </section>
-
-    <div id="cash-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
-    <form id="cash-form" class="bg-white p-6 rounded shadow-lg w-80">
-      <h3 class="text-xl font-semibold mb-4">Add Cash Record</h3>
-      <input id="cash-hand" type="number" placeholder="Amount at Hand" required class="w-full border p-2 mb-3" />
-      <input id="cash-banked" type="number" placeholder="Amount Banked" required class="w-full border p-2 mb-3" />
-      <input id="cash-receipt" type="text" placeholder="Receipt ID" class="w-full border p-2 mb-3" />
-      <input id="cash-person" type="text" placeholder="Responsible Person" class="w-full border p-2 mb-4" />
-      <div class="flex justify-between">
-        <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">Save</button>
-        <button type="button" onclick="closeModal('cash-modal')" class="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400">Cancel</button>
-      </div>
-    </form>
-  </div>
-
-  <!-- Edit Modals (Example for Inventory, Sales, Expenses) -->
-  <!-- Will be dynamically filled and opened when edit buttons are clicked -->
-  <div id="edit-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
-    <form id="edit-form" class="bg-white p-6 rounded shadow-lg w-80">
-      <h3 class="text-xl font-semibold mb-4">Edit Entry</h3>
-      <div id="edit-fields"></div>
-      <div class="flex justify-between mt-4">
-        <button type="submit" class="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700">Update</button>
-        <button type="button" onclick="closeModal('edit-modal')" class="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400">Cancel</button>
-      </div>
-    </form>
-  </div>
-
-    
     <!-- Bar Section -->
     <section id="bar" class="page-content hidden">
-      <h2 class="text-2xl font-bold mb-4">Bar Management</h2>
-
-      <!-- Sales Table -->
-      <h3 class="text-xl font-semibold mb-2">Sales</h3>
-      <table class="w-full mb-6 table-auto border-collapse border border-gray-300">
-        <thead>
-          <tr class="bg-gray-200">
-            <th class="border border-gray-300 px-4 py-2">Item</th>
-            <th class="border border-gray-300 px-4 py-2">Quantity</th>
-            <th class="border border-gray-300 px-4 py-2">Buying Price</th>
-            <th class="border border-gray-300 px-4 py-2">Selling Price</th>
-            <th class="border border-gray-300 px-4 py-2">Total BP</th>
-            <th class="border border-gray-300 px-4 py-2">Total SP</th>
-            <th class="border border-gray-300 px-4 py-2">Profit</th>
-            <th class="border border-gray-300 px-4 py-2">Profit %</th>
-          </tr>
-        </thead>
+      <h2 class="text-2xl font-bold mb-4">Bar Sales & Expenses</h2>
+      <button id="add-sale-btn-bar" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 mb-4">Add Sale</button>
+      <table class="w-full mb-6 border">
+        <thead><tr><th>Item</th><th>Qty</th><th>BP</th><th>SP</th><th>Total BP</th><th>Total SP</th><th>Profit</th><th>%</th></tr></thead>
         <tbody id="sales-table-body-bar"></tbody>
       </table>
 
-      <button id="add-sale-btn-bar" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 mb-6">Add Sale</button>
-
-      <!-- Expenses Table -->
-      <h3 class="text-xl font-semibold mb-2">Expenses</h3>
-      <table class="w-full mb-6 table-auto border-collapse border border-gray-300">
-        <thead>
-          <tr class="bg-gray-200">
-            <th class="border border-gray-300 px-4 py-2">Description</th>
-            <th class="border border-gray-300 px-4 py-2">Amount</th>
-            <th class="border border-gray-300 px-4 py-2">Date</th>
-            <th class="border border-gray-300 px-4 py-2">Receipt ID</th>
-            <th class="border border-gray-300 px-4 py-2">Source</th>
-            <th class="border border-gray-300 px-4 py-2">Responsible</th>
-            <th class="border border-gray-300 px-4 py-2">Actions</th>
-          </tr>
-        </thead>
+      <button id="add-expense-btn-bar" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 mb-4">Add Expense</button>
+      <table class="w-full mb-6 border">
+        <thead><tr><th>Description</th><th>Amount</th><th>Date</th><th>Receipt</th><th>Source</th><th>Person</th><th>Action</th></tr></thead>
         <tbody id="expenses-table-body-bar"></tbody>
       </table>
 
-      <button id="add-expense-btn-bar" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 mb-6">Add Expense</button>
-
-      <!-- Summary -->
       <div class="flex space-x-6 text-lg font-semibold">
         <div>Total Sales: <span id="bar-total-sales">UGX 0</span></div>
         <div>Total Expenses: <span id="bar-total-expenses">UGX 0</span></div>
@@ -125,214 +43,76 @@
       </div>
     </section>
 
-    <!-- Inventory Section -->
+    <!-- Inventory -->
     <section id="inventory-bar" class="page-content hidden">
-      <h2 class="text-2xl font-bold mb-4">Inventory Management</h2>
-
-      <table class="w-full mb-6 table-auto border-collapse border border-gray-300">
-        <thead>
-          <tr class="bg-gray-200">
-            <th class="border border-gray-300 px-4 py-2">Item</th>
-            <th class="border border-gray-300 px-4 py-2">Opening</th>
-            <th class="border border-gray-300 px-4 py-2">Purchases</th>
-            <th class="border border-gray-300 px-4 py-2">Total</th>
-            <th class="border border-gray-300 px-4 py-2">Sales</th>
-            <th class="border border-gray-300 px-4 py-2">Spoilage</th>
-            <th class="border border-gray-300 px-4 py-2">Closing</th>
-          </tr>
-        </thead>
+      <h2 class="text-2xl font-bold mb-4">Inventory</h2>
+      <button id="add-item-btn-bar" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 mb-4">Add Inventory</button>
+      <table class="w-full mb-6 border">
+        <thead><tr><th>Item</th><th>Opening</th><th>Purchases</th><th>Total</th><th>Sales</th><th>Spoilage</th><th>Closing</th><th>Actions</th></tr></thead>
         <tbody id="inventory-table-body-bar"></tbody>
       </table>
-
-      <button id="add-item-btn-bar" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Add Inventory Item</button>
-
-      <div id="low-stock-notification" class="hidden bg-yellow-200 border border-yellow-400 text-yellow-800 px-4 py-2 rounded mt-4">
-        <span id="low-stock-message"></span>
-      </div>
     </section>
 
+    <!-- Cash -->
+    <section id="cash-section" class="page-content hidden">
+      <h2 class="text-2xl font-bold mb-4">Cash Management</h2>
+      <button onclick="openModal('cash-modal')" class="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700 mb-4">Add Cash</button>
+      <table class="w-full mb-6 border">
+        <thead><tr><th>At Hand</th><th>Banked</th><th>Receipt</th><th>Person</th><th>Date</th></tr></thead>
+        <tbody id="cash-table-body"></tbody>
+      </table>
+    </section>
   </main>
 
   <!-- Modals -->
-  <!-- Inventory Modal -->
-  <div id="inventory-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
-    <form id="inventory-form" class="bg-white p-6 rounded shadow-lg w-80">
-      <h3 class="text-xl font-semibold mb-4">Add Inventory Item</h3>
-      <input id="inv-item" type="text" placeholder="Item Name" required class="w-full border p-2 mb-3" />
-      <input id="inv-open" type="number" placeholder="Opening Stock" min="0" required class="w-full border p-2 mb-3" />
-      <input id="inv-purchase" type="number" placeholder="Purchases" min="0" required class="w-full border p-2 mb-3" />
-      <input id="inv-sales" type="number" placeholder="Sales" min="0" required class="w-full border p-2 mb-3" />
-      <input id="inv-spoilage" type="number" placeholder="Spoilage" min="0" required class="w-full border p-2 mb-4" />
-      <div class="flex justify-between">
-        <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Add</button>
-        <button type="button" onclick="closeModal('inventory-modal')" class="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400">Cancel</button>
-      </div>
-    </form>
-  </div>
+  <div id="sale-modal" class="modal hidden"><form id="sale-form" class="modal-content">
+    <input id="sale-item" placeholder="Item" required class="input" />
+    <input id="sale-number" type="number" placeholder="Qty" required class="input" />
+    <input id="sale-bp" type="number" placeholder="Buying Price" required class="input" />
+    <input id="sale-sp" type="number" placeholder="Selling Price" required class="input" />
+    <div class="modal-actions">
+      <button type="submit" class="btn bg-blue-600 text-white">Add</button>
+      <button type="button" onclick="closeModal('sale-modal')" class="btn">Cancel</button>
+    </div></form></div>
 
-  <!-- Expense Modal -->
-  <div id="expense-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
-    <form id="expense-form" class="bg-white p-6 rounded shadow-lg w-80">
-      <h3 class="text-xl font-semibold mb-4">Add Expense</h3>
-      <input id="exp-desc" type="text" placeholder="Description" required class="w-full border p-2 mb-3" />
-      <input id="exp-amt" type="number" placeholder="Amount" min="0" required class="w-full border p-2 mb-3" />
-      <input id="exp-receipt" type="text" placeholder="Receipt ID" class="w-full border p-2 mb-3" />
-      <input id="exp-source" type="text" placeholder="Source" class="w-full border p-2 mb-3" />
-      <input id="exp-person" type="text" placeholder="Responsible Person" class="w-full border p-2 mb-4" />
-      <div class="flex justify-between">
-        <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">Add</button>
-        <button type="button" onclick="closeModal('expense-modal')" class="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400">Cancel</button>
-      </div>
-    </form>
-  </div>
+  <div id="expense-modal" class="modal hidden"><form id="expense-form" class="modal-content">
+    <input id="exp-desc" placeholder="Description" required class="input" />
+    <input id="exp-amt" type="number" placeholder="Amount" required class="input" />
+    <input id="exp-receipt" placeholder="Receipt ID" class="input" />
+    <input id="exp-source" placeholder="Source" class="input" />
+    <input id="exp-person" placeholder="Person" class="input" />
+    <div class="modal-actions">
+      <button type="submit" class="btn bg-red-600 text-white">Add</button>
+      <button type="button" onclick="closeModal('expense-modal')" class="btn">Cancel</button>
+    </div></form></div>
 
-  <!-- Sale Modal -->
-  <div id="sale-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
-    <form id="sale-form" class="bg-white p-6 rounded shadow-lg w-80">
-      <h3 class="text-xl font-semibold mb-4">Add Sale</h3>
-      <input id="sale-item" type="text" placeholder="Item" required class="w-full border p-2 mb-3" />
-      <input id="sale-number" type="number" placeholder="Quantity" min="1" required class="w-full border p-2 mb-3" />
-      <input id="sale-bp" type="number" placeholder="Buying Price" min="0" step="0.01" required class="w-full border p-2 mb-3" />
-      <input id="sale-sp" type="number" placeholder="Selling Price" min="0" step="0.01" required class="w-full border p-2 mb-4" />
-      <div class="flex justify-between">
-        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Add</button>
-        <button type="button" onclick="closeModal('sale-modal')" class="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400">Cancel</button>
-      </div>
-    </form>
-  </div>
-  <script>
+  <div id="inventory-modal" class="modal hidden"><form id="inventory-form" class="modal-content">
+    <input id="inv-item" placeholder="Item" required class="input" />
+    <input id="inv-open" type="number" placeholder="Opening" required class="input" />
+    <input id="inv-purchase" type="number" placeholder="Purchases" required class="input" />
+    <input id="inv-sales" type="number" placeholder="Sales" required class="input" />
+    <input id="inv-spoilage" type="number" placeholder="Spoilage" required class="input" />
+    <div class="modal-actions">
+      <button type="submit" class="btn bg-green-600 text-white">Add</button>
+      <button type="button" onclick="closeModal('inventory-modal')" class="btn">Cancel</button>
+    </div></form></div>
 
-    // === Base Config ===
-const API_BASE = 'https://patrinahhotelmgtsys.onrender.com';
-const headers = {
-  'Content-Type': 'application/json',
-  'Authorization': 'Basic ' + btoa('admin:123')
-};
+  <div id="cash-modal" class="modal hidden"><form id="cash-form" class="modal-content">
+    <input id="cash-hand" type="number" placeholder="At Hand" required class="input" />
+    <input id="cash-bank" type="number" placeholder="Banked" required class="input" />
+    <input id="cash-receipt" placeholder="Receipt ID" class="input" />
+    <input id="cash-person" placeholder="Person" class="input" />
+    <div class="modal-actions">
+      <button type="submit" class="btn bg-yellow-600 text-white">Add</button>
+      <button type="button" onclick="closeModal('cash-modal')" class="btn">Cancel</button>
+    </div></form></div>
 
-// === Helpers ===
-function openModal(id) {
-  document.getElementById(id).classList.remove('hidden');
-}
-function closeModal(id) {
-  document.getElementById(id).classList.add('hidden');
-}
-
-// === Load Cash Records ===
-async function loadCashRecords() {
-  try {
-    const res = await fetch(`${API_BASE}/cash`, { headers });
-    const cashRecords = await res.json();
-    const tbody = document.getElementById('cash-table-body');
-    tbody.innerHTML = '';
-    cashRecords.forEach(cash => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td class="border px-2 py-1">UGX ${cash.hand.toLocaleString()}</td>
-        <td class="border px-2 py-1">UGX ${cash.bank.toLocaleString()}</td>
-        <td class="border px-2 py-1">${cash.receiptId || ''}</td>
-        <td class="border px-2 py-1">${cash.responsible || ''}</td>
-        <td class="border px-2 py-1">${new Date(cash.date).toLocaleDateString()}</td>
-      `;
-      tbody.appendChild(tr);
-    });
-  } catch (err) {
-    console.error('Error loading cash records:', err);
-  }
-}
-
-// === Cash Form Submission ===
-document.getElementById('cash-form').addEventListener('submit', async e => {
-  e.preventDefault();
-  const hand = parseFloat(document.getElementById('cash-hand').value);
-  const bank = parseFloat(document.getElementById('cash-bank').value);
-  const receiptId = document.getElementById('cash-receipt').value.trim();
-  const responsible = document.getElementById('cash-person').value.trim();
-
-  try {
-    const res = await fetch(`${API_BASE}/cash`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ hand, bank, receiptId, responsible })
-    });
-    if (res.ok) {
-      alert('Cash record added');
-      closeModal('cash-modal');
-      loadCashRecords();
-    } else {
-      alert('Failed to add cash record');
-    }
-  } catch (err) {
-    console.error('Error adding cash:', err);
-  }
-  e.target.reset();
-});
-
-// === Date Filtering ===
-document.getElementById('date-filter').addEventListener('change', async (e) => {
-  const date = e.target.value;
-  if (!date) return;
-
-  const salesRes = await fetch(`${API_BASE}/sales?date=${date}`, { headers });
-  const expensesRes = await fetch(`${API_BASE}/expenses?date=${date}`, { headers });
-
-  const sales = await salesRes.json();
-  const expenses = await expensesRes.json();
-
-  updateSalesTable(sales);
-  updateExpensesTable(expenses);
-});
-
-// === Update Tables ===
-function updateSalesTable(sales) {
-  const tbody = document.getElementById('sales-table-body-bar');
-  tbody.innerHTML = '';
-  sales.forEach(sale => {
-    const sumBP = sale.bp * sale.number;
-    const sumSP = sale.sp * sale.number;
-    const profit = sumSP - sumBP;
-    const percent = ((profit / sumBP) * 100).toFixed(2);
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td class="border px-2 py-1">${sale.item}</td>
-      <td class="border px-2 py-1">${sale.number}</td>
-      <td class="border px-2 py-1">${sale.bp}</td>
-      <td class="border px-2 py-1">${sale.sp}</td>
-      <td class="border px-2 py-1">${sumBP}</td>
-      <td class="border px-2 py-1">${sumSP}</td>
-      <td class="border px-2 py-1">${profit}</td>
-      <td class="border px-2 py-1">${percent}%</td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
-
-function updateExpensesTable(expenses) {
-  const tbody = document.getElementById('expenses-table-body-bar');
-  tbody.innerHTML = '';
-  expenses.forEach(exp => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td class="border px-2 py-1">${exp.description}</td>
-      <td class="border px-2 py-1">${exp.amount}</td>
-      <td class="border px-2 py-1">${new Date(exp.date).toLocaleDateString()}</td>
-      <td class="border px-2 py-1">${exp.receiptId || ''}</td>
-      <td class="border px-2 py-1">${exp.source || ''}</td>
-      <td class="border px-2 py-1">${exp.responsible || ''}</td>
-      <td class="border px-2 py-1">
-        <button class="text-red-600 hover:underline" onclick="deleteExpense('${exp._id}')">Delete</button>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
-
-// === Initial Load ===
-window.addEventListener('DOMContentLoaded', () => {
-  loadCashRecords();
-});
-
-  </script>
-<script src= "script1.js"></script>
+  <script src="script1.js"></script>
+  <style>
+    .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; }
+    .modal-content { background: white; padding: 1.5rem; border-radius: 0.5rem; width: 300px; display: flex; flex-direction: column; gap: 0.75rem; }
+    .input { padding: 0.5rem; border: 1px solid #ccc; border-radius: 0.375rem; }
+    .btn { padding: 0.5rem 1rem; border-radius: 0.375rem; }
+  </style>
 </body>
-
-  // Sidebar navigation
+</html>
