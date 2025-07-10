@@ -275,8 +275,55 @@
                 <button onclick="showSection('sales')">Sales</button>
                 <button onclick="showSection('expenses')">Expenses</button>
                 <button onclick="showSection('cash-management')">Cash Management</button> <!-- NEW BUTTON -->
+                <button onclick="showSection('reports')">Reports</button> <!-- NEW BUTTON -->
             </nav>
-                         <div id="cash-management-section" class="section">
+
+             <!-- Reports Section -->
+            <div id="reports-section" class="section">
+                <h2>Financial Reports</h2>
+
+                <div class="filter-controls">
+                    <label for="report-start-date">Start Date:</label>
+                    <input type="date" id="report-start-date">
+                    <label for="report-end-date">End Date:</label>
+                    <input type="date" id="report-end-date">
+                    <button onclick="generateReports()">Generate Reports</button>
+                </div>
+
+                <h3>Overall Totals</h3>
+                <table id="overall-reports-table">
+                    <thead>
+                        <tr>
+                            <th>Total Sales</th>
+                            <th>Total Expenses</th>
+                            <th>Net Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td id="overall-sales">0</td>
+                            <td id="overall-expenses">0</td>
+                            <td id="overall-balance">0</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Departmental Totals</h3>
+                <table id="departmental-reports-table">
+                    <thead>
+                        <tr>
+                            <th>Department</th>
+                            <th>Total Sales</th>
+                            <th>Total Expenses</th>
+                            <th>Net Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Department reports will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="cash-management-section" class="section">
                 <h2>Cash Management</h2>
 
                 <h3>Record Cash Movement</h3>
@@ -444,6 +491,220 @@
         </div>
     </div>
     <script src="script3.js"></script>
+    <script>
+        <script>
+    // ... (Your existing API_BASE_URL, authToken, authenticatedFetch, login, logout functions) ...
+
+    // --- Utility Functions (UPDATED showSection) ---
+
+    /**
+     * Hides all sections and shows the specified one.
+     * Also triggers data fetching for the shown section.
+     * @param {string} sectionId The ID of the section to show (e.g., 'inventory', 'sales', 'expenses', 'reports', 'cash-management').
+     */
+    function showSection(sectionId) {
+        document.querySelectorAll('.section').forEach(section => {
+            section.classList.remove('active');
+        });
+        document.getElementById(`${sectionId}-section`).classList.add('active');
+
+        // Fetch data when a section is made active
+        if (sectionId === 'inventory') {
+            fetchInventory();
+        } else if (sectionId === 'sales') {
+            fetchSales();
+        } else if (sectionId === 'expenses') {
+            fetchExpenses();
+        } else if (sectionId === 'cash-management') {
+            // Set default date filter for cash management to today
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            const todayString = `${yyyy}-${mm}-${dd}`;
+            document.getElementById('cash-date').value = todayString; // Default for new entry form
+            document.getElementById('cash-filter-date').value = todayString; // Default for filter
+            fetchCashJournal();
+        } else if (sectionId === 'reports') { // NEW: Automatically generate reports
+            // Set default dates for reports to last 30 days or current month
+            const today = new Date();
+            const thirtyDaysAgo = new Date(today);
+            thirtyDaysAgo.setDate(today.getDate() - 30);
+
+            const startInput = document.getElementById('report-start-date');
+            const endInput = document.getElementById('report-end-date');
+
+            if (!startInput.value) {
+                startInput.value = thirtyDaysAgo.toISOString().split('T')[0];
+            }
+            if (!endInput.value) {
+                endInput.value = today.toISOString().split('T')[0];
+            }
+            generateReports();
+        }
+    }
+
+    // --- NEW: Helper function for departmental identification ---
+    /**
+     * Extracts the department from an item name or expense description/source.
+     * This is crucial for your current differentiation strategy based on naming conventions.
+     * @param {string} text The item name (e.g., "Bar-Whiskey") or expense description/source.
+     * @returns {string} The identified department (e.g., "Bar", "Restaurant", "Conference", "Gardens", "Accommodation") or "Other".
+     */
+    function getDepartmentFromText(text) {
+        const lowerText = text.toLowerCase();
+        if (lowerText.startsWith('bar-') || lowerText.includes('bar ')) return 'Bar';
+        if (lowerText.startsWith('rest-') || lowerText.includes('restaurant')) return 'Restaurant';
+        if (lowerText.startsWith('conf-') || lowerText.includes('conference')) return 'Conference';
+        if (lowerText.startsWith('grdn-') || lowerText.includes('garden')) return 'Gardens';
+        if (lowerText.startsWith('accomm-') || lowerText.includes('accommodation') || lowerText.includes('room')) return 'Accommodation';
+        return 'Other'; // Fallback for items/expenses not clearly categorized
+    }
+
+    // --- NEW: Report Generation Functions ---
+
+    /**
+     * Generates and displays financial reports for overall and by department.
+     * Filters data based on the selected date range.
+     */
+    async function generateReports() {
+        const startDateString = document.getElementById('report-start-date').value;
+        const endDateString = document.getElementById('report-end-date').value;
+
+        if (!startDateString || !endDateString) {
+            alert('Please select both start and end dates for the reports.');
+            return;
+        }
+
+        const startDate = new Date(startDateString);
+        const endDate = new Date(endDateString);
+        endDate.setHours(23, 59, 59, 999); // Set to end of the day for inclusive range
+
+        let allSales = [];
+        let allExpenses = [];
+
+        try {
+            // Fetch all sales (backend filters by start date, then we filter by end date)
+            const salesResponse = await authenticatedFetch(`${API_BASE_URL}/sales?date=${startDateString}`);
+            if (salesResponse) {
+                const salesData = await salesResponse.json();
+                allSales = salesData.filter(s => {
+                    const saleDate = new Date(s.date);
+                    return saleDate >= startDate && saleDate <= endDate;
+                });
+            }
+
+            // Fetch all expenses (backend filters by start date, then we filter by end date)
+            const expensesResponse = await authenticatedFetch(`${API_BASE_URL}/expenses?date=${startDateString}`);
+            if (expensesResponse) {
+                const expensesData = await expensesResponse.json();
+                allExpenses = expensesData.filter(e => {
+                    const expenseDate = new Date(e.date);
+                    return expenseDate >= startDate && expenseDate <= endDate;
+                });
+            }
+
+            // Initialize report aggregates
+            const departmentReports = {}; // { 'Bar': { sales: 0, expenses: 0 }, 'Restaurant': ... }
+            let overallSales = 0;
+            let overallExpenses = 0;
+
+            // Process Sales
+            allSales.forEach(sale => {
+                const department = getDepartmentFromText(sale.item);
+                const saleAmount = sale.number * sale.sp; // Assuming SP is the actual sales price
+                
+                overallSales += saleAmount;
+                if (!departmentReports[department]) {
+                    departmentReports[department] = { sales: 0, expenses: 0 };
+                }
+                departmentReports[department].sales += saleAmount;
+            });
+
+            // Process Expenses
+            allExpenses.forEach(expense => {
+                // Combine description and source for better keyword search
+                const department = getDepartmentFromText(expense.description + ' ' + (expense.source || ''));
+                
+                overallExpenses += expense.amount;
+                if (!departmentReports[department]) {
+                    departmentReports[department] = { sales: 0, expenses: 0 };
+                }
+                departmentReports[department].expenses += expense.amount;
+            });
+
+            // Display Overall Totals
+            document.getElementById('overall-sales').textContent = overallSales.toFixed(2);
+            document.getElementById('overall-expenses').textContent = overallExpenses.toFixed(2);
+            document.getElementById('overall-balance').textContent = (overallSales - overallExpenses).toFixed(2);
+
+            // Display Departmental Totals
+            const tbody = document.querySelector('#departmental-reports-table tbody');
+            tbody.innerHTML = ''; // Clear previous reports
+
+            // Sort departments for consistent display
+            const sortedDepartments = Object.keys(departmentReports).sort();
+
+            if (sortedDepartments.length === 0) {
+                const row = tbody.insertRow();
+                row.insertCell().colSpan = 4;
+                row.insertCell().textContent = 'No data found for the selected period or departments.';
+            } else {
+                sortedDepartments.forEach(dept => {
+                    const data = departmentReports[dept];
+                    const deptSales = data.sales;
+                    const deptExpenses = data.expenses;
+                    const deptBalance = deptSales - deptExpenses;
+
+                    const row = tbody.insertRow();
+                    row.insertCell().textContent = dept;
+                    row.insertCell().textContent = deptSales.toFixed(2);
+                    row.insertCell().textContent = deptExpenses.toFixed(2);
+                    row.insertCell().textContent = deptBalance.toFixed(2);
+                });
+            }
+
+        } catch (error) {
+            console.error('Error generating reports:', error);
+            alert('Failed to generate reports: ' + error.message);
+        }
+    }
+
+    // ... (Your existing fetchInventory, renderInventoryTable, submitInventoryForm, etc. functions) ...
+    // ... (Your existing fetchSales, renderSalesTable, submitSaleForm, etc. functions) ...
+    // ... (Your existing fetchExpenses, renderExpensesTable, submitExpenseForm, etc. functions) ...
+    // ... (Your existing fetchCashJournal, renderCashJournalTable, submitCashJournalForm, etc. functions) ...
+
+    // --- UPDATED Event Listener (DOMContentLoaded) ---
+    document.addEventListener('DOMContentLoaded', () => {
+        // ... (Your existing login-section and main-content display logic) ...
+
+        // Attach form submission handlers (ensure these are already there)
+        document.getElementById('inventory-form').addEventListener('submit', submitInventoryForm);
+        document.getElementById('sale-form').addEventListener('submit', submitSaleForm);
+        document.getElementById('expense-form').addEventListener('submit', submitExpenseForm);
+        document.getElementById('cash-journal-form').addEventListener('submit', submitCashJournalForm); // Ensure this is there
+
+        // Set initial date filter for sales/expenses/cash management/reports to today or a range
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        const todayString = `${yyyy}-${mm}-${dd}`;
+
+        document.getElementById('sales-date-filter').value = todayString;
+        document.getElementById('expenses-date-filter').value = todayString;
+        document.getElementById('cash-date').value = todayString; // For new cash entry form
+        document.getElementById('cash-filter-date').value = todayString; // For cash filter
+
+        // For reports, set default to last 30 days
+        const thirtyDaysAgo = new Date(today);
+        thirtyDaysAgo.setDate(today.getDate() - 30);
+        document.getElementById('report-start-date').value = thirtyDaysAgo.toISOString().split('T')[0];
+        document.getElementById('report-end-date').value = todayString;
+    });
+</script>
+    </script>
     <script>
         // IMPORTANT: Set this to your deployed backend URL
         const API_BASE_URL = 'https://patrinahhotelmgtsys.onrender.com'; 
