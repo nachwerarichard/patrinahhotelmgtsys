@@ -1,27 +1,24 @@
+// script1.js
 const API_BASE = 'https://patrinahhotelmgtsys.onrender.com';
 const headers = {
   'Content-Type': 'application/json',
-  'Authorization': 'Basic ' + btoa('admin:123') // Change credentials as needed
+  'Authorization': 'Basic ' + btoa('admin:123')
 };
 
-// Sidebar navigation
-document.querySelectorAll('[data-target]').forEach(link => {
+// Navigation
+const navLinks = document.querySelectorAll('[data-target]');
+navLinks.forEach(link => {
   link.addEventListener('click', e => {
     e.preventDefault();
-    const targetId = link.dataset.target;
     document.querySelectorAll('.page-content').forEach(page => page.classList.add('hidden'));
-    const targetPage = document.getElementById(targetId);
-    if(targetPage) targetPage.classList.remove('hidden');
+    document.getElementById(link.dataset.target).classList.remove('hidden');
   });
 });
 
-// Modal helpers
-function openModal(id) {
-  document.getElementById(id).classList.remove('hidden');
-}
-function closeModal(id) {
-  document.getElementById(id).classList.add('hidden');
-}
+// Utility Functions
+const openModal = id => document.getElementById(id).classList.remove('hidden');
+const closeModal = id => document.getElementById(id).classList.add('hidden');
+const formatUGX = n => `UGX ${Number(n).toLocaleString()}`;
 
 // Load Inventory
 async function loadInventory() {
@@ -30,8 +27,6 @@ async function loadInventory() {
     const inventory = await res.json();
     const tbody = document.getElementById('inventory-table-body-bar');
     tbody.innerHTML = '';
-    let lowStockItem = null;
-
     inventory.forEach(item => {
       const total = item.opening + item.purchases;
       const closing = total - item.sales - item.spoilage;
@@ -44,78 +39,28 @@ async function loadInventory() {
         <td class="border px-2 py-1">${item.sales}</td>
         <td class="border px-2 py-1">${item.spoilage}</td>
         <td class="border px-2 py-1">${closing}</td>
-      `;
+        <td class="border px-2 py-1">
+          <button onclick="editInventory('${item._id}')" class="text-blue-600">Edit</button>
+          <button onclick="deleteInventory('${item._id}')" class="text-red-600 ml-2">Delete</button>
+        </td>`;
       tbody.appendChild(tr);
 
-      // Check for low stock
-      if (closing < 10 && !lowStockItem) {
-        lowStockItem = { name: item.item, qty: closing };
+      if (closing < 10) {
+        document.getElementById('low-stock-message').textContent = `${item.item} stock is low (${closing})!`;
+        document.getElementById('low-stock-notification').classList.remove('hidden');
+        setTimeout(() => document.getElementById('low-stock-notification').classList.add('hidden'), 4000);
       }
     });
-
-    if(lowStockItem){
-      const notif = document.getElementById('low-stock-notification');
-      document.getElementById('low-stock-message').textContent = `${lowStockItem.name} stock is low (${lowStockItem.qty})!`;
-      notif.classList.remove('hidden');
-      setTimeout(() => notif.classList.add('hidden'), 4000);
-    }
   } catch (err) {
-    console.error('Error loading inventory:', err);
+    console.error('Inventory Error:', err);
   }
 }
-
-// Load Expenses
-async function loadExpenses() {
-  try {
-    const res = await fetch(`${API_BASE}/expenses`, { headers });
-    const expenses = await res.json();
-    const tbody = document.getElementById('expenses-table-body-bar');
-    tbody.innerHTML = '';
-    expenses.forEach(exp => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td class="border px-2 py-1">${exp.description}</td>
-        <td class="border px-2 py-1">${exp.amount}</td>
-        <td class="border px-2 py-1">${new Date(exp.date).toLocaleDateString()}</td>
-        <td class="border px-2 py-1">${exp.receiptId || ''}</td>
-        <td class="border px-2 py-1">${exp.source || ''}</td>
-        <td class="border px-2 py-1">${exp.responsible || ''}</td>
-        <td class="border px-2 py-1">
-          <button class="text-red-600 hover:underline" onclick="deleteExpense('${exp._id}')">Delete</button>
-        </td>
-      `;
-      tbody.appendChild(tr);
-    });
-  } catch (err) {
-    console.error('Error loading expenses:', err);
-  }
-}
-
-// Delete Expense
-async function deleteExpense(id) {
-  if(!confirm('Are you sure you want to delete this expense?')) return;
-  try {
-    const res = await fetch(`${API_BASE}/expenses/${id}`, {
-      method: 'DELETE',
-      headers
-    });
-    if(res.ok) {
-      alert('Expense deleted');
-      await loadExpenses();
-      await updateBarSummary();
-    } else {
-      alert('Failed to delete expense');
-    }
-  } catch (err) {
-    console.error('Delete expense error:', err);
-  }
-}
-window.deleteExpense = deleteExpense; // expose for onclick
 
 // Load Sales
-async function loadSales() {
+async function loadSales(date = '') {
   try {
-    const res = await fetch(`${API_BASE}/sales`, { headers });
+    const url = date ? `${API_BASE}/sales?date=${date}` : `${API_BASE}/sales`;
+    const res = await fetch(url, { headers });
     const sales = await res.json();
     const tbody = document.getElementById('sales-table-body-bar');
     tbody.innerHTML = '';
@@ -123,7 +68,7 @@ async function loadSales() {
       const sumBP = sale.bp * sale.number;
       const sumSP = sale.sp * sale.number;
       const profit = sumSP - sumBP;
-      const percent = sumBP ? ((profit / sumBP) * 100).toFixed(2) : '0.00';
+      const percent = ((profit / sumBP) * 100).toFixed(2);
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td class="border px-2 py-1">${sale.item}</td>
@@ -133,131 +78,175 @@ async function loadSales() {
         <td class="border px-2 py-1">${sumBP}</td>
         <td class="border px-2 py-1">${sumSP}</td>
         <td class="border px-2 py-1">${profit}</td>
-        <td class="border px-2 py-1">${percent}%</td>
-      `;
+        <td class="border px-2 py-1">${percent}%</td>`;
       tbody.appendChild(tr);
     });
   } catch (err) {
-    console.error('Error loading sales:', err);
+    console.error('Sales Error:', err);
   }
 }
 
-// Update Summary Cards (Total Sales, Expenses, Balance)
+// Load Expenses
+async function loadExpenses(date = '') {
+  try {
+    const url = date ? `${API_BASE}/expenses?date=${date}` : `${API_BASE}/expenses`;
+    const res = await fetch(url, { headers });
+    const expenses = await res.json();
+    const tbody = document.getElementById('expenses-table-body-bar');
+    tbody.innerHTML = '';
+    expenses.forEach(exp => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="border px-2 py-1">${exp.description}</td>
+        <td class="border px-2 py-1">${exp.amount}</td>
+        <td class="border px-2 py-1">${new Date(exp.date).toLocaleDateString()}</td>
+        <td class="border px-2 py-1">${exp.receiptId}</td>
+        <td class="border px-2 py-1">${exp.source}</td>
+        <td class="border px-2 py-1">${exp.responsible}</td>
+        <td class="border px-2 py-1">
+          <button onclick="deleteExpense('${exp._id}')" class="text-red-600">Delete</button>
+        </td>`;
+      tbody.appendChild(tr);
+    });
+  } catch (err) {
+    console.error('Expenses Error:', err);
+  }
+}
+
+// Summary
 async function updateBarSummary() {
   try {
-    const [expensesRes, salesRes] = await Promise.all([
+    const [expRes, saleRes] = await Promise.all([
       fetch(`${API_BASE}/expenses`, { headers }),
       fetch(`${API_BASE}/sales`, { headers })
     ]);
-    const expenses = await expensesRes.json();
-    const sales = await salesRes.json();
-
-    const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
+    const expenses = await expRes.json();
+    const sales = await saleRes.json();
+    const totalExp = expenses.reduce((sum, e) => sum + e.amount, 0);
     const totalSales = sales.reduce((sum, s) => sum + (s.sp * s.number), 0);
-
-    document.getElementById('bar-total-sales').innerText = `UGX ${totalSales.toLocaleString()}`;
-    document.getElementById('bar-total-expenses').innerText = `UGX ${totalExpenses.toLocaleString()}`;
-    document.getElementById('bar-balance').innerText = `UGX ${(totalSales - totalExpenses).toLocaleString()}`;
+    document.getElementById('bar-total-sales').innerText = formatUGX(totalSales);
+    document.getElementById('bar-total-expenses').innerText = formatUGX(totalExp);
+    document.getElementById('bar-balance').innerText = formatUGX(totalSales - totalExp);
   } catch (err) {
-    console.error('Error updating summary:', err);
+    console.error('Summary Error:', err);
   }
 }
 
-// Event Listeners for Add Buttons to open modals
-document.getElementById('add-item-btn-bar').addEventListener('click', () => openModal('inventory-modal'));
-document.getElementById('add-expense-btn-bar').addEventListener('click', () => openModal('expense-modal'));
-document.getElementById('add-sale-btn-bar').addEventListener('click', () => openModal('sale-modal'));
-
-// Inventory form submission
-document.getElementById('inventory-form').addEventListener('submit', async e => {
+// Add Inventory
+const invForm = document.getElementById('inventory-form');
+invForm.addEventListener('submit', async e => {
   e.preventDefault();
-  const item = document.getElementById('inv-item').value.trim();
-  const opening = parseInt(document.getElementById('inv-open').value);
-  const purchases = parseInt(document.getElementById('inv-purchase').value);
-  const sales = parseInt(document.getElementById('inv-sales').value);
-  const spoilage = parseInt(document.getElementById('inv-spoilage').value);
-
+  const data = {
+    item: invForm.inv-item.value.trim(),
+    opening: +invForm["inv-open"].value,
+    purchases: +invForm["inv-purchase"].value,
+    sales: +invForm["inv-sales"].value,
+    spoilage: +invForm["inv-spoilage"].value,
+  };
   try {
     const res = await fetch(`${API_BASE}/inventory`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ item, opening, purchases, sales, spoilage })
+      body: JSON.stringify(data)
     });
-    if(res.ok) {
-      alert('Inventory added');
+    if (res.ok) {
+      alert('Inventory Added');
       closeModal('inventory-modal');
-      await loadInventory();
-    } else {
-      alert('Failed to add inventory');
+      loadInventory();
     }
   } catch (err) {
-    console.error('Add inventory error:', err);
+    console.error('Add Inventory Error:', err);
   }
-  e.target.reset();
+  invForm.reset();
 });
 
-// Expense form submission
-document.getElementById('expense-form').addEventListener('submit', async e => {
+// Add Expense
+const expForm = document.getElementById('expense-form');
+expForm.addEventListener('submit', async e => {
   e.preventDefault();
-  const description = document.getElementById('exp-desc').value.trim();
-  const amount = parseFloat(document.getElementById('exp-amt').value);
-  const receiptId = document.getElementById('exp-receipt').value.trim();
-  const source = document.getElementById('exp-source').value.trim();
-  const responsible = document.getElementById('exp-person').value.trim();
-
+  const data = {
+    description: expForm["exp-desc"].value.trim(),
+    amount: +expForm["exp-amt"].value,
+    receiptId: expForm["exp-receipt"].value.trim(),
+    source: expForm["exp-source"].value.trim(),
+    responsible: expForm["exp-person"].value.trim(),
+  };
   try {
     const res = await fetch(`${API_BASE}/expenses`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ description, amount, receiptId, source, responsible })
+      body: JSON.stringify(data)
     });
-    if(res.ok) {
-      alert('Expense added');
+    if (res.ok) {
+      alert('Expense Added');
       closeModal('expense-modal');
-      await loadExpenses();
-      await updateBarSummary();
-    } else {
-      alert('Failed to add expense');
+      loadExpenses();
+      updateBarSummary();
     }
   } catch (err) {
-    console.error('Add expense error:', err);
+    console.error('Add Expense Error:', err);
   }
-  e.target.reset();
+  expForm.reset();
 });
 
-// Sale form submission
-document.getElementById('sale-form').addEventListener('submit', async e => {
+// Add Sale
+const saleForm = document.getElementById('sale-form');
+saleForm.addEventListener('submit', async e => {
   e.preventDefault();
-  const item = document.getElementById('sale-item').value.trim();
-  const number = parseInt(document.getElementById('sale-number').value);
-  const bp = parseFloat(document.getElementById('sale-bp').value);
-  const sp = parseFloat(document.getElementById('sale-sp').value);
-
+  const data = {
+    item: saleForm["sale-item"].value.trim(),
+    number: +saleForm["sale-number"].value,
+    bp: +saleForm["sale-bp"].value,
+    sp: +saleForm["sale-sp"].value,
+  };
   try {
     const res = await fetch(`${API_BASE}/sales`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ item, number, bp, sp })
+      body: JSON.stringify(data)
     });
-    if(res.ok) {
-      alert('Sale added');
+    if (res.ok) {
+      alert('Sale Added');
       closeModal('sale-modal');
-      await loadSales();
-      await updateBarSummary();
-    } else {
-      alert('Failed to add sale');
+      loadSales();
+      updateBarSummary();
     }
   } catch (err) {
-    console.error('Add sale error:', err);
+    console.error('Add Sale Error:', err);
   }
-  e.target.reset();
+  saleForm.reset();
 });
 
-// On page load, show Bar page and load data
-window.addEventListener('DOMContentLoaded', () => {
+// Delete Expense
+async function deleteExpense(id) {
+  if (!confirm('Delete this expense?')) return;
+  try {
+    await fetch(`${API_BASE}/expenses/${id}`, { method: 'DELETE', headers });
+    loadExpenses();
+    updateBarSummary();
+  } catch (err) {
+    console.error('Delete Expense Error:', err);
+  }
+}
+window.deleteExpense = deleteExpense;
+
+// Delete Inventory
+async function deleteInventory(id) {
+  if (!confirm('Delete this inventory item?')) return;
+  try {
+    await fetch(`${API_BASE}/inventory/${id}`, { method: 'DELETE', headers });
+    loadInventory();
+  } catch (err) {
+    console.error('Delete Inventory Error:', err);
+  }
+}
+window.deleteInventory = deleteInventory;
+
+// Load everything on start
+document.addEventListener('DOMContentLoaded', () => {
   document.querySelector('[data-target="bar"]').click();
-  loadInventory();
-  loadExpenses();
   loadSales();
+  loadExpenses();
+  loadInventory();
   updateBarSummary();
 });
