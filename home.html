@@ -493,7 +493,7 @@
         function logout() {
             authToken = '';
             document.getElementById('main-content').style.display = 'none';
-            document.getElementById('login-section').classList.add('active');
+            document.getElementById('login-section').style.display ='block';
             document.getElementById('username').value = ''; // Clear input fields
             document.getElementById('password').value = '';
             document.getElementById('login-message').textContent = '';
