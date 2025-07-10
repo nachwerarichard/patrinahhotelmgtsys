@@ -479,6 +479,7 @@
                 authToken = btoa(`${username}:${password}`); // Base64 encode "admin:123"
                 document.getElementById('login-section').classList.remove('active');
                 document.getElementById('main-content').style.display = 'block';
+                document.getElementById('login-section').style.display = 'none';
                 loginMessage.textContent = '';
                 showSection('inventory'); // Show inventory section by default after successful login
             } else {
