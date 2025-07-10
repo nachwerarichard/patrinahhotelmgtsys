@@ -15,12 +15,65 @@
     <nav class="flex flex-col space-y-3">
       <a href="#" data-target="bar" class="nav-link text-blue-600 hover:underline font-semibold">Bar</a>
       <a href="#" data-target="inventory-bar" class="nav-link text-blue-600 hover:underline font-semibold">Inventory</a>
+      <a href="#" data-target="cash-management" class="nav-link text-blue-600 hover:underline font-semibold">Cash</a>
     </nav>
   </aside>
 
   <!-- Main Content -->
   <main id="main-content" class="flex-1 p-6">
+<section id="cash-management" class="page-content hidden">
+      <h2 class="text-2xl font-bold mb-4">Cash Management</h2>
 
+      <button id="add-cash-btn" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 mb-4">Add Cash Record</button>
+
+      <table class="w-full mb-6 table-auto border-collapse border border-gray-300">
+        <thead>
+          <tr class="bg-gray-200">
+            <th class="border px-4 py-2">Date</th>
+            <th class="border px-4 py-2">Amount at Hand</th>
+            <th class="border px-4 py-2">Amount Banked</th>
+            <th class="border px-4 py-2">Receipt ID</th>
+            <th class="border px-4 py-2">Responsible</th>
+          </tr>
+        </thead>
+        <tbody id="cash-table-body"></tbody>
+      </table>
+    </section>
+
+    <!-- Date Filter Section -->
+    <section id="filter-section" class="mb-6">
+      <label for="filter-date" class="text-lg font-semibold">Filter by Date:</label>
+      <input type="date" id="filter-date" class="border p-2 rounded" />
+    </section>
+
+    <div id="cash-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+    <form id="cash-form" class="bg-white p-6 rounded shadow-lg w-80">
+      <h3 class="text-xl font-semibold mb-4">Add Cash Record</h3>
+      <input id="cash-hand" type="number" placeholder="Amount at Hand" required class="w-full border p-2 mb-3" />
+      <input id="cash-banked" type="number" placeholder="Amount Banked" required class="w-full border p-2 mb-3" />
+      <input id="cash-receipt" type="text" placeholder="Receipt ID" class="w-full border p-2 mb-3" />
+      <input id="cash-person" type="text" placeholder="Responsible Person" class="w-full border p-2 mb-4" />
+      <div class="flex justify-between">
+        <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">Save</button>
+        <button type="button" onclick="closeModal('cash-modal')" class="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400">Cancel</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Edit Modals (Example for Inventory, Sales, Expenses) -->
+  <!-- Will be dynamically filled and opened when edit buttons are clicked -->
+  <div id="edit-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+    <form id="edit-form" class="bg-white p-6 rounded shadow-lg w-80">
+      <h3 class="text-xl font-semibold mb-4">Edit Entry</h3>
+      <div id="edit-fields"></div>
+      <div class="flex justify-between mt-4">
+        <button type="submit" class="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700">Update</button>
+        <button type="button" onclick="closeModal('edit-modal')" class="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400">Cancel</button>
+      </div>
+    </form>
+  </div>
+
+    
     <!-- Bar Section -->
     <section id="bar" class="page-content hidden">
       <h2 class="text-2xl font-bold mb-4">Bar Management</h2>
