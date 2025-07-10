@@ -275,6 +275,50 @@
                 <button onclick="showSection('sales')">Sales</button>
                 <button onclick="showSection('expenses')">Expenses</button>
             </nav>
+                         <div id="cash-management-section" class="section">
+                <h2>Cash Management</h2>
+
+                <h3>Record Cash Movement</h3>
+                <form id="cash-journal-form">
+                    <input type="hidden" id="cash-journal-id">
+                    <label for="cash-at-hand">Cash At Hand:</label>
+                    <input type="number" id="cash-at-hand" step="0.01" min="0" required>
+                    <label for="cash-banked">Cash Banked:</label>
+                    <input type="number" id="cash-banked" step="0.01" min="0" required>
+                    <label for="bank-receipt-id">Bank Receipt ID:</label>
+                    <input type="text" id="bank-receipt-id" required>
+                    <label for="responsible-person">Responsible Person:</label>
+                    <input type="text" id="responsible-person" required>
+                    <label for="cash-date">Date:</label>
+                    <input type="date" id="cash-date" required>
+                    <button type="submit">Save Cash Entry</button>
+                </form>
+
+                <h3>Cash Records</h3>
+                <div class="filter-controls">
+                    <label for="cash-filter-date">Filter by Date:</label>
+                    <input type="date" id="cash-filter-date">
+                    <label for="cash-filter-responsible">Filter by Responsible Person:</label>
+                    <input type="text" id="cash-filter-responsible" placeholder="e.g., John Doe">
+                    <button onclick="fetchCashJournal()">Apply Filters</button>
+                </div>
+                <table id="cash-journal-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Cash At Hand</th>
+                            <th>Cash Banked</th>
+                            <th>Bank Receipt ID</th>
+                            <th>Responsible Person</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Cash records will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+
 
             <div id="inventory-section" class="section">
                 <h2>Inventory Management</h2>
