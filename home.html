@@ -1,118 +1,923 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Hotel Management System</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patrinah Hotel Management System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #eef2f7;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 20px;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2, h3 {
+            color: #0056b3;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
+            margin-top: 20px;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #007bff;
+        }
+        nav {
+            margin-bottom: 30px;
+            background-color: #eaf3ff;
+            padding: 15px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+        }
+        nav button {
+            padding: 12px 25px;
+            margin: 0 10px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 17px;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        nav button:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+        }
+        .section {
+            display: none; /* Hidden by default */
+            padding: 20px 0;
+            border-top: 1px solid #eee;
+            margin-top: 20px;
+        }
+        .section.active {
+            display: block;
+        }
+        form {
+            background-color: #fcfcfc;
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        form label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+        form input[type="text"],
+        form input[type="number"],
+        form input[type="date"] {
+            width: calc(100% - 24px);
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+            transition: border-color 0.3s ease;
+        }
+        form input[type="text"]:focus,
+        form input[type="number"]:focus,
+        form input[type="date"]:focus {
+            border-color: #007bff;
+            outline: none;
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.2);
+        }
+        form button {
+            width: auto;
+            background-color: #28a745;
+            color: white;
+            cursor: pointer;
+            font-size: 17px;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        form button:hover {
+            background-color: #218838;
+            transform: translateY(-1px);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 25px;
+            background-color: #fff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+            border-radius: 8px;
+            overflow: hidden; /* Ensures rounded corners */
+        }
+        th, td {
+            border: 1px solid #e0e0e0;
+            padding: 12px;
+            text-align: left;
+            vertical-align: middle;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+            font-weight: normal;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tr:hover {
+            background-color: #f0f8ff;
+        }
+        .actions button {
+            padding: 8px 15px;
+            margin-right: 8px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            color: white;
+            font-size: 14px;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+        }
+        .actions .edit {
+            background-color: #ffc107;
+        }
+        .actions .edit:hover {
+            background-color: #e0a800;
+            transform: translateY(-1px);
+        }
+        .actions .delete {
+            background-color: #dc3545;
+        }
+        .actions .delete:hover {
+            background-color: #c82333;
+            transform: translateY(-1px);
+        }
+        #login-section {
+            text-align: center;
+            margin-top: 100px;
+            padding: 40px;
+            background-color: #f9f9f9;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        #login-section h2 {
+            color: #007bff;
+            margin-bottom: 25px;
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        #login-section input {
+            width: calc(100% - 24px);
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        #login-section button {
+            padding: 12px 30px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        #login-section button:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+        }
+        #login-message {
+            color: #dc3545;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+        #logout-button {
+            float: right;
+            background-color: #6c757d;
+            padding: 10px 20px;
+            border-radius: 5px;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+        #logout-button:hover {
+            background-color: #5a6268;
+        }
+        .filter-controls {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f5f8fc;
+            border: 1px solid #e0eaf5;
+            border-radius: 8px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+        }
+        .filter-controls input[type="text"],
+        .filter-controls input[type="number"],
+        .filter-controls input[type="date"] {
+            width: auto;
+            flex-grow: 1;
+            min-width: 150px;
+            margin-bottom: 0; /* Override form input margin */
+        }
+        .filter-controls button {
+            margin-bottom: 0; /* Override form button margin */
+            padding: 10px 20px;
+            font-size: 15px;
+            background-color: #17a2b8; /* Info color */
+        }
+        .filter-controls button:hover {
+            background-color: #138496;
+        }
+    </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex">
-  <!-- Sidebar -->
-  <aside class="w-64 bg-white p-4 shadow-md hidden md:block">
-    <h2 class="text-xl font-bold mb-6">Hotel Dashboard</h2>
-    <nav class="flex flex-col space-y-3">
-      <a href="#" data-target="bar" class="nav-link text-blue-600 hover:underline font-semibold">Bar</a>
-      <a href="#" data-target="inventory-bar" class="nav-link text-blue-600 hover:underline font-semibold">Inventory</a>
-      <a href="#" data-target="cash-section" class="nav-link text-blue-600 hover:underline font-semibold">Cash</a>
-    </nav>
-  </aside>
+<body>
+    <div class="container">
+        <h1>Patrinah Hotel Management System</h1>
 
-  <!-- Main Content -->
-  <main class="flex-1 p-6">
-    <input type="date" id="date-filter" class="border p-2 mb-4 rounded" />
+        <div id="login-section" class="active">
+            <h2>Login</h2>
+            <input type="text" id="username" placeholder="Username (admin)">
+            <input type="password" id="password" placeholder="Password (123)">
+            <button onclick="login()">Login</button>
+            <p id="login-message"></p>
+        </div>
 
-    <!-- Bar Section -->
-    <section id="bar" class="page-content hidden">
-      <h2 class="text-2xl font-bold mb-4">Bar Sales & Expenses</h2>
-      <button id="add-sale-btn-bar" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 mb-4">Add Sale</button>
-      <table class="w-full mb-6 border">
-        <thead><tr><th>Item</th><th>Qty</th><th>BP</th><th>SP</th><th>Total BP</th><th>Total SP</th><th>Profit</th><th>%</th></tr></thead>
-        <tbody id="sales-table-body-bar"></tbody>
-      </table>
+        <div id="main-content" style="display: none;">
+            <button id="logout-button" onclick="logout()">Logout</button>
+            <nav>
+                <button onclick="showSection('inventory')">Inventory</button>
+                <button onclick="showSection('sales')">Sales</button>
+                <button onclick="showSection('expenses')">Expenses</button>
+            </nav>
 
-      <button id="add-expense-btn-bar" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 mb-4">Add Expense</button>
-      <table class="w-full mb-6 border">
-        <thead><tr><th>Description</th><th>Amount</th><th>Date</th><th>Receipt</th><th>Source</th><th>Person</th><th>Action</th></tr></thead>
-        <tbody id="expenses-table-body-bar"></tbody>
-      </table>
+            <div id="inventory-section" class="section">
+                <h2>Inventory Management</h2>
 
-      <div class="flex space-x-6 text-lg font-semibold">
-        <div>Total Sales: <span id="bar-total-sales">UGX 0</span></div>
-        <div>Total Expenses: <span id="bar-total-expenses">UGX 0</span></div>
-        <div>Balance: <span id="bar-balance">UGX 0</span></div>
-      </div>
-    </section>
+                <h3>Add/Update Inventory Item</h3>
+                <form id="inventory-form">
+                    <input type="hidden" id="inventory-id">
+                    <label for="item">Item:</label>
+                    <input type="text" id="item" required>
+                    <label for="opening">Opening Stock:</label>
+                    <input type="number" id="opening" min="0" required>
+                    <label for="purchases">Purchases:</label>
+                    <input type="number" id="purchases" min="0" required>
+                    <label for="inventory-sales">Sales (deducted from inventory):</label>
+                    <input type="number" id="inventory-sales" min="0" required>
+                    <label for="spoilage">Spoilage:</label>
+                    <input type="number" id="spoilage" min="0" required>
+                    <button type="submit">Save Inventory</button>
+                </form>
 
-    <!-- Inventory -->
-    <section id="inventory-bar" class="page-content hidden">
-      <h2 class="text-2xl font-bold mb-4">Inventory</h2>
-      <button id="add-item-btn-bar" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 mb-4">Add Inventory</button>
-      <table class="w-full mb-6 border">
-        <thead><tr><th>Item</th><th>Opening</th><th>Purchases</th><th>Total</th><th>Sales</th><th>Spoilage</th><th>Closing</th><th>Actions</th></tr></thead>
-        <tbody id="inventory-table-body-bar"></tbody>
-      </table>
-    </section>
+                <h3>Current Inventory</h3>
+                <div class="filter-controls">
+                    <input type="text" id="search-inventory-item" placeholder="Search by item name">
+                    <input type="number" id="search-inventory-low" placeholder="Filter by closing stock <">
+                    <button onclick="fetchInventory()">Apply Filters</button>
+                </div>
+                <table id="inventory-table">
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Opening</th>
+                            <th>Purchases</th>
+                            <th>Sales</th>
+                            <th>Spoilage</th>
+                            <th>Closing</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        </tbody>
+                </table>
+            </div>
 
-    <!-- Cash -->
-    <section id="cash-section" class="page-content hidden">
-      <h2 class="text-2xl font-bold mb-4">Cash Management</h2>
-      <button onclick="openModal('cash-modal')" class="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700 mb-4">Add Cash</button>
-      <table class="w-full mb-6 border">
-        <thead><tr><th>At Hand</th><th>Banked</th><th>Receipt</th><th>Person</th><th>Date</th></tr></thead>
-        <tbody id="cash-table-body"></tbody>
-      </table>
-    </section>
-  </main>
+            <div id="sales-section" class="section">
+                <h2>Sales Management</h2>
 
-  <!-- Modals -->
-  <div id="sale-modal" class="modal hidden"><form id="sale-form" class="modal-content">
-    <input id="sale-item" placeholder="Item" required class="input" />
-    <input id="sale-number" type="number" placeholder="Qty" required class="input" />
-    <input id="sale-bp" type="number" placeholder="Buying Price" required class="input" />
-    <input id="sale-sp" type="number" placeholder="Selling Price" required class="input" />
-    <div class="modal-actions">
-      <button type="submit" class="btn bg-blue-600 text-white">Add</button>
-      <button type="button" onclick="closeModal('sale-modal')" class="btn">Cancel</button>
-    </div></form></div>
+                <h3>Record New Sale</h3>
+                <form id="sale-form">
+                    <input type="hidden" id="sale-id">
+                    <label for="sale-item">Item:</label>
+                    <input type="text" id="sale-item" required>
+                    <label for="sale-number">Number Sold:</label>
+                    <input type="number" id="sale-number" min="1" required>
+                    <label for="sale-bp">Buying Price (BP):</label>
+                    <input type="number" id="sale-bp" step="0.01" min="0" required>
+                    <label for="sale-sp">Selling Price (SP):</label>
+                    <input type="number" id="sale-sp" step="0.01" min="0" required>
+                    <button type="submit">Record Sale</button>
+                </form>
 
-  <div id="expense-modal" class="modal hidden"><form id="expense-form" class="modal-content">
-    <input id="exp-desc" placeholder="Description" required class="input" />
-    <input id="exp-amt" type="number" placeholder="Amount" required class="input" />
-    <input id="exp-receipt" placeholder="Receipt ID" class="input" />
-    <input id="exp-source" placeholder="Source" class="input" />
-    <input id="exp-person" placeholder="Person" class="input" />
-    <div class="modal-actions">
-      <button type="submit" class="btn bg-red-600 text-white">Add</button>
-      <button type="button" onclick="closeModal('expense-modal')" class="btn">Cancel</button>
-    </div></form></div>
+                <h3>Sales Records</h3>
+                <div class="filter-controls">
+                    <label for="sales-date-filter" style="margin-bottom:0;">Filter by Date:</label>
+                    <input type="date" id="sales-date-filter" onchange="fetchSales()">
+                </div>
+                <table id="sales-table">
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Number</th>
+                            <th>BP</th>
+                            <th>SP</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        </tbody>
+                </table>
+            </div>
 
-  <div id="inventory-modal" class="modal hidden"><form id="inventory-form" class="modal-content">
-    <input id="inv-item" placeholder="Item" required class="input" />
-    <input id="inv-open" type="number" placeholder="Opening" required class="input" />
-    <input id="inv-purchase" type="number" placeholder="Purchases" required class="input" />
-    <input id="inv-sales" type="number" placeholder="Sales" required class="input" />
-    <input id="inv-spoilage" type="number" placeholder="Spoilage" required class="input" />
-    <div class="modal-actions">
-      <button type="submit" class="btn bg-green-600 text-white">Add</button>
-      <button type="button" onclick="closeModal('inventory-modal')" class="btn">Cancel</button>
-    </div></form></div>
+            <div id="expenses-section" class="section">
+                <h2>Expenses Management</h2>
 
-  <div id="cash-modal" class="modal hidden"><form id="cash-form" class="modal-content">
-    <input id="cash-hand" type="number" placeholder="At Hand" required class="input" />
-    <input id="cash-bank" type="number" placeholder="Banked" required class="input" />
-    <input id="cash-receipt" placeholder="Receipt ID" class="input" />
-    <input id="cash-person" placeholder="Person" class="input" />
-    <div class="modal-actions">
-      <button type="submit" class="btn bg-yellow-600 text-white">Add</button>
-      <button type="button" onclick="closeModal('cash-modal')" class="btn">Cancel</button>
-    </div></form></div>
+                <h3>Record New Expense</h3>
+                <form id="expense-form">
+                    <input type="hidden" id="expense-id">
+                    <label for="expense-description">Description:</label>
+                    <input type="text" id="expense-description" required>
+                    <label for="expense-amount">Amount:</label>
+                    <input type="number" id="expense-amount" step="0.01" min="0" required>
+                    <label for="expense-receiptId">Receipt ID (Optional):</label>
+                    <input type="text" id="expense-receiptId">
+                    <label for="expense-source">Source (Optional):</label>
+                    <input type="text" id="expense-source">
+                    <label for="expense-responsible">Responsible Person (Optional):</label>
+                    <input type="text" id="expense-responsible">
+                    <button type="submit">Record Expense</button>
+                </form>
 
-  <script src="script1.js"></script>
-  <style>
-    .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; }
-    .modal-content { background: white; padding: 1.5rem; border-radius: 0.5rem; width: 300px; display: flex; flex-direction: column; gap: 0.75rem; }
-    .input { padding: 0.5rem; border: 1px solid #ccc; border-radius: 0.375rem; }
-    .btn { padding: 0.5rem 1rem; border-radius: 0.375rem; }
-  </style>
+                <h3>Expense Records</h3>
+                <div class="filter-controls">
+                    <label for="expenses-date-filter" style="margin-bottom:0;">Filter by Date:</label>
+                    <input type="date" id="expenses-date-filter" onchange="fetchExpenses()">
+                </div>
+                <table id="expenses-table">
+                    <thead>
+                        <tr>
+                            <th>Description</th>
+                            <th>Amount</th>
+                            <th>Date</th>
+                            <th>Receipt ID</th>
+                            <th>Source</th>
+                            <th>Responsible</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // IMPORTANT: Set this to your deployed backend URL
+        const API_BASE_URL = 'https://patrinahhotelmgtsys.onrender.com'; 
+        let authToken = ''; // This will store the base64 encoded "admin:123" after login
+
+        // --- Utility Functions ---
+
+        /**
+         * Hides all sections and shows the specified one.
+         * Also triggers data fetching for the shown section.
+         * @param {string} sectionId The ID of the section to show (e.g., 'inventory', 'sales', 'expenses').
+         */
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(`${sectionId}-section`).classList.add('active');
+
+            // Fetch data when a section is made active
+            if (sectionId === 'inventory') {
+                fetchInventory();
+            } else if (sectionId === 'sales') {
+                fetchSales();
+            } else if (sectionId === 'expenses') {
+                fetchExpenses();
+            }
+        }
+
+        /**
+         * Wrapper for fetch API to include authentication header and handle common errors.
+         * @param {string} url The URL to fetch.
+         * @param {object} options Fetch options (method, headers, body, etc.).
+         * @returns {Promise<Response|null>} The fetch Response object or null if authentication fails.
+         */
+        async function authenticatedFetch(url, options = {}) {
+            if (!authToken) {
+                alert('You are not logged in. Please log in first.');
+                logout(); // Redirect to login
+                return null;
+            }
+
+            options.headers = {
+                ...options.headers,
+                'Authorization': `Basic ${authToken}`,
+                'Content-Type': 'application/json'
+            };
+
+            try {
+                const response = await fetch(url, options);
+
+                if (response.status === 401 || response.status === 403) {
+                    alert('Session expired or invalid credentials. Please log in again.');
+                    logout();
+                    return null;
+                }
+                if (!response.ok && response.status !== 204) { // 204 No Content is a success for DELETE
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP error! Status: ${response.status}`);
+                }
+                return response;
+            } catch (error) {
+                console.error('Network or fetch error:', error);
+                throw new Error('Could not connect to the server or process request: ' + error.message);
+            }
+        }
+
+        // --- Login/Logout ---
+
+        /**
+         * Handles user login. Authenticates with hardcoded credentials and sets authToken.
+         */
+        function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const loginMessage = document.getElementById('login-message');
+
+            if (username === 'admin' && password === '123') { // Hardcoded credentials as per backend
+                authToken = btoa(`${username}:${password}`); // Base64 encode "admin:123"
+                document.getElementById('login-section').classList.remove('active');
+                document.getElementById('main-content').style.display = 'block';
+                loginMessage.textContent = '';
+                showSection('inventory'); // Show inventory section by default after successful login
+            } else {
+                loginMessage.textContent = 'Invalid username or password.';
+            }
+        }
+
+        /**
+         * Logs out the user by clearing the authToken and showing the login section.
+         */
+        function logout() {
+            authToken = '';
+            document.getElementById('main-content').style.display = 'none';
+            document.getElementById('login-section').classList.add('active');
+            document.getElementById('username').value = ''; // Clear input fields
+            document.getElementById('password').value = '';
+            document.getElementById('login-message').textContent = '';
+        }
+
+        // --- Inventory Functions ---
+
+        /**
+         * Fetches and displays inventory data. Supports filtering by item name and low stock.
+         */
+        async function fetchInventory() {
+            try {
+                const itemFilter = document.getElementById('search-inventory-item').value;
+                const lowFilter = document.getElementById('search-inventory-low').value;
+
+                let url = `${API_BASE_URL}/inventory`;
+                const params = new URLSearchParams();
+                if (itemFilter) params.append('item', itemFilter);
+                if (lowFilter) params.append('low', lowFilter);
+
+                if (params.toString()) {
+                    url += `?${params.toString()}`;
+                }
+
+                const response = await authenticatedFetch(url);
+                if (!response) return; // If authenticatedFetch returned null, it means login failed
+                const inventory = await response.json();
+                renderInventoryTable(inventory);
+            } catch (error) {
+                console.error('Error fetching inventory:', error);
+                alert('Failed to fetch inventory: ' + error.message);
+            }
+        }
+
+        /**
+         * Renders the fetched inventory data into the inventory table.
+         * @param {Array} inventory An array of inventory objects.
+         */
+        function renderInventoryTable(inventory) {
+            const tbody = document.querySelector('#inventory-table tbody');
+            tbody.innerHTML = ''; // Clear existing rows
+            if (inventory.length === 0) {
+                const row = tbody.insertRow();
+                row.insertCell().colSpan = 7;
+                row.insertCell().textContent = 'No inventory items found.';
+                return;
+            }
+
+            inventory.forEach(item => {
+                const row = tbody.insertRow();
+                row.insertCell().textContent = item.item;
+                row.insertCell().textContent = item.opening;
+                row.insertCell().textContent = item.purchases;
+                row.insertCell().textContent = item.sales;
+                row.insertCell().textContent = item.spoilage;
+                row.insertCell().textContent = item.closing;
+                const actionsCell = row.insertCell();
+                actionsCell.className = 'actions';
+
+                const editButton = document.createElement('button');
+                editButton.textContent = 'Edit';
+                editButton.className = 'edit';
+                editButton.onclick = () => populateInventoryForm(item);
+                actionsCell.appendChild(editButton);
+
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = 'Delete';
+                deleteButton.className = 'delete';
+                deleteButton.onclick = () => deleteInventory(item._id);
+                actionsCell.appendChild(deleteButton);
+            });
+        }
+
+        /**
+         * Handles the submission of the inventory form (add or update).
+         * @param {Event} event The form submission event.
+         */
+        async function submitInventoryForm(event) {
+            event.preventDefault(); // Prevent default form submission
+
+            const id = document.getElementById('inventory-id').value;
+            const item = document.getElementById('item').value;
+            const opening = parseInt(document.getElementById('opening').value);
+            const purchases = parseInt(document.getElementById('purchases').value);
+            const sales = parseInt(document.getElementById('inventory-sales').value); // This is from inventory decrease
+            const spoilage = parseInt(document.getElementById('spoilage').value);
+
+            const inventoryData = { item, opening, purchases, sales, spoilage };
+
+            try {
+                let response;
+                if (id) { // If ID exists, it's an update operation
+                    response = await authenticatedFetch(`${API_BASE_URL}/inventory/${id}`, {
+                        method: 'PUT',
+                        body: JSON.stringify(inventoryData)
+                    });
+                } else { // Otherwise, it's a new item creation
+                    response = await authenticatedFetch(`${API_BASE_URL}/inventory`, {
+                        method: 'POST',
+                        body: JSON.stringify(inventoryData)
+                    });
+                }
+                if (response) {
+                    await response.json(); // Parse response to ensure success or catch specific errors
+                    alert(`Inventory item ${id ? 'updated' : 'added'} successfully!`);
+                    document.getElementById('inventory-form').reset(); // Clear the form
+                    document.getElementById('inventory-id').value = ''; // Clear ID for next new entry
+                    fetchInventory(); // Refresh the table
+                }
+            } catch (error) {
+                console.error('Error saving inventory item:', error);
+                alert('Failed to save inventory item: ' + error.message);
+            }
+        }
+
+        /**
+         * Populates the inventory form with data from an existing item for editing.
+         * @param {object} item The inventory item object.
+         */
+        function populateInventoryForm(item) {
+            document.getElementById('inventory-id').value = item._id;
+            document.getElementById('item').value = item.item;
+            document.getElementById('opening').value = item.opening;
+            document.getElementById('purchases').value = item.purchases;
+            document.getElementById('inventory-sales').value = item.sales;
+            document.getElementById('spoilage').value = item.spoilage;
+        }
+
+        /**
+         * Deletes an inventory item by its ID.
+         * @param {string} id The ID of the inventory item to delete.
+         */
+        async function deleteInventory(id) {
+            if (!confirm('Are you sure you want to delete this inventory item?')) {
+                return; // User cancelled
+            }
+            try {
+                const response = await authenticatedFetch(`${API_BASE_URL}/inventory/${id}`, {
+                    method: 'DELETE'
+                });
+                if (response && response.status === 204) { // 204 No Content indicates successful deletion
+                    alert('Inventory item deleted successfully!');
+                    fetchInventory(); // Refresh the table
+                } else if (response) {
+                    const errorData = await response.json(); // Try to get more specific error from backend
+                    alert('Failed to delete inventory item: ' + errorData.error);
+                }
+            } catch (error) {
+                console.error('Error deleting inventory item:', error);
+                alert('Failed to delete inventory item: ' + error.message);
+            }
+        }
+
+        // --- Sales Functions ---
+
+        /**
+         * Fetches and displays sales data. Supports filtering by date.
+         */
+        async function fetchSales() {
+            try {
+                const dateFilter = document.getElementById('sales-date-filter').value;
+                let url = `${API_BASE_URL}/sales`;
+                if (dateFilter) {
+                    url += `?date=${dateFilter}`;
+                }
+
+                const response = await authenticatedFetch(url);
+                if (!response) return;
+                const sales = await response.json();
+                renderSalesTable(sales);
+            } catch (error) {
+                console.error('Error fetching sales:', error);
+                alert('Failed to fetch sales: ' + error.message);
+            }
+        }
+
+        /**
+         * Renders the fetched sales data into the sales table.
+         * @param {Array} sales An array of sale objects.
+         */
+        function renderSalesTable(sales) {
+            const tbody = document.querySelector('#sales-table tbody');
+            tbody.innerHTML = '';
+            if (sales.length === 0) {
+                const row = tbody.insertRow();
+                row.insertCell().colSpan = 6;
+                row.insertCell().textContent = 'No sales records found for this date.';
+                return;
+            }
+
+            sales.forEach(sale => {
+                const row = tbody.insertRow();
+                row.insertCell().textContent = sale.item;
+                row.insertCell().textContent = sale.number;
+                row.insertCell().textContent = sale.bp;
+                row.insertCell().textContent = sale.sp;
+                row.insertCell().textContent = new Date(sale.date).toLocaleDateString();
+                const actionsCell = row.insertCell();
+                actionsCell.className = 'actions';
+
+                const editButton = document.createElement('button');
+                editButton.textContent = 'Edit';
+                editButton.className = 'edit';
+                editButton.onclick = () => populateSaleForm(sale);
+                actionsCell.appendChild(editButton);
+                // No delete button as per backend API
+            });
+        }
+
+        /**
+         * Handles the submission of the sale form (record new sale or update).
+         * @param {Event} event The form submission event.
+         */
+        async function submitSaleForm(event) {
+            event.preventDefault();
+
+            const id = document.getElementById('sale-id').value;
+            const item = document.getElementById('sale-item').value;
+            const number = parseInt(document.getElementById('sale-number').value);
+            const bp = parseFloat(document.getElementById('sale-bp').value);
+            const sp = parseFloat(document.getElementById('sale-sp').value);
+
+            const saleData = { item, number, bp, sp };
+
+            try {
+                let response;
+                if (id) {
+                    response = await authenticatedFetch(`${API_BASE_URL}/sales/${id}`, {
+                        method: 'PUT',
+                        body: JSON.stringify(saleData)
+                    });
+                } else {
+                    response = await authenticatedFetch(`${API_BASE_URL}/sales`, {
+                        method: 'POST',
+                        body: JSON.stringify(saleData)
+                    });
+                }
+                if (response) {
+                    await response.json();
+                    alert(`Sale ${id ? 'updated' : 'recorded'} successfully!`);
+                    document.getElementById('sale-form').reset();
+                    document.getElementById('sale-id').value = '';
+                    fetchSales();
+                }
+            } catch (error) {
+                console.error('Error recording sale:', error);
+                alert('Failed to record sale: ' + error.message);
+            }
+        }
+
+        /**
+         * Populates the sale form with data from an existing sale for editing.
+         * @param {object} sale The sale object.
+         */
+        function populateSaleForm(sale) {
+            document.getElementById('sale-id').value = sale._id;
+            document.getElementById('sale-item').value = sale.item;
+            document.getElementById('sale-number').value = sale.number;
+            document.getElementById('sale-bp').value = sale.bp;
+            document.getElementById('sale-sp').value = sale.sp;
+        }
+
+        // --- Expenses Functions ---
+
+        /**
+         * Fetches and displays expense data. Supports filtering by date.
+         */
+        async function fetchExpenses() {
+            try {
+                const dateFilter = document.getElementById('expenses-date-filter').value;
+                let url = `${API_BASE_URL}/expenses`;
+                if (dateFilter) {
+                    url += `?date=${dateFilter}`;
+                }
+
+                const response = await authenticatedFetch(url);
+                if (!response) return;
+                const expenses = await response.json();
+                renderExpensesTable(expenses);
+            } catch (error) {
+                console.error('Error fetching expenses:', error);
+                alert('Failed to fetch expenses: ' + error.message);
+            }
+        }
+
+        /**
+         * Renders the fetched expense data into the expenses table.
+         * @param {Array} expenses An array of expense objects.
+         */
+        function renderExpensesTable(expenses) {
+            const tbody = document.querySelector('#expenses-table tbody');
+            tbody.innerHTML = '';
+            if (expenses.length === 0) {
+                const row = tbody.insertRow();
+                row.insertCell().colSpan = 7;
+                row.insertCell().textContent = 'No expense records found for this date.';
+                return;
+            }
+
+            expenses.forEach(expense => {
+                const row = tbody.insertRow();
+                row.insertCell().textContent = expense.description;
+                row.insertCell().textContent = expense.amount;
+                row.insertCell().textContent = new Date(expense.date).toLocaleDateString();
+                row.insertCell().textContent = expense.receiptId || 'N/A'; // Handle optional fields
+                row.insertCell().textContent = expense.source || 'N/A';
+                row.insertCell().textContent = expense.responsible || 'N/A';
+                const actionsCell = row.insertCell();
+                actionsCell.className = 'actions';
+
+                const editButton = document.createElement('button');
+                editButton.textContent = 'Edit';
+                editButton.className = 'edit';
+                editButton.onclick = () => populateExpenseForm(expense);
+                actionsCell.appendChild(editButton);
+
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = 'Delete';
+                deleteButton.className = 'delete';
+                deleteButton.onclick = () => deleteExpense(expense._id);
+                actionsCell.appendChild(deleteButton);
+            });
+        }
+
+        /**
+         * Handles the submission of the expense form (record new expense or update).
+         * @param {Event} event The form submission event.
+         */
+        async function submitExpenseForm(event) {
+            event.preventDefault();
+
+            const id = document.getElementById('expense-id').value;
+            const description = document.getElementById('expense-description').value;
+            const amount = parseFloat(document.getElementById('expense-amount').value);
+            const receiptId = document.getElementById('expense-receiptId').value;
+            const source = document.getElementById('expense-source').value;
+            const responsible = document.getElementById('expense-responsible').value;
+
+            const expenseData = { description, amount, receiptId, source, responsible };
+
+            try {
+                let response;
+                if (id) {
+                    response = await authenticatedFetch(`${API_BASE_URL}/expenses/${id}`, {
+                        method: 'PUT',
+                        body: JSON.stringify(expenseData)
+                    });
+                } else {
+                    response = await authenticatedFetch(`${API_BASE_URL}/expenses`, {
+                        method: 'POST',
+                        body: JSON.stringify(expenseData)
+                    });
+                }
+                if (response) {
+                    await response.json();
+                    alert(`Expense ${id ? 'updated' : 'recorded'} successfully!`);
+                    document.getElementById('expense-form').reset();
+                    document.getElementById('expense-id').value = '';
+                    fetchExpenses();
+                }
+            } catch (error) {
+                console.error('Error recording expense:', error);
+                alert('Failed to record expense: ' + error.message);
+            }
+        }
+
+        /**
+         * Populates the expense form with data from an existing expense for editing.
+         * @param {object} expense The expense object.
+         */
+        function populateExpenseForm(expense) {
+            document.getElementById('expense-id').value = expense._id;
+            document.getElementById('expense-description').value = expense.description;
+            document.getElementById('expense-amount').value = expense.amount;
+            document.getElementById('expense-receiptId').value = expense.receiptId || '';
+            document.getElementById('expense-source').value = expense.source || '';
+            document.getElementById('expense-responsible').value = expense.responsible || '';
+        }
+
+        /**
+         * Deletes an expense record by its ID.
+         * @param {string} id The ID of the expense record to delete.
+         */
+        async function deleteExpense(id) {
+            if (!confirm('Are you sure you want to delete this expense record?')) {
+                return;
+            }
+            try {
+                const response = await authenticatedFetch(`${API_BASE_URL}/expenses/${id}`, {
+                    method: 'DELETE'
+                });
+                if (response && response.status === 204) {
+                    alert('Expense record deleted successfully!');
+                    fetchExpenses();
+                } else if (response) {
+                    const errorData = await response.json();
+                    alert('Failed to delete expense record: ' + errorData.error);
+                }
+            } catch (error) {
+                console.error('Error deleting expense record:', error);
+                alert('Failed to delete expense record: ' + error.message);
+            }
+        }
+
+        // --- Initial Setup and Event Listeners ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initially, only show the login section
+            document.getElementById('login-section').classList.add('active');
+            document.getElementById('main-content').style.display = 'none';
+
+            // Attach form submission handlers
+            document.getElementById('inventory-form').addEventListener('submit', submitInventoryForm);
+            document.getElementById('sale-form').addEventListener('submit', submitSaleForm);
+            document.getElementById('expense-form').addEventListener('submit', submitExpenseForm);
+
+            // Set initial date filter for sales/expenses to today
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+            const dd = String(today.getDate()).padStart(2, '0');
+            const todayString = `${yyyy}-${mm}-${dd}`;
+            document.getElementById('sales-date-filter').value = todayString;
+            document.getElementById('expenses-date-filter').value = todayString;
+        });
+
+    </script>
 </body>
 </html>
