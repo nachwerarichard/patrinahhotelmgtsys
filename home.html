@@ -200,6 +200,138 @@
       </div>
     </form>
   </div>
+  <script>
+
+    // === Base Config ===
+const API_BASE = 'https://patrinahhotelmgtsys.onrender.com';
+const headers = {
+  'Content-Type': 'application/json',
+  'Authorization': 'Basic ' + btoa('admin:123')
+};
+
+// === Helpers ===
+function openModal(id) {
+  document.getElementById(id).classList.remove('hidden');
+}
+function closeModal(id) {
+  document.getElementById(id).classList.add('hidden');
+}
+
+// === Load Cash Records ===
+async function loadCashRecords() {
+  try {
+    const res = await fetch(`${API_BASE}/cash`, { headers });
+    const cashRecords = await res.json();
+    const tbody = document.getElementById('cash-table-body');
+    tbody.innerHTML = '';
+    cashRecords.forEach(cash => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="border px-2 py-1">UGX ${cash.hand.toLocaleString()}</td>
+        <td class="border px-2 py-1">UGX ${cash.bank.toLocaleString()}</td>
+        <td class="border px-2 py-1">${cash.receiptId || ''}</td>
+        <td class="border px-2 py-1">${cash.responsible || ''}</td>
+        <td class="border px-2 py-1">${new Date(cash.date).toLocaleDateString()}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  } catch (err) {
+    console.error('Error loading cash records:', err);
+  }
+}
+
+// === Cash Form Submission ===
+document.getElementById('cash-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const hand = parseFloat(document.getElementById('cash-hand').value);
+  const bank = parseFloat(document.getElementById('cash-bank').value);
+  const receiptId = document.getElementById('cash-receipt').value.trim();
+  const responsible = document.getElementById('cash-person').value.trim();
+
+  try {
+    const res = await fetch(`${API_BASE}/cash`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ hand, bank, receiptId, responsible })
+    });
+    if (res.ok) {
+      alert('Cash record added');
+      closeModal('cash-modal');
+      loadCashRecords();
+    } else {
+      alert('Failed to add cash record');
+    }
+  } catch (err) {
+    console.error('Error adding cash:', err);
+  }
+  e.target.reset();
+});
+
+// === Date Filtering ===
+document.getElementById('date-filter').addEventListener('change', async (e) => {
+  const date = e.target.value;
+  if (!date) return;
+
+  const salesRes = await fetch(`${API_BASE}/sales?date=${date}`, { headers });
+  const expensesRes = await fetch(`${API_BASE}/expenses?date=${date}`, { headers });
+
+  const sales = await salesRes.json();
+  const expenses = await expensesRes.json();
+
+  updateSalesTable(sales);
+  updateExpensesTable(expenses);
+});
+
+// === Update Tables ===
+function updateSalesTable(sales) {
+  const tbody = document.getElementById('sales-table-body-bar');
+  tbody.innerHTML = '';
+  sales.forEach(sale => {
+    const sumBP = sale.bp * sale.number;
+    const sumSP = sale.sp * sale.number;
+    const profit = sumSP - sumBP;
+    const percent = ((profit / sumBP) * 100).toFixed(2);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="border px-2 py-1">${sale.item}</td>
+      <td class="border px-2 py-1">${sale.number}</td>
+      <td class="border px-2 py-1">${sale.bp}</td>
+      <td class="border px-2 py-1">${sale.sp}</td>
+      <td class="border px-2 py-1">${sumBP}</td>
+      <td class="border px-2 py-1">${sumSP}</td>
+      <td class="border px-2 py-1">${profit}</td>
+      <td class="border px-2 py-1">${percent}%</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function updateExpensesTable(expenses) {
+  const tbody = document.getElementById('expenses-table-body-bar');
+  tbody.innerHTML = '';
+  expenses.forEach(exp => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="border px-2 py-1">${exp.description}</td>
+      <td class="border px-2 py-1">${exp.amount}</td>
+      <td class="border px-2 py-1">${new Date(exp.date).toLocaleDateString()}</td>
+      <td class="border px-2 py-1">${exp.receiptId || ''}</td>
+      <td class="border px-2 py-1">${exp.source || ''}</td>
+      <td class="border px-2 py-1">${exp.responsible || ''}</td>
+      <td class="border px-2 py-1">
+        <button class="text-red-600 hover:underline" onclick="deleteExpense('${exp._id}')">Delete</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// === Initial Load ===
+window.addEventListener('DOMContentLoaded', () => {
+  loadCashRecords();
+});
+
+  </script>
 <script src= "script1.js"></script>
 </body>
 
