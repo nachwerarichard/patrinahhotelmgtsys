@@ -195,11 +195,38 @@ app.get('/inventory', auth, async (req, res) => {
 
 app.put('/inventory/:id', auth, async (req, res) => {
   try {
-    const doc = await Inventory.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    // Note: The low stock check here means manually updating inventory can also trigger alerts.
+    // 1. Find the existing inventory document
+    const existingDoc = await Inventory.findById(req.params.id);
+
+    if (!existingDoc) {
+      return res.status(404).json({ error: 'Inventory item not found' });
+    }
+
+    // 2. Create an object with potentially updated values
+    // Use values from req.body if they exist, otherwise use existing values
+    const updatedValues = {
+      item: req.body.item !== undefined ? req.body.item : existingDoc.item,
+      opening: req.body.opening !== undefined ? req.body.opening : existingDoc.opening,
+      purchases: req.body.purchases !== undefined ? req.body.purchases : existingDoc.purchases,
+      sales: req.body.sales !== undefined ? req.body.sales : existingDoc.sales,
+      spoilage: req.body.spoilage !== undefined ? req.body.spoilage : existingDoc.spoilage,
+    };
+
+    // 3. Recalculate the closing stock based on the updated values
+    const newClosing = updatedValues.opening + updatedValues.purchases - updatedValues.sales - updatedValues.spoilage;
+
+    // 4. Update the document in the database with all fields, including the new closing
+    const doc = await Inventory.findByIdAndUpdate(
+      req.params.id,
+      { ...updatedValues, closing: newClosing }, // Merge updated fields with the recalculated closing
+      { new: true } // Return the updated document
+    );
+
+    // 5. Low stock check (remains the same)
     if (doc.closing < Number(process.env.LOW_STOCK_THRESHOLD)) {
       notifyLowStock(doc.item, doc.closing);
     }
+
     res.json(doc);
   } catch (err) {
     res.status(500).json({ error: err.message });
