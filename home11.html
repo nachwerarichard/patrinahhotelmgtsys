@@ -17,7 +17,7 @@
             min-height: 100vh;
         }
         /* Styles for the main application container */
-        .container {
+        #main-container { /* Changed from .container to #main-container */
             width: 100%;
             max-width: 1200px;
             margin: 20px; /* Consistent margin around the container */
@@ -25,6 +25,7 @@
             padding: 30px;
             border-radius: 10px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            display: none; /* Initially hidden */
         }
         h1, h2, h3 {
             color: #0056b3;
@@ -271,6 +272,7 @@
     </style>
 </head>
 <body>
+    <!-- Login Section - OUTSIDE the main application container -->
     <div id="login-section">
         <h2>Login</h2>
         <input type="text" id="username" placeholder="Username">
@@ -279,7 +281,8 @@
         <p id="login-message"></p>
     </div>
 
-    <div id="main-container" class="container" style="display: none;">
+    <!-- Main Application Container - Initially hidden -->
+    <div id="main-container">
         <h1>Patrinah Hotel Management System</h1>
 
         <div id="main-content">
@@ -294,6 +297,7 @@
                 <button id="nav-audit-logs" onclick="showSection('audit-logs')">Audit Logs</button>
             </nav>
 
+            <!-- Inventory Section -->
             <div id="inventory-section" class="section">
                 <h2>Inventory Management</h2>
 
@@ -332,10 +336,12 @@
                         </tr>
                     </thead>
                     <tbody>
-                        </tbody>
+                        <!-- Inventory items will be loaded here -->
+                    </tbody>
                 </table>
             </div>
 
+            <!-- Sales Section -->
             <div id="sales-section" class="section">
                 <h2>Sales Management</h2>
 
@@ -371,10 +377,12 @@
                         </tr>
                     </thead>
                     <tbody>
-                        </tbody>
+                        <!-- Sales records will be loaded here -->
+                    </tbody>
                 </table>
             </div>
 
+            <!-- Expenses Section -->
             <div id="expenses-section" class="section">
                 <h2>Expenses Management</h2>
 
@@ -413,10 +421,12 @@
                         </tr>
                     </thead>
                     <tbody>
-                        </tbody>
+                        <!-- Expense records will be loaded here -->
+                    </tbody>
                 </table>
             </div>
 
+            <!-- Cash Management Section -->
             <div id="cash-management-section" class="section">
                 <h2>Cash Management</h2>
 
@@ -456,10 +466,12 @@
                         </tr>
                     </thead>
                     <tbody>
-                        </tbody>
+                        <!-- Cash records will be loaded here -->
+                    </tbody>
                 </table>
             </div>
 
+            <!-- Reports Section -->
             <div id="reports-section" class="section">
                 <h2>Financial Reports</h2>
 
@@ -500,10 +512,12 @@
                         </tr>
                     </thead>
                     <tbody>
-                        </tbody>
+                        <!-- Department reports will be loaded here -->
+                    </tbody>
                 </table>
             </div>
 
+            <!-- Audit Logs Section -->
             <div id="audit-logs-section" class="section">
                 <h2>Audit Logs</h2>
 
@@ -517,7 +531,8 @@
                         </tr>
                     </thead>
                     <tbody>
-                        </tbody>
+                        <!-- Audit logs will be loaded here -->
+                    </tbody>
                 </table>
             </div>
 
@@ -549,27 +564,14 @@
                 const expensesFilter = document.querySelector('#expenses-section .expenses-filter-controls');
                 const expensesTable = document.getElementById('expenses-table');
 
-                if (sectionId === 'sales') {
-                    if (salesHeading) salesHeading.style.display = 'none';
-                    if (salesFilter) salesFilter.style.display = 'none';
-                    if (salesTable) salesTable.style.display = 'none';
-                } else {
-                    // Ensure these are visible if not in sales section (e.g., if admin switches to sales)
-                    if (salesHeading) salesHeading.style.display = 'block';
-                    if (salesFilter) salesFilter.style.display = 'flex'; // Use flex for filter controls
-                    if (salesTable) salesTable.style.display = 'table';
-                }
+                if (salesHeading) salesHeading.style.display = 'none';
+                if (salesFilter) salesFilter.style.display = 'none';
+                if (salesTable) salesTable.style.display = 'none';
 
-                if (sectionId === 'expenses') {
-                    if (expensesHeading) expensesHeading.style.display = 'none';
-                    if (expensesFilter) expensesFilter.style.display = 'none';
-                    if (expensesTable) expensesTable.style.display = 'none';
-                } else {
-                    // Ensure these are visible if not in expenses section
-                    if (expensesHeading) expensesHeading.style.display = 'block';
-                    if (expensesFilter) expensesFilter.style.display = 'flex'; // Use flex for filter controls
-                    if (expensesTable) expensesTable.style.display = 'table';
-                }
+                if (expensesHeading) expensesHeading.style.display = 'none';
+                if (expensesFilter) expensesFilter.style.display = 'none';
+                if (expensesTable) expensesTable.style.display = 'none';
+
             } else {
                 // For admin or other roles, ensure all elements are visible in sales/expenses sections
                 const salesHeading = document.querySelector('#sales-section .sales-records-heading');
@@ -601,8 +603,8 @@
             const navButtons = document.querySelectorAll('nav button');
 
             console.log('updateUIForUserRole called. AuthToken present:', !!authToken); // Debugging log
-            console.log('Current Username:', currentUsername); // ADDED THIS LINE FOR DEBUGGING
-            console.log('Current User Role:', currentUserRole); // ADDED THIS LINE FOR DEBUGGING
+            console.log('Current Username:', currentUsername); // Debugging log
+            console.log('Current User Role:', currentUserRole); // Debugging log
 
             if (authToken && currentUsername && currentUserRole) {
                 userDisplay.textContent = `Logged in as: ${currentUsername} (${currentUserRole})`;
@@ -613,7 +615,7 @@
                 
                 mainContainer.style.display = 'block';
                 console.log('mainContainer.style.display set to:', mainContainer.style.display);
-                mainContent.style.display = 'block';
+                // mainContent.style.display is already 'block' by default in the HTML, no need to set here unless it's explicitly hidden by other CSS
                 
                 // --- Manage Navigation Button Visibility based on role ---
                 navButtons.forEach(button => {
@@ -641,7 +643,7 @@
             } else {
                 // Not logged in: Show login section, hide main container
                 userDisplay.textContent = '';
-                mainContent.style.display = 'none'; // Ensure main content is hidden
+                // mainContent.style.display = 'none'; // No need to hide main-content directly if main-container is hidden
                 mainContainer.style.display = 'none'; // Hide the main container
                 console.log('mainContainer.style.display set to:', mainContainer.style.display);
                 
@@ -691,9 +693,9 @@
                 fetchInventory();
             } else if (sectionId === 'sales') {
                 if (currentUserRole === 'bar_staff') {
-                    // For bar staff, clear the table and show a message to prompt filtering.
+                    // For bar staff, clear the table and show a message to prompt recording.
                     document.querySelector('#sales-table tbody').innerHTML = '<tr><td colspan="6" style="text-align: center; color: #555;">Use the form above to record a new sale.</td></tr>';
-                    // Ensure the date filter is set to today for convenience if they click "Apply Filters" (though filters are hidden)
+                    // Ensure the date filter is set to today for convenience (though filters are hidden)
                     const today = new Date();
                     const yyyy = today.getFullYear();
                     const mm = String(today.getMonth() + 1).padStart(2, '0');
@@ -1172,7 +1174,7 @@
             }
 
             expenses.forEach(expense => {
-                const row = tbody.insertRow(); // Changed from tbody.insertCell() to tbody.insertRow()
+                const row = tbody.insertRow();
                 row.insertCell().textContent = expense.description;
                 row.insertCell().textContent = expense.amount;
                 row.insertCell().textContent = new Date(expense.date).toLocaleDateString();
