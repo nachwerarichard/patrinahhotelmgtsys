@@ -3,10 +3,10 @@ const express = require('express');
 const mongoose = require('mongoose');
 const nodemailer = require('nodemailer');
 const cors = require('cors');
-const bcrypt = require('bcryptjs'); // NEW: For password hashing
+// const bcrypt = require('bcryptjs'); // REMOVED: Not needed for hardcoded passwords
 
 const app = express();
-app.use(express.json()); // Use built-in Express JSON parser
+app.use(express.json());
 
 // CORS config - allow your frontend origin
 app.use(cors({
@@ -15,6 +15,17 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
+// --- !!! WARNING: SERIOUS SECURITY VULNERABILITY !!! ---
+// Hardcoding users for demonstration purposes only.
+// DO NOT USE THIS IN PRODUCTION OR FOR ANY REAL APPLICATION.
+const HARDCODED_USERS = {
+    'admin': { password: '123', role: 'admin' },
+    'bar_staff_user': { password: '456', role: 'bar_staff' },
+    // Add more hardcoded users as needed for testing
+};
+// --- !!! END OF WARNING !!! ---
+
+
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI, { 
   useNewUrlParser: true, 
@@ -22,12 +33,8 @@ mongoose.connect(process.env.MONGO_URI, {
 }).then(() => console.log('MongoDB connected'))
   .catch(err => console.error('MongoDB connection error:', err));
 
-// --- NEW: User Schema ---
-const User = mongoose.model('User', new mongoose.Schema({
-  username: { type: String, required: true, unique: true },
-  password: { type: String, required: true }, // Hashed password
-  role: { type: String, enum: ['admin', 'bar_staff'], default: 'bar_staff' } // Define roles
-}));
+// --- REMOVED: User Schema (Not used for hardcoded auth) ---
+// const User = mongoose.model('User', new mongoose.Schema({ ... }));
 
 // --- NEW: Audit Log Schema ---
 const AuditLog = mongoose.model('AuditLog', new mongoose.Schema({
@@ -46,7 +53,7 @@ async function logAction(action, user, details = {}) {
   }
 }
 
-// --- MODIFIED: Authentication Middleware ---
+// --- MODIFIED: Authentication Middleware (Uses hardcoded users) ---
 async function auth(req, res, next) {
   const authHeader = req.headers.authorization;
   if (!authHeader) return res.status(401).json({ error: 'No authorization header' });
@@ -58,20 +65,15 @@ async function auth(req, res, next) {
     const credentials = Buffer.from(token, 'base64').toString('ascii');
     const [username, password] = credentials.split(':');
 
-    // Find the user in the database
-    const user = await User.findOne({ username });
-    if (!user) {
+    // --- !!! SERIOUS SECURITY RISK: PLAIN-TEXT PASSWORD COMPARISON !!! ---
+    const user = HARDCODED_USERS[username];
+
+    if (!user || user.password !== password) { // Directly comparing plain-text passwords
       return res.status(401).json({ error: 'Invalid username or password' });
     }
 
-    // Compare provided password with hashed password from DB
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(401).json({ error: 'Invalid username or password' });
-    }
-
-    // Attach user object (including role) to the request for subsequent middleware/routes
-    req.user = user; 
+    // Attach user object (including role) to the request
+    req.user = { username: user.username, role: user.role, id: username }; // Using username as ID
     next();
   } catch (err) {
     console.error('Authentication error:', err);
@@ -152,63 +154,35 @@ async function notifyLowStock(item, current) {
 }
 
 
-// --- NEW: User Management Endpoints (Admin Only) ---
-// POST /users - Create a new user
-app.post('/users', auth, authorize('admin'), async (req, res) => {
-  try {
-    const { username, password, role } = req.body;
-    // Hash the password before saving
-    const hashedPassword = await bcrypt.hash(password, 10); // Salt rounds: 10
-    const newUser = await User.create({ username, password: hashedPassword, role });
-    await logAction('User Created', req.user.username, { newUsername: newUser.username, role: newUser.role });
-    res.status(201).json({ message: 'User created successfully', user: { username: newUser.username, role: newUser.role } });
-  } catch (err) {
-    if (err.code === 11000) { // Duplicate key error
-      return res.status(400).json({ error: 'Username already exists.' });
-    }
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// GET /users - Get all users (Admin Only)
-app.get('/users', auth, authorize('admin'), async (req, res) => {
-    try {
-        const users = await User.find({}, { password: 0 }); // Exclude password from response
-        res.json(users);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
+// --- REMOVED: User Management Endpoints (No longer managing users in DB) ---
+// app.post('/users', auth, authorize('admin'), async (req, res) => { ... });
+// app.get('/users', auth, authorize('admin'), async (req, res) => { ... });
 
 
-// --- MODIFIED: Login Endpoint ---
+// --- MODIFIED: Login Endpoint (Uses hardcoded users) ---
 app.post('/login', async (req, res) => {
     const { username, password } = req.body;
 
-    try {
-        const user = await User.findOne({ username });
-        if (!user) {
-            await logAction('Login Attempt Failed', 'N/A', { username, reason: 'User not found' });
-            return res.status(401).json({ error: 'Invalid username or password' });
-        }
+    // --- !!! SERIOUS SECURITY RISK: PLAIN-TEXT PASSWORD COMPARISON !!! ---
+    const user = HARDCODED_USERS[username];
 
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) {
-            await logAction('Login Attempt Failed', username, { reason: 'Incorrect password' });
-            return res.status(401).json({ error: 'Invalid username or password' });
-        }
-
-        // Login successful, respond with username and role
-        await logAction('Login Successful', username);
-        res.status(200).json({ username: user.username, role: user.role });
-    } catch (error) {
-        console.error('Login error:', error);
-        res.status(500).json({ error: 'Login failed due to server error.' });
+    if (!user || user.password !== password) { // Directly comparing plain-text passwords
+        console.warn(`Login failed for username: ${username}. Invalid credentials.`);
+        await logAction('Login Attempt Failed', username, { reason: 'Invalid credentials provided.' });
+        return res.status(401).json({ error: 'Invalid username or password' });
     }
+
+    // Login successful
+    console.log(`Login successful for username: ${username}, role: ${user.role}`);
+    await logAction('Login Successful', username);
+    
+    // Respond with user info, including their role
+    res.status(200).json({ username: user.username, role: user.role });
 });
 
 // --- NEW: Logout Endpoint ---
 app.post('/logout', auth, async (req, res) => {
+    // Note: req.user is populated by the auth middleware before this route is hit
     await logAction('Logout', req.user.username);
     res.status(200).json({ message: 'Logged out successfully' });
 });
@@ -484,7 +458,6 @@ app.delete('/cash-journal/:id', auth, authorize('admin'), async (req, res) => { 
 // --- NEW: Audit Log Endpoints (Admin Only) ---
 app.get('/audit-logs', auth, authorize('admin'), async (req, res) => {
     try {
-        // You can add filtering/pagination here if logs become too numerous
         const logs = await AuditLog.find().sort({ timestamp: -1 }).limit(100); // Limit to last 100 for performance
         res.json(logs);
     } catch (err) {
