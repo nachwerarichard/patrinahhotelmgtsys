@@ -594,24 +594,26 @@
          * Updates the display of the current logged-in user and manages navigation button visibility.
          * Ensures the login form is hidden on success and sets nav button visibility based on role.
          */
-        function updateUIForUserRole() {
+        ffunction updateUIForUserRole() {
             const userDisplay = document.getElementById('current-user-display');
-            const mainContent = document.getElementById('main-content'); // This is inside #main-container
+            const mainContent = document.getElementById('main-content');
             const loginSection = document.getElementById('login-section');
-            const mainContainer = document.getElementById('main-container'); // Get reference to the main container
+            const mainContainer = document.getElementById('main-container');
             const navButtons = document.querySelectorAll('nav button');
 
-            console.log('updateUIForUserRole called. AuthToken present:', !!authToken); // Debugging log
+            console.log('updateUIForUserRole called. AuthToken present:', !!authToken);
+            console.log('Current Username:', currentUsername); // ADDED THIS LINE
+            console.log('Current User Role:', currentUserRole); // ADDED THIS LINE
 
             if (authToken && currentUsername && currentUserRole) {
                 userDisplay.textContent = `Logged in as: ${currentUsername} (${currentUserRole})`;
                 
                 // --- Hide Login Section, Show Main Container ---
                 loginSection.style.display = 'none';
-                console.log('loginSection.style.display set to:', loginSection.style.display); // Debugging log
+                console.log('loginSection.style.display set to:', loginSection.style.display);
                 
                 mainContainer.style.display = 'block';
-                console.log('mainContainer.style.display set to:', mainContainer.style.display); // Debugging log
+                console.log('mainContainer.style.display set to:', mainContainer.style.display);
                 mainContent.style.display = 'block';
                 
                 // --- Manage Navigation Button Visibility based on role ---
@@ -640,22 +642,15 @@
             } else {
                 // Not logged in: Show login section, hide main container
                 userDisplay.textContent = '';
-                mainContent.style.display = 'none'; // Ensure main content is hidden
-                mainContainer.style.display = 'none'; // Hide the main container
-                console.log('mainContainer.style.display set to:', mainContainer.style.display); // Debugging log
+                mainContent.style.display = 'none';
+                mainContainer.style.display = 'none';
+                console.log('mainContainer.style.display set to:', mainContainer.style.display);
                 
                 loginSection.style.display = 'block';
-                console.log('loginSection.style.display set to:', loginSection.style.display); // Debugging log
+                console.log('loginSection.style.display set to:', loginSection.style.display);
             }
-            console.log('End of updateUIForUserRole.'); // Debugging log
+            console.log('End of updateUIForUserRole.');
         }
-
-
-        /**
-         * Hides all sections and shows the specified one.
-         * Includes role-based access checks and special handling for bar staff sales view.
-         * @param {string} sectionId The ID of the section to show.
-         */
         function showSection(sectionId) {
             // Define which sections are allowed for each role
             const allowedSections = {
