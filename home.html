@@ -88,7 +88,7 @@
         form input[type="number"],
         form input[type="date"],
         form input[type="password"],
-        form select { /* Added select for roles */
+        form select {
             width: calc(100% - 24px);
             padding: 12px;
             margin-bottom: 15px;
@@ -288,7 +288,7 @@
                 <button id="nav-expenses" onclick="showSection('expenses')">Expenses</button>
                 <button id="nav-cash-management" onclick="showSection('cash-management')">Cash Management</button>
                 <button id="nav-reports" onclick="showSection('reports')">Reports</button>
-                <button id="nav-users" onclick="showSection('users')" style="display: none;">User Management</button> <!-- Admin Only -->
+                <!-- Removed User Management button as it's no longer supported by hardcoded backend -->
                 <button id="nav-audit-logs" onclick="showSection('audit-logs')" style="display: none;">Audit Logs</button> <!-- Admin Only -->
             </nav>
 
@@ -510,41 +510,10 @@
                 </table>
             </div>
 
-            <!-- NEW: User Management Section -->
-            <div id="users-section" class="section">
-                <h2>User Management</h2>
+            <!-- REMOVED: User Management Section - No longer supported by hardcoded backend -->
+            <!-- <div id="users-section" class="section">...</div> -->
 
-                <h3>Create New User</h3>
-                <form id="user-form">
-                    <input type="hidden" id="user-id">
-                    <label for="new-username">Username:</label>
-                    <input type="text" id="new-username" required>
-                    <label for="new-password">Password:</label>
-                    <input type="password" id="new-password" required>
-                    <label for="new-role">Role:</label>
-                    <select id="new-role" required>
-                        <option value="bar_staff">Bar Staff</option>
-                        <option value="admin">Admin</option>
-                    </select>
-                    <button type="submit">Create User</button>
-                </form>
-
-                <h3>Existing Users</h3>
-                <table id="users-table">
-                    <thead>
-                        <tr>
-                            <th>Username</th>
-                            <th>Role</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- Users will be loaded here -->
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- NEW: Audit Logs Section -->
+            <!-- Audit Logs Section -->
             <div id="audit-logs-section" class="section">
                 <h2>Audit Logs</h2>
 
@@ -568,9 +537,9 @@
 
     <script>
         const API_BASE_URL = 'https://patrinahhotelmgtsys.onrender.com';
-        let authToken = localStorage.getItem('authToken') || ''; // Get token from local storage
-        let currentUsername = localStorage.getItem('username') || ''; // Get username
-        let currentUserRole = localStorage.getItem('userRole') || ''; // Get role
+        let authToken = localStorage.getItem('authToken') || '';
+        let currentUsername = localStorage.getItem('username') || '';
+        let currentUserRole = localStorage.getItem('userRole') || '';
 
         // --- Utility Functions ---
 
@@ -589,29 +558,27 @@
                 loginSection.classList.remove('active');
 
                 // Manage navigation button visibility based on role
-                const adminOnlyButtons = ['nav-users', 'nav-audit-logs'];
-                adminOnlyButtons.forEach(buttonId => {
-                    const button = document.getElementById(buttonId);
-                    if (button) {
-                        button.style.display = (currentUserRole === 'admin') ? 'inline-block' : 'none';
-                    }
-                });
+                const navButtons = document.querySelectorAll('nav button');
+                navButtons.forEach(button => {
+                    button.style.display = 'inline-block'; // Default to visible
 
-                // Bar staff can only access Sales, Expenses, Cash Management, Reports
-                const barStaffAllowedButtons = ['nav-sales', 'nav-expenses', 'nav-cash-management', 'nav-reports'];
-                document.querySelectorAll('nav button').forEach(button => {
-                    if (!adminOnlyButtons.includes(button.id)) { // Don't hide admin buttons
-                        if (currentUserRole === 'bar_staff' && !barStaffAllowedButtons.includes(button.id)) {
-                            button.style.display = 'none';
-                        } else if (currentUserRole === 'bar_staff' && barStaffAllowedButtons.includes(button.id)) {
-                             button.style.display = 'inline-block'; // Ensure they are shown
-                        } else if (currentUserRole === 'admin') {
-                            // Admins see all by default, ensure they are not hidden by bar_staff logic
+                    if (currentUserRole === 'admin') {
+                        // Admins see all buttons (including Audit Logs)
+                        if (button.id === 'nav-audit-logs') {
                             button.style.display = 'inline-block';
+                        }
+                    } else if (currentUserRole === 'bar_staff') {
+                        // Bar staff can only access Sales, Expenses, Cash Management, Reports
+                        const barStaffAllowedButtons = ['nav-sales', 'nav-expenses', 'nav-cash-management', 'nav-reports'];
+                        if (!barStaffAllowedButtons.includes(button.id)) {
+                            button.style.display = 'none'; // Hide buttons not allowed for bar staff
+                        }
+                        // Ensure Audit Logs is hidden for bar staff
+                        if (button.id === 'nav-audit-logs') {
+                            button.style.display = 'none';
                         }
                     }
                 });
-
 
                 // Show default section based on role
                 if (currentUserRole === 'admin') {
@@ -671,21 +638,16 @@
                     endInput.value = today.toISOString().split('T')[0];
                 }
                 generateReports();
-            } else if (sectionId === 'users') { // NEW: User Management
-                if (currentUserRole === 'admin') {
-                    fetchUsers();
-                } else {
-                    alert('Access Denied: Only administrators can view user management.');
-                    showSection(currentUserRole === 'bar_staff' ? 'sales' : 'inventory'); // Redirect if not admin
-                }
-            } else if (sectionId === 'audit-logs') { // NEW: Audit Logs
+            } else if (sectionId === 'audit-logs') { // Audit Logs
                 if (currentUserRole === 'admin') {
                     fetchAuditLogs();
                 } else {
                     alert('Access Denied: Only administrators can view audit logs.');
-                    showSection(currentUserRole === 'bar_staff' ? 'sales' : 'inventory'); // Redirect if not admin
+                    // Redirect to a default section if not admin
+                    showSection(currentUserRole === 'bar_staff' ? 'sales' : 'inventory');
                 }
             }
+            // Removed 'users' section handling as it's no longer present
         }
 
         /**
@@ -713,7 +675,7 @@
                 if (response.status === 401 || response.status === 403) {
                     const errorData = await response.json();
                     alert(`Access Denied: ${errorData.error || 'Invalid credentials or insufficient permissions.'}`);
-                    logout();
+                    logout(); // Force logout on auth/authz failure
                     return null;
                 }
                 if (!response.ok && response.status !== 204) {
@@ -747,7 +709,8 @@
 
                 if (response.ok) {
                     const data = await response.json();
-                    authToken = btoa(`${username}:${password}`); // Generate token AFTER successful validation
+                    // For hardcoded auth, the token is derived from the plain credentials
+                    authToken = btoa(`${username}:${password}`); 
                     currentUsername = data.username;
                     currentUserRole = data.role;
 
@@ -1449,98 +1412,14 @@
             }
         }
 
-        // --- NEW: User Management Functions ---
-        async function fetchUsers() {
-            try {
-                const response = await authenticatedFetch(`${API_BASE_URL}/users`);
-                if (!response) return;
-                const users = await response.json();
-                renderUsersTable(users);
-            } catch (error) {
-                console.error('Error fetching users:', error);
-                alert('Failed to fetch users: ' + error.message);
-            }
-        }
+        // --- REMOVED: User Management Functions - No longer supported by hardcoded backend ---
+        // async function fetchUsers() { ... }
+        // function renderUsersTable(users) { ... }
+        // async function submitUserForm(event) { ... }
+        // async function deleteUser(id, username) { ... }
 
-        function renderUsersTable(users) {
-            const tbody = document.querySelector('#users-table tbody');
-            tbody.innerHTML = '';
-            if (users.length === 0) {
-                const row = tbody.insertRow();
-                row.insertCell().colSpan = 3;
-                row.insertCell().textContent = 'No users found.';
-                return;
-            }
 
-            users.forEach(user => {
-                const row = tbody.insertRow();
-                row.insertCell().textContent = user.username;
-                row.insertCell().textContent = user.role;
-                const actionsCell = row.insertCell();
-                actionsCell.className = 'actions';
-
-                // Only admin can delete users (no edit endpoint for users in backend yet)
-                if (currentUserRole === 'admin') {
-                    const deleteButton = document.createElement('button');
-                    deleteButton.textContent = 'Delete';
-                    deleteButton.className = 'delete';
-                    deleteButton.onclick = () => deleteUser(user._id, user.username);
-                    actionsCell.appendChild(deleteButton);
-                }
-            });
-        }
-
-        async function submitUserForm(event) {
-            event.preventDefault();
-            if (currentUserRole !== 'admin') {
-                alert('Permission Denied: Only administrators can create users.');
-                return;
-            }
-            const username = document.getElementById('new-username').value;
-            const password = document.getElementById('new-password').value;
-            const role = document.getElementById('new-role').value;
-
-            try {
-                const response = await authenticatedFetch(`${API_BASE_URL}/users`, {
-                    method: 'POST',
-                    body: JSON.stringify({ username, password, role })
-                });
-                if (response) {
-                    const result = await response.json();
-                    alert(result.message);
-                    document.getElementById('user-form').reset();
-                    fetchUsers();
-                }
-            } catch (error) {
-                console.error('Error creating user:', error);
-                alert('Failed to create user: ' + error.message);
-            }
-        }
-
-        async function deleteUser(id, username) {
-            if (currentUserRole !== 'admin') {
-                alert('Permission Denied: Only administrators can delete users.');
-                return;
-            }
-            if (!confirm(`Are you sure you want to delete user "${username}"?`)) return;
-            try {
-                const response = await authenticatedFetch(`${API_BASE_URL}/users/${id}`, {
-                    method: 'DELETE'
-                });
-                if (response && response.status === 204) {
-                    alert('User deleted successfully!');
-                    fetchUsers();
-                } else if (response) {
-                    const errorData = await response.json();
-                    alert('Failed to delete user: ' + errorData.error);
-                }
-            } catch (error) {
-                console.error('Error deleting user:', error);
-                alert('Failed to delete user: ' + error.message);
-            }
-        }
-
-        // --- NEW: Audit Logs Functions ---
+        // --- Audit Logs Functions ---
         async function fetchAuditLogs() {
             try {
                 const response = await authenticatedFetch(`${API_BASE_URL}/audit-logs`);
@@ -1583,7 +1462,7 @@
             document.getElementById('sale-form').addEventListener('submit', submitSaleForm);
             document.getElementById('expense-form').addEventListener('submit', submitExpenseForm);
             document.getElementById('cash-journal-form').addEventListener('submit', submitCashJournalForm);
-            document.getElementById('user-form').addEventListener('submit', submitUserForm); // NEW
+            // Removed: document.getElementById('user-form').addEventListener('submit', submitUserForm);
 
             // Set initial date filters for various sections
             const today = new Date();
