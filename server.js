@@ -1,9 +1,9 @@
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
-// const bodyParser = require('body-parser'); // <-- Can be removed
 const nodemailer = require('nodemailer');
 const cors = require('cors');
+const bcrypt = require('bcryptjs'); // NEW: For password hashing
 
 const app = express();
 app.use(express.json()); // Use built-in Express JSON parser
@@ -15,26 +15,6 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-// app.use(bodyParser.json()); // <-- REMOVE THIS LINE, express.json() is sufficient
-
-// Basic Auth middleware
-function auth(req, res, next) {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) return res.status(401).json({ error: 'No authorization header' });
-
-  const token = authHeader.split(' ')[1]; // Basic <token>
-  if (!token) return res.status(401).json({ error: 'Malformed authorization header' });
-
-  const credentials = Buffer.from(token, 'base64').toString('ascii');
-  const [username, password] = credentials.split(':');
-
-  if (username === 'admin' && password === '123') {
-    next();
-  } else {
-    res.status(403).json({ error: 'Invalid credentials' });
-  }
-}
-
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI, { 
   useNewUrlParser: true, 
@@ -42,22 +22,94 @@ mongoose.connect(process.env.MONGO_URI, {
 }).then(() => console.log('MongoDB connected'))
   .catch(err => console.error('MongoDB connection error:', err));
 
-// Schemas (Defined here for clarity, order doesn't strictly matter if all are defined before use)
+// --- NEW: User Schema ---
+const User = mongoose.model('User', new mongoose.Schema({
+  username: { type: String, required: true, unique: true },
+  password: { type: String, required: true }, // Hashed password
+  role: { type: String, enum: ['admin', 'bar_staff'], default: 'bar_staff' } // Define roles
+}));
+
+// --- NEW: Audit Log Schema ---
+const AuditLog = mongoose.model('AuditLog', new mongoose.Schema({
+  action: { type: String, required: true }, // e.g., 'Login', 'Logout', 'Sale Created', 'Inventory Updated'
+  user: { type: String, required: true }, // Username of the person performing the action
+  timestamp: { type: Date, default: Date.now },
+  details: { type: mongoose.Schema.Types.Mixed } // Store relevant details about the action
+}));
+
+// --- NEW: Helper function to create audit log entries ---
+async function logAction(action, user, details = {}) {
+  try {
+    await AuditLog.create({ action, user, details });
+  } catch (error) {
+    console.error('Error logging audit action:', error);
+  }
+}
+
+// --- MODIFIED: Authentication Middleware ---
+async function auth(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) return res.status(401).json({ error: 'No authorization header' });
+
+  const token = authHeader.split(' ')[1]; // Expecting "Basic <base64encoded_username:password>"
+  if (!token) return res.status(401).json({ error: 'Malformed authorization header' });
+
+  try {
+    const credentials = Buffer.from(token, 'base64').toString('ascii');
+    const [username, password] = credentials.split(':');
+
+    // Find the user in the database
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid username or password' });
+    }
+
+    // Compare provided password with hashed password from DB
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ error: 'Invalid username or password' });
+    }
+
+    // Attach user object (including role) to the request for subsequent middleware/routes
+    req.user = user; 
+    next();
+  } catch (err) {
+    console.error('Authentication error:', err);
+    res.status(500).json({ error: 'Authentication failed' });
+  }
+}
+
+// --- NEW: Authorization Middleware ---
+function authorize(roles = []) {
+  if (typeof roles === 'string') {
+    roles = [roles];
+  }
+
+  return (req, res, next) => {
+    // req.user is populated by the 'auth' middleware
+    if (!req.user || (roles.length > 0 && !roles.includes(req.user.role))) {
+      return res.status(403).json({ error: 'Forbidden: You do not have the required permissions.' });
+    }
+    next();
+  };
+}
+
+// Schemas (Existing ones)
 const CashJournal = mongoose.model('CashJournal', new mongoose.Schema({
-    cashAtHand: Number, // Amount of physical cash currently on hand
-    cashBanked: Number, // Amount of cash deposited into the bank
-    bankReceiptId: String, // ID from the bank deposit slip
-    responsiblePerson: String, // Person responsible for this cash entry
-    date: { type: Date, default: Date.now } // Date of the cash entry
+    cashAtHand: Number, 
+    cashBanked: Number,
+    bankReceiptId: String,
+    responsiblePerson: String,
+    date: { type: Date, default: Date.now }
 }));
 
 const Inventory = mongoose.model('Inventory', new mongoose.Schema({
   item: String,
   opening: Number,
   purchases: Number,
-  sales: Number, // This will now reflect transactional sales
+  sales: Number,
   spoilage: Number,
-  closing: Number, // This will automatically decrease
+  closing: Number,
 }));
 
 const Sale = mongoose.model('Sale', new mongoose.Schema({
@@ -84,12 +136,12 @@ const transporter = nodemailer.createTransport({
   auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
 });
 
-// Low-stock notifier
+// Low-stock notifier (Existing)
 async function notifyLowStock(item, current) {
   try {
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
-      to: process.env.EMAIL_USER, // You might want to change this to an admin email
+      to: process.env.EMAIL_USER, 
       subject: `Low stock alert: ${item}`,
       text: `Stock for ${item} is now ${current}, below threshold! Please reorder.`
     });
@@ -99,8 +151,269 @@ async function notifyLowStock(item, current) {
   }
 }
 
-// --- Cash Management Endpoints ---
-app.post('/cash-journal', auth, async (req, res) => {
+
+// --- NEW: User Management Endpoints (Admin Only) ---
+// POST /users - Create a new user
+app.post('/users', auth, authorize('admin'), async (req, res) => {
+  try {
+    const { username, password, role } = req.body;
+    // Hash the password before saving
+    const hashedPassword = await bcrypt.hash(password, 10); // Salt rounds: 10
+    const newUser = await User.create({ username, password: hashedPassword, role });
+    await logAction('User Created', req.user.username, { newUsername: newUser.username, role: newUser.role });
+    res.status(201).json({ message: 'User created successfully', user: { username: newUser.username, role: newUser.role } });
+  } catch (err) {
+    if (err.code === 11000) { // Duplicate key error
+      return res.status(400).json({ error: 'Username already exists.' });
+    }
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /users - Get all users (Admin Only)
+app.get('/users', auth, authorize('admin'), async (req, res) => {
+    try {
+        const users = await User.find({}, { password: 0 }); // Exclude password from response
+        res.json(users);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+
+// --- MODIFIED: Login Endpoint ---
+app.post('/login', async (req, res) => {
+    const { username, password } = req.body;
+
+    try {
+        const user = await User.findOne({ username });
+        if (!user) {
+            await logAction('Login Attempt Failed', 'N/A', { username, reason: 'User not found' });
+            return res.status(401).json({ error: 'Invalid username or password' });
+        }
+
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            await logAction('Login Attempt Failed', username, { reason: 'Incorrect password' });
+            return res.status(401).json({ error: 'Invalid username or password' });
+        }
+
+        // Login successful, respond with username and role
+        await logAction('Login Successful', username);
+        res.status(200).json({ username: user.username, role: user.role });
+    } catch (error) {
+        console.error('Login error:', error);
+        res.status(500).json({ error: 'Login failed due to server error.' });
+    }
+});
+
+// --- NEW: Logout Endpoint ---
+app.post('/logout', auth, async (req, res) => {
+    await logAction('Logout', req.user.username);
+    res.status(200).json({ message: 'Logged out successfully' });
+});
+
+
+// --- MODIFIED: Inventory Endpoints (Admin Only) ---
+app.post('/inventory', auth, authorize('admin'), async (req, res) => {
+  try {
+    const { item, opening, purchases, sales, spoilage } = req.body;
+    const total = opening + purchases - sales - spoilage;
+    const doc = await Inventory.create({ item, opening, purchases, sales, spoilage, closing: total });
+    if (total < Number(process.env.LOW_STOCK_THRESHOLD)) {
+      notifyLowStock(item, total);
+    }
+    await logAction('Inventory Created', req.user.username, { item: doc.item, closing: doc.closing });
+    res.status(201).json(doc);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/inventory', auth, authorize('admin'), async (req, res) => {
+  try {
+    const { item, low } = req.query;
+    const filter = {};
+    if (item) filter.item = new RegExp(item, 'i');
+    if (low) filter.closing = { $lt: Number(low) };
+    const docs = await Inventory.find(filter);
+    res.json(docs);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put('/inventory/:id', auth, authorize('admin'), async (req, res) => {
+  try {
+    const existingDoc = await Inventory.findById(req.params.id);
+    if (!existingDoc) {
+      return res.status(404).json({ error: 'Inventory item not found' });
+    }
+
+    const updatedValues = {
+      item: req.body.item !== undefined ? req.body.item : existingDoc.item,
+      opening: req.body.opening !== undefined ? req.body.opening : existingDoc.opening,
+      purchases: req.body.purchases !== undefined ? req.body.purchases : existingDoc.purchases,
+      sales: req.body.sales !== undefined ? req.body.sales : existingDoc.sales,
+      spoilage: req.body.spoilage !== undefined ? req.body.spoilage : existingDoc.spoilage,
+    };
+    const newClosing = updatedValues.opening + updatedValues.purchases - updatedValues.sales - updatedValues.spoilage;
+    
+    const doc = await Inventory.findByIdAndUpdate(
+      req.params.id,
+      { ...updatedValues, closing: newClosing },
+      { new: true }
+    );
+
+    if (doc.closing < Number(process.env.LOW_STOCK_THRESHOLD)) {
+      notifyLowStock(doc.item, doc.closing);
+    }
+    await logAction('Inventory Updated', req.user.username, { itemId: doc._id, item: doc.item, newClosing: doc.closing });
+    res.json(doc);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/inventory/:id', auth, authorize('admin'), async (req, res) => {
+  try {
+    const deletedDoc = await Inventory.findByIdAndDelete(req.params.id);
+    if (!deletedDoc) {
+        return res.status(404).json({ error: 'Inventory item not found' });
+    }
+    await logAction('Inventory Deleted', req.user.username, { itemId: deletedDoc._id, item: deletedDoc.item });
+    res.sendStatus(204);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- MODIFIED: Sales endpoints (Admin: All, Bar Staff: POST only) ---
+app.post('/sales', auth, authorize(['admin', 'bar_staff']), async (req, res) => {
+  try {
+    const { item, number } = req.body;
+    const sale = await Sale.create({ ...req.body, date: new Date() });
+
+    if (item && typeof number === 'number' && number > 0) {
+      try {
+        const updatedInventoryItem = await Inventory.findOneAndUpdate(
+          { item: item },
+          { $inc: { closing: -number, sales: number } },
+          { new: true }
+        );
+
+        if (updatedInventoryItem) {
+          console.log(`Inventory updated for "${item}". New closing stock: ${updatedInventoryItem.closing}.`);
+          if (updatedInventoryItem.closing < Number(process.env.LOW_STOCK_THRESHOLD)) {
+            notifyLowStock(updatedInventoryItem.item, updatedInventoryItem.closing);
+          }
+        } else {
+          console.warn(`Warning: Sold item "${item}" not found in Inventory. Inventory not updated.`);
+        }
+      } catch (inventoryError) {
+        console.error(`Error updating inventory for item "${item}":`, inventoryError);
+      }
+    } else {
+      console.warn("Warning: Sale request missing valid 'item' or 'number' for inventory deduction. Inventory not updated.");
+    }
+    await logAction('Sale Created', req.user.username, { saleId: sale._id, item: sale.item, number: sale.number, sp: sale.sp });
+    res.status(201).json(sale);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/sales', auth, authorize(['admin', 'bar_staff']), async (req, res) => { // Both roles can view
+  try {
+    const { date } = req.query;
+    let query = {};
+    if (date) {
+      const start = new Date(date);
+      const end = new Date(date);
+      end.setHours(23, 59, 59, 999);
+      query.date = { $gte: start, $lte: end };
+    }
+    const sales = await Sale.find(query).sort({ date: -1 });
+    res.json(sales);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put('/sales/:id', auth, authorize('admin'), async (req, res) => { // Admin only for edit/delete
+  try {
+    const updated = await Sale.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!updated) return res.status(404).json({ error: 'Sale not found' });
+    await logAction('Sale Updated', req.user.username, { saleId: updated._id, item: updated.item, newNumber: updated.number });
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/sales/:id', auth, authorize('admin'), async (req, res) => { // Admin only for edit/delete
+  try {
+    const deleted = await Sale.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ error: 'Sale not found' });
+    await logAction('Sale Deleted', req.user.username, { saleId: deleted._id, item: deleted.item });
+    res.sendStatus(204);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- MODIFIED: Expenses endpoints (Admin: All, Bar Staff: POST only) ---
+app.post('/expenses', auth, authorize(['admin', 'bar_staff']), async (req, res) => {
+  try {
+    const exp = await Expense.create({ ...req.body, date: new Date() });
+    await logAction('Expense Created', req.user.username, { expenseId: exp._id, description: exp.description, amount: exp.amount });
+    res.status(201).json(exp);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/expenses', auth, authorize(['admin', 'bar_staff']), async (req, res) => { // Both roles can view
+  try {
+    const { date } = req.query;
+    let query = {};
+    if (date) {
+      const start = new Date(date);
+      const end = new Date(date);
+      end.setHours(23, 59, 59, 999);
+      query.date = { $gte: start, $lte: end };
+    }
+    const expenses = await Expense.find(query).sort({ date: -1 });
+    res.json(expenses);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put('/expenses/:id', auth, authorize('admin'), async (req, res) => { // Admin only for edit/delete
+  try {
+    const updated = await Expense.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!updated) return res.status(404).json({ error: 'Expense not found' });
+    await logAction('Expense Updated', req.user.username, { expenseId: updated._id, description: updated.description, newAmount: updated.amount });
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/expenses/:id', auth, authorize('admin'), async (req, res) => { // Admin only for edit/delete
+  try {
+    const deleted = await Expense.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ error: 'Expense not found' });
+    await logAction('Expense Deleted', req.user.username, { expenseId: deleted._id, description: deleted.description });
+    res.sendStatus(204);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- MODIFIED: Cash Management Endpoints (Admin: All, Bar Staff: POST only) ---
+app.post('/cash-journal', auth, authorize(['admin', 'bar_staff']), async (req, res) => {
     try {
         const { cashAtHand, cashBanked, bankReceiptId, responsiblePerson, date } = req.body;
         const newEntry = await CashJournal.create({
@@ -110,13 +423,14 @@ app.post('/cash-journal', auth, async (req, res) => {
             responsiblePerson,
             date: date ? new Date(date) : new Date()
         });
+        await logAction('Cash Entry Created', req.user.username, { entryId: newEntry._id, cashAtHand: newEntry.cashAtHand, cashBanked: newEntry.cashBanked });
         res.status(201).json(newEntry);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
-app.get('/cash-journal', auth, async (req, res) => {
+app.get('/cash-journal', auth, authorize(['admin', 'bar_staff']), async (req, res) => { // Both roles can view
     try {
         const { date, responsiblePerson } = req.query;
         const filter = {};
@@ -136,7 +450,7 @@ app.get('/cash-journal', auth, async (req, res) => {
     }
 });
 
-app.put('/cash-journal/:id', auth, async (req, res) => {
+app.put('/cash-journal/:id', auth, authorize('admin'), async (req, res) => { // Admin only for edit/delete
     try {
         const { cashAtHand, cashBanked, bankReceiptId, responsiblePerson, date } = req.body;
         const updatedEntry = await CashJournal.findByIdAndUpdate(
@@ -147,235 +461,38 @@ app.put('/cash-journal/:id', auth, async (req, res) => {
         if (!updatedEntry) {
             return res.status(404).json({ error: 'Cash journal entry not found' });
         }
+        await logAction('Cash Entry Updated', req.user.username, { entryId: updatedEntry._id, newCashAtHand: updatedEntry.cashAtHand });
         res.json(updatedEntry);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
-app.delete('/cash-journal/:id', auth, async (req, res) => {
+app.delete('/cash-journal/:id', auth, authorize('admin'), async (req, res) => { // Admin only for edit/delete
     try {
         const deletedEntry = await CashJournal.findByIdAndDelete(req.params.id);
         if (!deletedEntry) {
             return res.status(404).json({ error: 'Cash journal entry not found' });
         }
+        await logAction('Cash Entry Deleted', req.user.username, { entryId: deletedEntry._id });
         res.sendStatus(204);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
-// --- Inventory Endpoints ---
-app.post('/inventory', auth, async (req, res) => {
-  try {
-    const { item, opening, purchases, sales, spoilage } = req.body;
-    const total = opening + purchases - sales - spoilage;
-    const doc = await Inventory.create({ item, opening, purchases, sales, spoilage, closing: total });
-    if (total < Number(process.env.LOW_STOCK_THRESHOLD)) {
-      notifyLowStock(item, total);
-    }
-    res.json(doc);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.get('/inventory', auth, async (req, res) => {
-  try {
-    const { item, low } = req.query;
-    const filter = {};
-    if (item) filter.item = new RegExp(item, 'i');
-    if (low) filter.closing = { $lt: Number(low) };
-    const docs = await Inventory.find(filter);
-    res.json(docs);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.put('/inventory/:id', auth, async (req, res) => {
-  try {
-    // 1. Find the existing inventory document
-    const existingDoc = await Inventory.findById(req.params.id);
-
-    if (!existingDoc) {
-      return res.status(404).json({ error: 'Inventory item not found' });
-    }
-
-    // 2. Create an object with potentially updated values
-    // Use values from req.body if they exist, otherwise use existing values
-    const updatedValues = {
-      item: req.body.item !== undefined ? req.body.item : existingDoc.item,
-      opening: req.body.opening !== undefined ? req.body.opening : existingDoc.opening,
-      purchases: req.body.purchases !== undefined ? req.body.purchases : existingDoc.purchases,
-      sales: req.body.sales !== undefined ? req.body.sales : existingDoc.sales,
-      spoilage: req.body.spoilage !== undefined ? req.body.spoilage : existingDoc.spoilage,
-    };
-
-    // 3. Recalculate the closing stock based on the updated values
-    const newClosing = updatedValues.opening + updatedValues.purchases - updatedValues.sales - updatedValues.spoilage;
-
-    // 4. Update the document in the database with all fields, including the new closing
-    const doc = await Inventory.findByIdAndUpdate(
-      req.params.id,
-      { ...updatedValues, closing: newClosing }, // Merge updated fields with the recalculated closing
-      { new: true } // Return the updated document
-    );
-
-    // 5. Low stock check (remains the same)
-    if (doc.closing < Number(process.env.LOW_STOCK_THRESHOLD)) {
-      notifyLowStock(doc.item, doc.closing);
-    }
-
-    res.json(doc);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.delete('/inventory/:id', auth, async (req, res) => {
-  try {
-    await Inventory.findByIdAndDelete(req.params.id);
-    res.sendStatus(204);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// --- Sales endpoints ---
-app.post('/sales', auth, async (req, res) => {
-  try {
-    const { item, number } = req.body; // Extract item and number from the sale request
-    
-    // 1. Create the Sale Record
-    const sale = await Sale.create({ ...req.body, date: new Date() });
-
-    // 2. Perform Automatic Inventory Deduction
-    if (item && typeof number === 'number' && number > 0) { // Basic validation
-      try {
-        const updatedInventoryItem = await Inventory.findOneAndUpdate(
-          { item: item }, // Find the inventory item by its name
-          {
-            $inc: {
-              closing: -number, // Decrease closing stock by the sold quantity
-              sales: number     // Increment the 'sales' counter in the Inventory record
-            }
-          },
-          { new: true } // Return the updated document
-        );
-
-        if (updatedInventoryItem) {
-          console.log(`Inventory updated for "${item}". New closing stock: ${updatedInventoryItem.closing}.`);
-          // 3. Check for low stock after deduction
-          if (updatedInventoryItem.closing < Number(process.env.LOW_STOCK_THRESHOLD)) {
-            notifyLowStock(updatedInventoryItem.item, updatedInventoryItem.closing);
-          }
-        } else {
-          // If the item was sold but not found in Inventory
-          console.warn(`Warning: Sold item "${item}" not found in Inventory. Inventory not updated.`);
-          // You might choose to send a different status code for the sale or
-          // include a warning in the response, but the sale itself is still recorded.
-        }
-      } catch (inventoryError) {
-        console.error(`Error updating inventory for item "${item}":`, inventoryError);
-        // Log the inventory update error, but allow the sale record to be created
-        // so the financial transaction is not lost.
-      }
-    } else {
-      console.warn("Warning: Sale request missing valid 'item' or 'number' for inventory deduction. Inventory not updated.");
-    }
-
-    res.status(201).json(sale); // Respond with the created sale record
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.get('/sales', auth, async (req, res) => {
-  try {
-    const { date } = req.query;
-    let query = {};
-    if (date) {
-      const start = new Date(date);
-      const end = new Date(date);
-      end.setHours(23, 59, 59, 999);
-      query.date = { $gte: start, $lte: end };
-    }
-    const sales = await Sale.find(query).sort({ date: -1 });
-    res.json(sales);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.put('/sales/:id', auth, async (req, res) => {
-  try {
-    const updated = await Sale.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    // IMPORTANT: If you allow editing sales that affects quantity, you would need
-    // to adjust inventory here too. For simplicity, we're assuming sales edits
-    // don't change quantity for inventory purposes, or inventory is adjusted manually.
-    res.json(updated);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Expenses endpoints
-app.post('/expenses', auth, async (req, res) => {
-  try {
-    const exp = await Expense.create({ ...req.body, date: new Date() });
-    res.json(exp);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.get('/expenses', auth, async (req, res) => {
-  try {
-    const { date } = req.query;
-    let query = {};
-    if (date) {
-      const start = new Date(date);
-      const end = new Date(date);
-      end.setHours(23, 59, 59, 999);
-      query.date = { $gte: start, $lte: end };
-    }
-    const expenses = await Expense.find(query).sort({ date: -1 });
-    res.json(expenses);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.put('/expenses/:id', auth, async (req, res) => {
-  try {
-    const updated = await Expense.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    res.json(updated);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.delete('/expenses/:id', auth, async (req, res) => {
-  try {
-    await Expense.findByIdAndDelete(req.params.id);
-    res.sendStatus(204);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// --- NEW: Login Endpoint for Frontend Validation ---
-app.post('/login', async (req, res) => {
-    const { username, password } = req.body;
-
-    // Validate credentials against your hardcoded ones (or a database in a real app)
-    if (username === 'admin' && password === '123') {
-        res.status(200).json({ message: 'Login successful' });
-    } else {
-        res.status(401).json({ error: 'Invalid username or password' });
+// --- NEW: Audit Log Endpoints (Admin Only) ---
+app.get('/audit-logs', auth, authorize('admin'), async (req, res) => {
+    try {
+        // You can add filtering/pagination here if logs become too numerous
+        const logs = await AuditLog.find().sort({ timestamp: -1 }).limit(100); // Limit to last 100 for performance
+        res.json(logs);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
+
+
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
