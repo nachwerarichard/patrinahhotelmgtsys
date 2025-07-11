@@ -271,7 +271,7 @@
     <div class="container">
         <h1>Patrinah Hotel Management System</h1>
 
-        <div id="login-section" class="">
+        <div id="login-section" class="active">
             <h2>Login</h2>
             <input type="text" id="username" placeholder="Username">
             <input type="password" id="password" placeholder="Password">
@@ -288,11 +288,9 @@
                 <button id="nav-expenses" onclick="showSection('expenses')">Expenses</button>
                 <button id="nav-cash-management" onclick="showSection('cash-management')">Cash Management</button>
                 <button id="nav-reports" onclick="showSection('reports')">Reports</button>
-                <!-- Removed User Management button as it's no longer supported by hardcoded backend -->
-                <button id="nav-audit-logs" onclick="showSection('audit-logs')" style="display: none;">Audit Logs</button> <!-- Admin Only -->
+                <button id="nav-audit-logs" onclick="showSection('audit-logs')">Audit Logs</button>
             </nav>
 
-            <!-- Inventory Section -->
             <div id="inventory-section" class="section">
                 <h2>Inventory Management</h2>
 
@@ -331,12 +329,10 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- Inventory items will be loaded here -->
-                    </tbody>
+                        </tbody>
                 </table>
             </div>
 
-            <!-- Sales Section -->
             <div id="sales-section" class="section">
                 <h2>Sales Management</h2>
 
@@ -358,6 +354,7 @@
                 <div class="filter-controls">
                     <label for="sales-date-filter" style="margin-bottom:0;">Filter by Date:</label>
                     <input type="date" id="sales-date-filter" onchange="fetchSales()">
+                    <button onclick="fetchSales()">Apply Filters</button>
                 </div>
                 <table id="sales-table">
                     <thead>
@@ -371,12 +368,10 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- Sales records will be loaded here -->
-                    </tbody>
+                        </tbody>
                 </table>
             </div>
 
-            <!-- Expenses Section -->
             <div id="expenses-section" class="section">
                 <h2>Expenses Management</h2>
 
@@ -400,6 +395,7 @@
                 <div class="filter-controls">
                     <label for="expenses-date-filter" style="margin-bottom:0;">Filter by Date:</label>
                     <input type="date" id="expenses-date-filter" onchange="fetchExpenses()">
+                    <button onclick="fetchExpenses()">Apply Filters</button>
                 </div>
                 <table id="expenses-table">
                     <thead>
@@ -414,12 +410,10 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- Expense records will be loaded here -->
-                    </tbody>
+                        </tbody>
                 </table>
             </div>
 
-            <!-- Cash Management Section -->
             <div id="cash-management-section" class="section">
                 <h2>Cash Management</h2>
 
@@ -459,12 +453,10 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- Cash records will be loaded here -->
-                    </tbody>
+                        </tbody>
                 </table>
             </div>
 
-            <!-- Reports Section -->
             <div id="reports-section" class="section">
                 <h2>Financial Reports</h2>
 
@@ -505,12 +497,10 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- Department reports will be loaded here -->
-                    </tbody>
+                        </tbody>
                 </table>
             </div>
 
-            <!-- Audit Logs Section -->
             <div id="audit-logs-section" class="section">
                 <h2>Audit Logs</h2>
 
@@ -524,8 +514,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- Audit logs will be loaded here -->
-                    </tbody>
+                        </tbody>
                 </table>
             </div>
 
@@ -542,40 +531,38 @@
 
         /**
          * Updates the display of the current logged-in user and manages navigation button visibility.
-         * This function is now more robust to ensure immediate UI update.
+         * Ensures the login form is hidden on success and sets nav button visibility based on role.
          */
         function updateUIForUserRole() {
             const userDisplay = document.getElementById('current-user-display');
             const mainContent = document.getElementById('main-content');
             const loginSection = document.getElementById('login-section');
+            const navButtons = document.querySelectorAll('nav button');
 
             if (authToken && currentUsername && currentUserRole) {
                 userDisplay.textContent = `Logged in as: ${currentUsername} (${currentUserRole})`;
                 
-                // Set display properties directly and immediately
+                // --- Hide Login Section, Show Main Content ---
                 mainContent.style.display = 'block';
                 loginSection.style.display = 'none';
+                loginSection.classList.remove('active'); // Ensure active class is removed for CSS rules
 
-                // Manage navigation button visibility based on role
-                const navButtons = document.querySelectorAll('nav button');
+                // --- Manage Navigation Button Visibility based on role ---
                 navButtons.forEach(button => {
-                    button.style.display = 'inline-block'; // Default to visible for all nav buttons
-
-                    if (currentUserRole === 'admin') {
-                        // Admins see all buttons (including Audit Logs)
-                        // No specific hiding logic needed here, as default is inline-block
-                    } else if (currentUserRole === 'bar_staff') {
-                        // Bar staff can only access Sales, Expenses, Cash Management, Reports
-                        const barStaffAllowedButtons = ['nav-sales', 'nav-expenses', 'nav-cash-management', 'nav-reports'];
-                        if (!barStaffAllowedButtons.includes(button.id)) {
-                            button.style.display = 'none'; // Hide buttons not allowed for bar staff
-                        }
-                        // Ensure Audit Logs is hidden for bar staff
-                        if (button.id === 'nav-audit-logs') {
-                            button.style.display = 'none';
-                        }
-                    }
+                    button.style.display = 'none'; // Hide all buttons by default
                 });
+
+                if (currentUserRole === 'admin') {
+                    // Admins see all buttons
+                    navButtons.forEach(button => {
+                        button.style.display = 'inline-block';
+                    });
+                } else if (currentUserRole === 'bar_staff') {
+                    // Bar staff ONLY see Sales and Expenses
+                    document.getElementById('nav-sales').style.display = 'inline-block';
+                    document.getElementById('nav-expenses').style.display = 'inline-block';
+                    // Other buttons (inventory, cash, reports, audit) remain hidden by default
+                }
 
                 // Show default section based on role
                 if (currentUserRole === 'admin') {
@@ -585,41 +572,77 @@
                 }
 
             } else {
+                // Not logged in: Show login section, hide main content
                 userDisplay.textContent = '';
                 mainContent.style.display = 'none';
                 loginSection.style.display = 'block';
+                loginSection.classList.add('active'); // Ensure active class is added for CSS rules
             }
         }
 
 
         /**
          * Hides all sections and shows the specified one.
-         * Also triggers data fetching for the shown section.
+         * Includes role-based access checks and special handling for bar staff sales view.
          * @param {string} sectionId The ID of the section to show.
          */
         function showSection(sectionId) {
+            // Define which sections are allowed for each role
+            const allowedSections = {
+                'admin': ['inventory', 'sales', 'expenses', 'cash-management', 'reports', 'audit-logs'],
+                'bar_staff': ['sales', 'expenses']
+            };
+
+            // --- Role-based Access Check ---
+            if (currentUserRole && !allowedSections[currentUserRole].includes(sectionId)) {
+                alert('Access Denied: You do not have permission to view this section.');
+                // Redirect to a default allowed section if trying to access unauthorized
+                if (currentUserRole === 'admin') {
+                    showSection('inventory'); // Admin default
+                } else if (currentUserRole === 'bar_staff') {
+                    showSection('sales'); // Bar staff default
+                }
+                return; // Prevent further execution for unauthorized access
+            }
+
+            // --- Show/Hide Sections ---
             document.querySelectorAll('.section').forEach(section => {
                 section.classList.remove('active');
             });
             document.getElementById(`${sectionId}-section`).classList.add('active');
 
-            // Fetch data when a section is made active
+            // --- Fetch Data based on Section and Role ---
             if (sectionId === 'inventory') {
                 fetchInventory();
             } else if (sectionId === 'sales') {
-                fetchSales();
+                if (currentUserRole === 'bar_staff') {
+                    // For bar staff, activate sales section but don't auto-fetch on initial load.
+                    // Clear the table and show a message to prompt filtering.
+                    document.querySelector('#sales-table tbody').innerHTML = '<tr><td colspan="6" style="text-align: center; color: #555;">Click "Apply Filters" to load sales data.</td></tr>';
+                    // Ensure the date filter is set to today for convenience if they click "Apply Filters"
+                    const today = new Date();
+                    const yyyy = today.getFullYear();
+                    const mm = String(today.getMonth() + 1).padStart(2, '0');
+                    const dd = String(today.getDate()).padStart(2, '0');
+                    document.getElementById('sales-date-filter').value = `${yyyy}-${mm}-${dd}`;
+                } else {
+                    // For admin or other roles, auto-fetch sales
+                    fetchSales();
+                }
             } else if (sectionId === 'expenses') {
                 fetchExpenses();
             } else if (sectionId === 'cash-management') {
+                // Set default date for new entry and filter
                 const today = new Date();
                 const yyyy = today.getFullYear();
                 const mm = String(today.getMonth() + 1).padStart(2, '0');
                 const dd = String(today.getDate()).padStart(2, '0');
                 const todayString = `${yyyy}-${mm}-${dd}`;
-                document.getElementById('cash-date').value = todayString;
-                document.getElementById('cash-filter-date').value = todayString;
+                document.getElementById('cash-date').value = todayString; // For the form
+                document.getElementById('cash-filter-date').value = todayString; // For the filter
                 fetchCashJournal();
             } else if (sectionId === 'reports') {
+                // Set default dates for reports (last 30 days)
                 const today = new Date();
                 const thirtyDaysAgo = new Date(today);
                 thirtyDaysAgo.setDate(today.getDate() - 30);
@@ -634,16 +657,10 @@
                     endInput.value = today.toISOString().split('T')[0];
                 }
                 generateReports();
-            } else if (sectionId === 'audit-logs') { // Audit Logs
-                if (currentUserRole === 'admin') {
-                    fetchAuditLogs();
-                } else {
-                    alert('Access Denied: Only administrators can view audit logs.');
-                    // Redirect to a default section if not admin
-                    showSection(currentUserRole === 'bar_staff' ? 'sales' : 'inventory');
-                }
+            } else if (sectionId === 'audit-logs') {
+                // Role check for audit logs already handled at the top of this function
+                fetchAuditLogs();
             }
-            // Removed 'users' section handling as it's no longer present
         }
 
         /**
@@ -686,7 +703,7 @@
             }
         }
 
-        // --- Login/Logout (MODIFIED) ---
+        // --- Login/Logout ---
         async function login() {
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
@@ -916,7 +933,7 @@
             if (sales.length === 0) {
                 const row = tbody.insertRow();
                 row.insertCell().colSpan = 6;
-                row.insertCell().textContent = 'No sales records found for this date.';
+                row.insertCell().textContent = 'No sales records found for this date. Try adjusting the filter.';
                 return;
             }
 
@@ -984,7 +1001,7 @@
                     alert('Sale recorded successfully!');
                     document.getElementById('sale-form').reset();
                     document.getElementById('sale-id').value = '';
-                    fetchSales();
+                    fetchSales(); // Re-fetch to update table after successful operation
                 }
             } catch (error) {
                 console.error('Error recording sale:', error);
@@ -1012,7 +1029,7 @@
                 });
                 if (response && response.status === 204) {
                     alert('Sale record deleted successfully!');
-                    fetchSales();
+                    fetchSales(); // Re-fetch to update table after successful operation
                 } else if (response) {
                     const errorData = await response.json();
                     alert('Failed to delete sale record: ' + errorData.error);
@@ -1048,7 +1065,7 @@
             if (expenses.length === 0) {
                 const row = tbody.insertRow();
                 row.insertCell().colSpan = 7;
-                row.insertCell().textContent = 'No expense records found for this date.';
+                row.insertCell().textContent = 'No expense records found for this date. Try adjusting the filter.';
                 return;
             }
 
@@ -1118,7 +1135,7 @@
                     alert('Expense recorded successfully!');
                     document.getElementById('expense-form').reset();
                     document.getElementById('expense-id').value = '';
-                    fetchExpenses();
+                    fetchExpenses(); // Re-fetch to update table after successful operation
                 }
             } catch (error) {
                 console.error('Error recording expense:', error);
@@ -1147,7 +1164,7 @@
                 });
                 if (response && response.status === 204) {
                     alert('Expense record deleted successfully!');
-                    fetchExpenses();
+                    fetchExpenses(); // Re-fetch to update table after successful operation
                 } else if (response) {
                     const errorData = await response.json();
                     alert('Failed to delete expense record: ' + errorData.error);
@@ -1263,7 +1280,7 @@
                     const mm = String(today.getMonth() + 1).padStart(2, '0');
                     const dd = String(today.getDate()).padStart(2, '0');
                     document.getElementById('cash-date').value = `${yyyy}-${mm}-${dd}`;
-                    fetchCashJournal();
+                    fetchCashJournal(); // Re-fetch to update table after successful operation
                 }
             } catch (error) {
                 console.error('Error saving cash entry:', error);
@@ -1292,7 +1309,7 @@
                 });
                 if (response && response.status === 204) {
                     alert('Cash entry deleted successfully!');
-                    fetchCashJournal();
+                    fetchCashJournal(); // Re-fetch to update table after successful operation
                 } else if (response) {
                     const errorData = await response.json();
                     alert('Failed to delete cash entry: ' + errorData.error);
@@ -1303,7 +1320,7 @@
             }
         }
 
-        // --- Reports Functions (Existing) ---
+        // --- Reports Functions ---
         function getDepartmentFromText(text) {
             const lowerText = text.toLowerCase();
             if (lowerText.startsWith('bar-') || lowerText.includes('bar ')) return 'Bar';
@@ -1325,13 +1342,19 @@
 
             const startDate = new Date(startDateString);
             const endDate = new Date(endDateString);
-            endDate.setHours(23, 59, 59, 999);
+            endDate.setHours(23, 59, 59, 999); // Set to end of day
 
             let allSales = [];
             let allExpenses = [];
 
             try {
-                const salesResponse = await authenticatedFetch(`${API_BASE_URL}/sales?date=${startDateString}`);
+                // Fetch sales and expenses for the entire duration if the backend supports range,
+                // or filter on client side if only single date filter is supported.
+                // Assuming backend's date filter takes a single day, fetching all and filtering client-side
+                // for simplicity with the current backend.
+                // For a proper range, backend would need to support ?startDate=X&endDate=Y
+                
+                const salesResponse = await authenticatedFetch(`${API_BASE_URL}/sales`);
                 if (salesResponse) {
                     const salesData = await salesResponse.json();
                     allSales = salesData.filter(s => {
@@ -1340,7 +1363,7 @@
                     });
                 }
 
-                const expensesResponse = await authenticatedFetch(`${API_BASE_URL}/expenses?date=${startDateString}`);
+                const expensesResponse = await authenticatedFetch(`${API_BASE_URL}/expenses`);
                 if (expensesResponse) {
                     const expensesData = await expensesResponse.json();
                     allExpenses = expensesData.filter(e => {
@@ -1451,8 +1474,7 @@
             document.getElementById('sale-form').addEventListener('submit', submitSaleForm);
             document.getElementById('expense-form').addEventListener('submit', submitExpenseForm);
             document.getElementById('cash-journal-form').addEventListener('submit', submitCashJournalForm);
-            // Removed: document.getElementById('user-form').addEventListener('submit', submitUserForm);
-
+            
             // Set initial date filters for various sections
             const today = new Date();
             const yyyy = today.getFullYear();
