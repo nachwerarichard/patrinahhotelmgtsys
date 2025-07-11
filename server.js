@@ -365,6 +365,17 @@ app.delete('/expenses/:id', auth, async (req, res) => {
   }
 });
 
+// --- NEW: Login Endpoint for Frontend Validation ---
+app.post('/login', async (req, res) => {
+    const { username, password } = req.body;
+
+    // Validate credentials against your hardcoded ones (or a database in a real app)
+    if (username === 'admin' && password === '123') {
+        res.status(200).json({ message: 'Login successful' });
+    } else {
+        res.status(401).json({ error: 'Invalid username or password' });
+    }
+});
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
