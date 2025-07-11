@@ -792,7 +792,7 @@
         }
 
         // --- Login/Logout ---
-    async function login() {
+        async function login() {
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
             const loginMessage = document.getElementById('login-message');
@@ -810,12 +810,10 @@
 
                 if (response.ok) {
                     const data = await response.json();
-                    
-                    // --- FIX IS HERE ---
-                    // Ensure you are accessing the correct property from the backend response
+                    // For hardcoded auth, the token is derived from the plain credentials
                     authToken = btoa(`${username}:${password}`); 
-                    currentUsername = data.user.username; // <--- CHANGED FROM data.username to data.user.username
-                    currentUserRole = data.user.role;    // <--- CHANGED FROM data.role to data.user.role
+                    currentUsername = data.username;
+                    currentUserRole = data.role;
 
                     localStorage.setItem('authToken', authToken);
                     localStorage.setItem('username', currentUsername);
@@ -845,6 +843,7 @@
                 updateUIForUserRole();
             }
         }
+
         async function logout() {
             try {
                 // Optionally notify backend of logout for audit logging
