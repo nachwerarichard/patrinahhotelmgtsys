@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patrinah Hotel Management System</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom styles for active navigation button */
+        .nav-button.active {
+            background-color: #1a56db; /* A slightly darker blue for active state */
+        }
+        /* Hide sections by default, JavaScript will manage visibility */
+        .section {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center py-10">
+    <div class="container mx-auto p-4 max-w-7xl w-full">
+        <h1 class="text-4xl font-bold text-center mb-8 text-blue-800">Patrinah Hotel Management System</h1>
+
+        <!-- Login Section -->
+        <div id="login-section" class="bg-white p-8 rounded-lg shadow-md max-w-md mx-auto">
+            <h2 class="text-2xl font-semibold mb-6 text-center text-blue-700">Login</h2>
+            <input type="text" id="username" placeholder="Username" class="w-full p-3 mb-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <input type="password" id="password" placeholder="Password" class="w-full p-3 mb-6 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <button onclick="login()" class="w-full bg-blue-600 text-white p-3 rounded-md hover:bg-blue-700 transition duration-300 ease-in-out">Login</button>
+            <p id="login-message" class="text-center mt-4 text-red-500"></p>
+        </div>
+
+        <!-- Main Content Section (Initially Hidden) -->
+        <div id="main-content" class="mt-8 hidden">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-6 bg-white p-4 rounded-lg shadow-md">
+                <span id="current-user-display" class="username-display text-lg font-medium text-gray-700 mb-4 md:mb-0"></span>
+                <div class="flex items-center space-x-4">
+                    <span id="user-id-display" class="text-sm text-gray-500"></span>
+                    <button id="logout-button" onclick="logout()" class="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition duration-300 ease-in-out">Logout</button>
+                </div>
+            </div>
+            
+            <nav class="flex flex-wrap justify-center gap-4 mb-8 p-4 bg-white rounded-lg shadow-md">
+                <button id="nav-inventory" onclick="showSection('inventory')" class="nav-button px-5 py-2 rounded-md bg-blue-500 text-white hover:bg-blue-600 transition duration-300 ease-in-out">Inventory</button>
+                <button id="nav-sales" onclick="showSection('sales')" class="nav-button px-5 py-2 rounded-md bg-blue-500 text-white hover:bg-blue-600 transition duration-300 ease-in-out">Sales</button>
+                <button id="nav-expenses" onclick="showSection('expenses')" class="nav-button px-5 py-2 rounded-md bg-blue-500 text-white hover:bg-blue-600 transition duration-300 ease-in-out">Expenses</button>
+                <button id="nav-cash-management" onclick="showSection('cash-management')" class="nav-button px-5 py-2 rounded-md bg-blue-500 text-white hover:bg-blue-600 transition duration-300 ease-in-out">Cash Management</button>
+                <button id="nav-reports" onclick="showSection('reports')" class="nav-button px-5 py-2 rounded-md bg-blue-500 text-white hover:bg-blue-600 transition duration-300 ease-in-out">Reports</button>
+                <button id="nav-audit-logs" onclick="showSection('audit-logs')" class="nav-button px-5 py-2 rounded-md bg-blue-500 text-white hover:bg-blue-600 transition duration-300 ease-in-out">Audit Logs</button>
+            </nav>
+
+            <!-- Inventory Section -->
+            <div id="inventory-section" class="section bg-white p-6 rounded-lg shadow-md mb-8">
+                <h2 class="text-2xl font-semibold mb-4 text-blue-700">Inventory Management</h2>
+
+                <h3 class="text-xl font-medium mb-3 text-gray-800">Add/Update Inventory Item</h3>
+                <form id="inventory-form" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <input type="hidden" id="inventory-id">
+                    <div>
+                        <label for="item" class="block text-gray-700 text-sm font-bold mb-2">Item:</label>
+                        <input type="text" id="item" required class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="opening" class="block text-gray-700 text-sm font-bold mb-2">Opening Stock:</label>
+                        <input type="number" id="opening" min="0" required class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="purchases" class="block text-gray-700 text-sm font-bold mb-2">Purchases:</label>
+                        <input type="number" id="purchases" min="0" required class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="inventory-sales" class="block text-gray-700 text-sm font-bold mb-2">Sales (deducted from inventory):</label>
+                        <input type="number" id="inventory-sales" min="0" required class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="spoilage" class="block text-gray-700 text-sm font-bold mb-2">Spoilage:</label>
+                        <input type="number" id="spoilage" min="0" required class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <button type="submit" class="col-span-full bg-green-600 text-white p-3 rounded-md hover:bg-green-700 transition duration-300 ease-in-out mt-4">Save Inventory</button>
+                </form>
+
+                <h3 class="text-xl font-medium mb-3 text-gray-800">Current Inventory</h3>
+                <div class="filter-controls flex flex-wrap gap-4 mb-6">
+                    <input type="text" id="search-inventory-item" placeholder="Search by item name" class="p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 flex-grow">
+                    <input type="number" id="search-inventory-low" placeholder="Filter by closing stock <" class="p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 w-48">
+                    <button onclick="fetchInventory()" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition duration-300 ease-in-out">Apply Filters</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table id="inventory-table" class="min-w-full bg-white border border-gray-200">
+                        <thead>
+                            <tr class="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
+                                <th class="py-3 px-6 text-left">Item</th>
+                                <th class="py-3 px-6 text-left">Opening</th>
+                                <th class="py-3 px-6 text-left">Purchases</th>
+                                <th class="py-3 px-6 text-left">Sales</th>
+                                <th class="py-3 px-6 text-left">Spoilage</th>
+                                <th class="py-3 px-6 text-left">Closing</th>
+                                <th class="py-3 px-6 text-left">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-gray-600 text-sm font-light">
+                            <!-- Inventory items will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Sales Section -->
+            <div id="sales-section" class="section bg-white p-6 rounded-lg shadow-md mb-8">
+                <h2 class="text-2xl font-semibold mb-4 text-blue-700">Sales Management</h2>
+
+                <h3 class="text-xl font-medium mb-3 text-gray-800">Record New Sale</h3>
+                <form id="sale-form" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <input type="hidden" id="sale-id">
+                    <div>
+                        <label for="sale-item" class="block text-gray-700 text-sm font-bold mb-2">Item:</label>
+                        <input type="text" id="sale-item" required class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="sale-number" class="block text-gray-700 text-sm font-bold mb-2">Number Sold:</label>
+                        <input type="number" id="sale-number" min="1" required class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="sale-bp" class="block text-gray-700 text-sm font-bold mb-2">Buying Price (BP):</label>
+                        <input type="number" id="sale-bp" step="0.01" min="0" required class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="sale-sp" class="block text-gray-700 text-sm font-bold mb-2">Selling Price (SP):</label>
+                        <input type="number" id="sale-sp" step="0.01" min="0" required class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <button type="submit" class="col-span-full bg-green-600 text-white p-3 rounded-md hover:bg-green-700 transition duration-300 ease-in-out mt-4">Record Sale</button>
+                </form>
+
+                <h3 class="sales-records-heading text-xl font-medium mb-3 text-gray-800">Sales Records</h3>
+                <div class="filter-controls sales-filter-controls flex flex-wrap gap-4 mb-6">
+                    <label for="sales-date-filter" class="block text-gray-700 text-sm font-bold self-center">Filter by Date:</label>
+                    <input type="date" id="sales-date-filter" class="p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 flex-grow">
+                    <button onclick="fetchSales()" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition duration-300 ease-in-out">Apply Filters</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table id="sales-table" class="min-w-full bg-white border border-gray-200">
+                        <thead>
+                            <tr class="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
+                                <th class="py-3 px-6 text-left">Item</th>
+                                <th class="py-3 px-6 text-left">Number</th>
+                                <th class="py-3 px-6 text-left">BP</th>
+                                <th class="py-3 px-6 text-left">SP</th>
+                                <th class="py-3 px-6 text-left">Date</th>
+                                <th class="py-3 px-6 text-left">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-gray-600 text-sm font-light">
+                            <!-- Sales records will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Expenses Section -->
+            <div id="expenses-section" class="section bg-white p-6 rounded-lg shadow-md mb-8">
+                <h2 class="text-2xl font-semibold mb-4 text-blue-700">Expenses Management</h2>
+
+                <h3 class="text-xl font-medium mb-3 text-gray-800">Record New Expense</h3>
+                <form id="expense-form" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <input type="hidden" id="expense-id">
+                    <div>
+                        <label for="expense-description" class="block text-gray-700 text-sm font-bold mb-2">Description:</label>
+                        <input type="text" id="expense-description" required class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="expense-amount" class="block text-gray-700 text-sm font-bold mb-2">Amount:</label>
+                        <input type="number" id="expense-amount" step="0.01" min="0" required class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="expense-receiptId" class="block text-gray-700 text-sm font-bold mb-2">Receipt ID (Optional):</label>
+                        <input type="text" id="expense-receiptId" class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="expense-source" class="block text-gray-700 text-sm font-bold mb-2">Source (Optional):</label>
+                        <input type="text" id="expense-source" class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="expense-responsible" class="block text-gray-700 text-sm font-bold mb-2">Responsible Person (Optional):</label>
+                        <input type="text" id="expense-responsible" class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <button type="submit" class="col-span-full bg-green-600 text-white p-3 rounded-md hover:bg-green-700 transition duration-300 ease-in-out mt-4">Record Expense</button>
+                </form>
+
+                <h3 class="expenses-records-heading text-xl font-medium mb-3 text-gray-800">Expense Records</h3>
+                <div class="filter-controls expenses-filter-controls flex flex-wrap gap-4 mb-6">
+                    <label for="expenses-date-filter" class="block text-gray-700 text-sm font-bold self-center">Filter by Date:</label>
+                    <input type="date" id="expenses-date-filter" class="p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 flex-grow">
+                    <button onclick="fetchExpenses()" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition duration-300 ease-in-out">Apply Filters</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table id="expenses-table" class="min-w-full bg-white border border-gray-200">
+                        <thead>
+                            <tr class="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
+                                <th class="py-3 px-6 text-left">Description</th>
+                                <th class="py-3 px-6 text-left">Amount</th>
+                                <th class="py-3 px-6 text-left">Date</th>
+                                <th class="py-3 px-6 text-left">Receipt ID</th>
+                                <th class="py-3 px-6 text-left">Source</th>
+                                <th class="py-3 px-6 text-left">Responsible</th>
+                                <th class="py-3 px-6 text-left">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-gray-600 text-sm font-light">
+                            <!-- Expense records will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Cash Management Section -->
+            <div id="cash-management-section" class="section bg-white p-6 rounded-lg shadow-md mb-8">
+                <h2 class="text-2xl font-semibold mb-4 text-blue-700">Cash Management</h2>
+
+                <h3 class="text-xl font-medium mb-3 text-gray-800">Record Cash Movement</h3>
+                <form id="cash-journal-form" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <input type="hidden" id="cash-journal-id">
+                    <div>
+                        <label for="cash-at-hand" class="block text-gray-700 text-sm font-bold mb-2">Cash At Hand:</label>
+                        <input type="number" id="cash-at-hand" step="0.01" min="0" required class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="cash-banked" class="block text-gray-700 text-sm font-bold mb-2">Cash Banked:</label>
+                        <input type="number" id="cash-banked" step="0.01" min="0" required class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="bank-receipt-id" class="block text-gray-700 text-sm font-bold mb-2">Bank Receipt ID:</label>
+                        <input type="text" id="bank-receipt-id" required class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="responsible-person" class="block text-gray-700 text-sm font-bold mb-2">Responsible Person:</label>
+                        <input type="text" id="responsible-person" required class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="cash-date" class="block text-gray-700 text-sm font-bold mb-2">Date:</label>
+                        <input type="date" id="cash-date" required class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <button type="submit" class="col-span-full bg-green-600 text-white p-3 rounded-md hover:bg-green-700 transition duration-300 ease-in-out mt-4">Save Cash Entry</button>
+                </form>
+
+                <h3 class="text-xl font-medium mb-3 text-gray-800">Cash Records</h3>
+                <div class="filter-controls flex flex-wrap gap-4 mb-6">
+                    <label for="cash-filter-date" class="block text-gray-700 text-sm font-bold self-center">Filter by Date:</label>
+                    <input type="date" id="cash-filter-date" class="p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 flex-grow">
+                    <label for="cash-filter-responsible" class="block text-gray-700 text-sm font-bold self-center">Filter by Responsible Person:</label>
+                    <input type="text" id="cash-filter-responsible" placeholder="e.g., John Doe" class="p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 flex-grow">
+                    <button onclick="fetchCashJournal()" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition duration-300 ease-in-out">Apply Filters</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table id="cash-journal-table" class="min-w-full bg-white border border-gray-200">
+                        <thead>
+                            <tr class="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
+                                <th class="py-3 px-6 text-left">Date</th>
+                                <th class="py-3 px-6 text-left">Cash At Hand</th>
+                                <th class="py-3 px-6 text-left">Cash Banked</th>
+                                <th class="py-3 px-6 text-left">Bank Receipt ID</th>
+                                <th class="py-3 px-6 text-left">Responsible Person</th>
+                                <th class="py-3 px-6 text-left">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-gray-600 text-sm font-light">
+                            <!-- Cash records will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Reports Section -->
+            <div id="reports-section" class="section bg-white p-6 rounded-lg shadow-md mb-8">
+                <h2 class="text-2xl font-semibold mb-4 text-blue-700">Financial Reports</h2>
+
+                <div class="filter-controls flex flex-wrap gap-4 mb-6">
+                    <label for="report-start-date" class="block text-gray-700 text-sm font-bold self-center">Start Date:</label>
+                    <input type="date" id="report-start-date" class="p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 flex-grow">
+                    <label for="report-end-date" class="block text-gray-700 text-sm font-bold self-center">End Date:</label>
+                    <input type="date" id="report-end-date" class="p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 flex-grow">
+                    <button onclick="generateReports()" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition duration-300 ease-in-out">Generate Reports</button>
+                </div>
+
+                <h3 class="text-xl font-medium mb-3 text-gray-800">Overall Totals</h3>
+                <div class="overflow-x-auto mb-6">
+                    <table id="overall-reports-table" class="min-w-full bg-white border border-gray-200">
+                        <thead>
+                            <tr class="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
+                                <th class="py-3 px-6 text-left">Total Sales</th>
+                                <th class="py-3 px-6 text-left">Total Expenses</th>
+                                <th class="py-3 px-6 text-left">Net Balance</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-gray-600 text-sm font-light">
+                            <tr>
+                                <td id="overall-sales" class="py-3 px-6 border-b border-gray-200">0</td>
+                                <td id="overall-expenses" class="py-3 px-6 border-b border-gray-200">0</td>
+                                <td id="overall-balance" class="py-3 px-6 border-b border-gray-200">0</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3 class="text-xl font-medium mb-3 text-gray-800">Departmental Totals</h3>
+                <div class="overflow-x-auto">
+                    <table id="departmental-reports-table" class="min-w-full bg-white border border-gray-200">
+                        <thead>
+                            <tr class="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
+                                <th class="py-3 px-6 text-left">Department</th>
+                                <th class="py-3 px-6 text-left">Total Sales</th>
+                                <th class="py-3 px-6 text-left">Total Expenses</th>
+                                <th class="py-3 px-6 text-left">Net Balance</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-gray-600 text-sm font-light">
+                            <!-- Department reports will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Audit Logs Section -->
+            <div id="audit-logs-section" class="section bg-white p-6 rounded-lg shadow-md mb-8">
+                <h2 class="text-2xl font-semibold mb-4 text-blue-700">Audit Logs</h2>
+
+                <div class="overflow-x-auto">
+                    <table id="audit-logs-table" class="min-w-full bg-white border border-gray-200">
+                        <thead>
+                            <tr class="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
+                                <th class="py-3 px-6 text-left">Timestamp</th>
+                                <th class="py-3 px-6 text-left">User</th>
+                                <th class="py-3 px-6 text-left">Action</th>
+                                <th class="py-3 px-6 text-left">Details</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-gray-600 text-sm font-light">
+                            <!-- Audit logs will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Confirmation Modal Structure -->
+    <div id="confirmation-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-96">
+            <h3 id="modal-title" class="text-lg font-semibold mb-4"></h3>
+            <p id="modal-message" class="mb-6"></p>
+            <div class="flex justify-end space-x-4">
+                <button id="modal-cancel-btn" class="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400">Cancel</button>
+                <button id="modal-confirm-btn" class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Firebase imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global Firebase variables
+        let app;
+        let db;
+        let auth;
+        let userId = 'anonymous'; // Default to anonymous
+        let isAuthReady = false; // Flag to ensure Firestore operations wait for auth
+
+        // Initialize Firebase on window load
+        window.onload = async function() {
+            try {
+                // Access global variables provided by the environment
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+                const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+                // Initialize Firebase app
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                // Authenticate user
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                // Listen for authentication state changes
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        document.getElementById('user-id-display').textContent = `User ID: ${userId}`;
+                        console.log("Firebase Auth Ready. User ID:", userId);
+                        isAuthReady = true;
+
+                        // After auth is ready, set up real-time listeners for all sections
+                        setupRealtimeListeners();
+                        // Initially show the login section, then JS will handle showing main content
+                        // if already logged in or after successful login.
+                        showLoginScreen(); // Ensure login screen is visible until successful login
+                    } else {
+                        userId = 'anonymous';
+                        document.getElementById('user-id-display').textContent = '';
+                        console.log("User logged out or not authenticated.");
+                        isAuthReady = false;
+                        showLoginScreen(); // Show login screen if not authenticated
+                    }
+                });
+
+            } catch (error) {
+                console.error("Error initializing Firebase or authenticating:", error);
+                displayMessage("Failed to initialize app. Please try again later.", "error");
+            }
+        };
+
+        // --- UI Management Functions ---
+
+        /**
+         * Displays a message on the login form.
+         * @param {string} message - The message to display.
+         * @param {'success'|'error'|'info'} type - The type of message (determines color).
+         */
+        function displayMessage(message, type) {
+            const loginMessageElement = document.getElementById('login-message');
+            loginMessageElement.textContent = message;
+            loginMessageElement.className = 'text-center mt-4'; // Reset classes
+            if (type === 'error') {
+                loginMessageElement.classList.add('text-red-500');
+            } else if (type === 'success') {
+                loginMessageElement.classList.add('text-green-500');
+            } else {
+                loginMessageElement.classList.add('text-gray-700');
+            }
+        }
+
+        /**
+         * Shows the login section and hides the main content.
+         */
+        function showLoginScreen() {
+            document.getElementById('login-section').classList.remove('hidden');
+            document.getElementById('main-content').classList.add('hidden');
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            displayMessage('', 'info'); // Clear any previous login messages
+            document.getElementById('current-user-display').textContent = '';
+        }
+
+        /**
+         * Shows the main content and hides the login section.
+         * Sets the default active section to 'inventory'.
+         */
+        function showMainContent() {
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('main-content').classList.remove('hidden');
+            showSection('inventory'); // Default to inventory section
+        }
+
+        /**
+         * Toggles the visibility of different sections within the main content.
+         * @param {string} sectionId - The ID of the section to show (e.g., 'inventory', 'sales').
+         */
+        function showSection(sectionId) {
+            const sections = document.querySelectorAll('.section');
+            sections.forEach(section => {
+                section.style.display = 'none'; // Hide all sections
+            });
+            document.getElementById(sectionId + '-section').style.display = 'block'; // Show the selected section
+
+            // Update active navigation button styling
+            const navButtons = document.querySelectorAll('.nav-button');
+            navButtons.forEach(button => {
+                button.classList.remove('active');
+            });
+            document.getElementById('nav-' + sectionId).classList.add('active');
+
+            // Fetch data for the newly shown section
+            switch (sectionId) {
+                case 'inventory':
+                    fetchInventory();
+                    break;
+                case 'sales':
+                    fetchSales();
+                    break;
+                case 'expenses':
+                    fetchExpenses();
+                    break;
+                case 'cash-management':
+                    fetchCashJournal();
+                    break;
+                case 'reports':
+                    generateReports();
+                    break;
+                case 'audit-logs':
+                    fetchAuditLogs();
+                    break;
+            }
+            addAuditLog('Navigation', `Navigated to ${sectionId} section`);
+        }
+
+        /**
+         * Displays a confirmation modal.
+         * @param {string} title - The title of the modal.
+         * @param {string} message - The message content.
+         * @param {function} onConfirm - Callback function to execute on confirmation.
+         */
+        function showModal(title, message, onConfirm) {
+            const modal = document.getElementById('confirmation-modal');
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-message').textContent = message;
+            modal.classList.remove('hidden');
+
+            const confirmBtn = document.getElementById('modal-confirm-btn');
+            const cancelBtn = document.getElementById('modal-cancel-btn');
+
+            const handleConfirm = () => {
+                onConfirm();
+                modal.classList.add('hidden');
+                confirmBtn.removeEventListener('click', handleConfirm);
+                cancelBtn.removeEventListener('click', handleCancel);
+            };
+
+            const handleCancel = () => {
+                modal.classList.add('hidden');
+                confirmBtn.removeEventListener('click', handleConfirm);
+                cancelBtn.removeEventListener('click', handleCancel);
+            };
+
+            confirmBtn.addEventListener('click', handleConfirm);
+            cancelBtn.addEventListener('click', handleCancel);
+        }
+
+        // --- Authentication Functions ---
+
+        /**
+         * Handles user login.
+         * This is a simplified login for demonstration. In a real app, you'd use Firebase Auth email/password, Google Sign-In, etc.
+         */
+        async function login() {
+            const usernameInput = document.getElementById('username').value;
+            const passwordInput = document.getElementById('password').value;
+
+            // Simple hardcoded credentials for demonstration
+            if (usernameInput === 'admin' && passwordInput === 'password123') {
+                displayMessage('Login successful!', 'success');
+                document.getElementById('current-user-display').textContent = `Logged in as: ${usernameInput}`;
+                showMainContent();
+                addAuditLog('Login', `User '${usernameInput}' logged in`);
+            } else {
+                displayMessage('Invalid username or password.', 'error');
+                addAuditLog('Login Failed', `Attempted login with username '${usernameInput}'`);
+            }
+        }
+
+        /**
+         * Handles user logout.
+         */
+        async function logout() {
+            showModal('Confirm Logout', 'Are you sure you want to log out?', async () => {
+                try {
+                    await signOut(auth);
+                    displayMessage('Logged out successfully.', 'info');
+                    addAuditLog('Logout', `User '${userId}' logged out`);
+                    showLoginScreen(); // Go back to login screen
+                } catch (error) {
+                    console.error("Error logging out:", error);
+                    displayMessage("Error logging out. Please try again.", "error");
+                }
+            });
+        }
+
+        // --- Firebase Realtime Listeners Setup ---
+
+        /**
+         * Sets up real-time listeners for all data collections.
+         * This function is called once authentication is ready.
+         */
+        function setupRealtimeListeners() {
+            if (!isAuthReady) {
+                console.warn("Authentication not ready for listeners.");
+                return;
+            }
+
+            // Inventory Listener
+            onSnapshot(collection(db, `artifacts/${__app_id}/users/${userId}/inventory`), (snapshot) => {
+                const inventoryData = [];
+                snapshot.forEach(doc => {
+                    inventoryData.push({ id: doc.id, ...doc.data() });
+                });
+                renderInventoryTable(inventoryData);
+            }, (error) => {
+                console.error("Error fetching inventory:", error);
+            });
+
+            // Sales Listener
+            onSnapshot(collection(db, `artifacts/${__app_id}/users/${userId}/sales`), (snapshot) => {
+                const salesData = [];
+                snapshot.forEach(doc => {
+                    salesData.push({ id: doc.id, ...doc.data() });
+                });
+                renderSalesTable(salesData);
+            }, (error) => {
+                console.error("Error fetching sales:", error);
+            });
+
+            // Expenses Listener
+            onSnapshot(collection(db, `artifacts/${__app_id}/users/${userId}/expenses`), (snapshot) => {
+                const expensesData = [];
+                snapshot.forEach(doc => {
+                    expensesData.push({ id: doc.id, ...doc.data() });
+                });
+                renderExpensesTable(expensesData);
+            }, (error) => {
+                console.error("Error fetching expenses:", error);
+            });
+
+            // Cash Journal Listener
+            onSnapshot(collection(db, `artifacts/${__app_id}/users/${userId}/cashJournal`), (snapshot) => {
+                const cashData = [];
+                snapshot.forEach(doc => {
+                    cashData.push({ id: doc.id, ...doc.data() });
+                });
+                renderCashJournalTable(cashData);
+            }, (error) => {
+                console.error("Error fetching cash journal:", error);
+            });
+
+            // Audit Logs Listener
+            onSnapshot(collection(db, `artifacts/${__app_id}/users/${userId}/auditLogs`), (snapshot) => {
+                const auditLogsData = [];
+                snapshot.forEach(doc => {
+                    auditLogsData.push({ id: doc.id, ...doc.data() });
+                });
+                renderAuditLogsTable(auditLogsData);
+            }, (error) => {
+                console.error("Error fetching audit logs:", error);
+            });
+        }
+
+        // --- Data Management (CRUD) Functions for each section ---
+
+        // --- Inventory Functions ---
+
+        document.getElementById('inventory-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!isAuthReady) { console.error("Auth not ready."); return; }
+
+            const id = document.getElementById('inventory-id').value;
+            const item = document.getElementById('item').value;
+            const opening = parseFloat(document.getElementById('opening').value);
+            const purchases = parseFloat(document.getElementById('purchases').value);
+            const inventorySales = parseFloat(document.getElementById('inventory-sales').value);
+            const spoilage = parseFloat(document.getElementById('spoilage').value);
+            const closing = opening + purchases - inventorySales - spoilage;
+
+            const inventoryItem = {
+                item,
+                opening,
+                purchases,
+                inventorySales,
+                spoilage,
+                closing,
+                timestamp: serverTimestamp()
+            };
+
+            try {
+                if (id) {
+                    await setDoc(doc(db, `artifacts/${__app_id}/users/${userId}/inventory`, id), inventoryItem);
+                    addAuditLog('Update Inventory', `Updated item: ${item}`);
+                } else {
+                    await addDoc(collection(db, `artifacts/${__app_id}/users/${userId}/inventory`), inventoryItem);
+                    addAuditLog('Add Inventory', `Added new item: ${item}`);
+                }
+                document.getElementById('inventory-form').reset();
+                document.getElementById('inventory-id').value = ''; // Clear hidden ID
+            } catch (e) {
+                console.error("Error saving inventory item: ", e);
+            }
+        });
+
+        async function fetchInventory() {
+            if (!isAuthReady) { console.error("Auth not ready."); return; }
+            const itemFilter = document.getElementById('search-inventory-item').value.toLowerCase();
+            const lowStockFilter = parseFloat(document.getElementById('search-inventory-low').value);
+
+            let q = collection(db, `artifacts/${__app_id}/users/${userId}/inventory`);
+
+            // onSnapshot listener already handles real-time updates.
+            // This function primarily triggers a re-render based on current filters.
+            // For filtering, onSnapshot should ideally be set up with query constraints.
+            // For simplicity, we'll filter in memory for now, but for large datasets,
+            // Firestore queries (with `where`) are necessary.
+            // Re-trigger the onSnapshot if filters change significantly, or filter in UI.
+            // For this example, the onSnapshot is already listening to the *entire* collection.
+            // We'll apply the filters to the data received by the onSnapshot.
+        }
+
+        function renderInventoryTable(inventoryData) {
+            const tableBody = document.querySelector('#inventory-table tbody');
+            tableBody.innerHTML = ''; // Clear existing rows
+
+            const itemFilter = document.getElementById('search-inventory-item').value.toLowerCase();
+            const lowStockFilter = parseFloat(document.getElementById('search-inventory-low').value);
+
+            const filteredData = inventoryData.filter(item => {
+                const matchesItem = item.item.toLowerCase().includes(itemFilter);
+                const matchesLowStock = isNaN(lowStockFilter) || item.closing < lowStockFilter;
+                return matchesItem && matchesLowStock;
+            });
+
+            filteredData.forEach(item => {
+                const row = tableBody.insertRow();
+                row.className = 'border-b border-gray-200 hover:bg-gray-100';
+                row.innerHTML = `
+                    <td class="py-3 px-6 text-left whitespace-nowrap">${item.item}</td>
+                    <td class="py-3 px-6 text-left">${item.opening}</td>
+                    <td class="py-3 px-6 text-left">${item.purchases}</td>
+                    <td class="py-3 px-6 text-left">${item.inventorySales}</td>
+                    <td class="py-3 px-6 text-left">${item.spoilage}</td>
+                    <td class="py-3 px-6 text-left font-semibold">${item.closing}</td>
+                    <td class="py-3 px-6 text-left">
+                        <button onclick="editInventory('${item.id}')" class="bg-yellow-500 text-white px-3 py-1 rounded-md text-xs hover:bg-yellow-600 mr-2">Edit</button>
+                        <button onclick="deleteInventory('${item.id}', '${item.item}')" class="bg-red-500 text-white px-3 py-1 rounded-md text-xs hover:bg-red-600">Delete</button>
+                    </td>
+                `;
+            });
+        }
+
+        async function editInventory(id) {
+            if (!isAuthReady) { console.error("Auth not ready."); return; }
+            try {
+                const docRef = doc(db, `artifacts/${__app_id}/users/${userId}/inventory`, id);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    document.getElementById('inventory-id').value = id;
+                    document.getElementById('item').value = data.item;
+                    document.getElementById('opening').value = data.opening;
+                    document.getElementById('purchases').value = data.purchases;
+                    document.getElementById('inventory-sales').value = data.inventorySales;
+                    document.getElementById('spoilage').value = data.spoilage;
+                    addAuditLog('Edit Inventory', `Opened edit form for item: ${data.item}`);
+                }
+            } catch (e) {
+                console.error("Error fetching inventory item for edit: ", e);
+            }
+        }
+
+        function deleteInventory(id, itemName) {
+            showModal('Confirm Deletion', `Are you sure you want to delete ${itemName} from inventory?`, async () => {
+                if (!isAuthReady) { console.error("Auth not ready."); return; }
+                try {
+                    await deleteDoc(doc(db, `artifacts/${__app_id}/users/${userId}/inventory`, id));
+                    addAuditLog('Delete Inventory', `Deleted item: ${itemName}`);
+                } catch (e) {
+                    console.error("Error deleting inventory item: ", e);
+                }
+            });
+        }
+
+        // --- Sales Functions ---
+
+        document.getElementById('sale-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!isAuthReady) { console.error("Auth not ready."); return; }
+
+            const id = document.getElementById('sale-id').value;
+            const item = document.getElementById('sale-item').value;
+            const numberSold = parseInt(document.getElementById('sale-number').value);
+            const buyingPrice = parseFloat(document.getElementById('sale-bp').value);
+            const sellingPrice = parseFloat(document.getElementById('sale-sp').value);
+            const saleDate = new Date().toISOString().split('T')[0]; // Current date
+
+            const sale = {
+                item,
+                numberSold,
+                buyingPrice,
+                sellingPrice,
+                date: saleDate,
+                timestamp: serverTimestamp()
+            };
+
+            try {
+                if (id) {
+                    await setDoc(doc(db, `artifacts/${__app_id}/users/${userId}/sales`, id), sale);
+                    addAuditLog('Update Sale', `Updated sale for item: ${item}`);
+                } else {
+                    await addDoc(collection(db, `artifacts/${__app_id}/users/${userId}/sales`), sale);
+                    addAuditLog('Record Sale', `Recorded sale for item: ${item}, quantity: ${numberSold}`);
+                }
+                document.getElementById('sale-form').reset();
+                document.getElementById('sale-id').value = '';
+            } catch (e) {
+                console.error("Error saving sale: ", e);
+            }
+        });
+
+        async function fetchSales() {
+            if (!isAuthReady) { console.error("Auth not ready."); return; }
+            // onSnapshot listener already handles real-time updates.
+            // Filtering in UI for simplicity.
+        }
+
+        function renderSalesTable(salesData) {
+            const tableBody = document.querySelector('#sales-table tbody');
+            tableBody.innerHTML = '';
+
+            const dateFilter = document.getElementById('sales-date-filter').value;
+
+            const filteredData = salesData.filter(sale => {
+                // Assuming sale.date is stored as 'YYYY-MM-DD'
+                return !dateFilter || sale.date === dateFilter;
+            });
+
+            // Sort by timestamp descending
+            filteredData.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+
+
+            filteredData.forEach(sale => {
+                const row = tableBody.insertRow();
+                row.className = 'border-b border-gray-200 hover:bg-gray-100';
+                row.innerHTML = `
+                    <td class="py-3 px-6 text-left whitespace-nowrap">${sale.item}</td>
+                    <td class="py-3 px-6 text-left">${sale.numberSold}</td>
+                    <td class="py-3 px-6 text-left">$${sale.buyingPrice.toFixed(2)}</td>
+                    <td class="py-3 px-6 text-left">$${sale.sellingPrice.toFixed(2)}</td>
+                    <td class="py-3 px-6 text-left">${sale.date}</td>
+                    <td class="py-3 px-6 text-left">
+                        <button onclick="editSale('${sale.id}')" class="bg-yellow-500 text-white px-3 py-1 rounded-md text-xs hover:bg-yellow-600 mr-2">Edit</button>
+                        <button onclick="deleteSale('${sale.id}', '${sale.item}')" class="bg-red-500 text-white px-3 py-1 rounded-md text-xs hover:bg-red-600">Delete</button>
+                    </td>
+                `;
+            });
+        }
+
+        async function editSale(id) {
+            if (!isAuthReady) { console.error("Auth not ready."); return; }
+            try {
+                const docRef = doc(db, `artifacts/${__app_id}/users/${userId}/sales`, id);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    document.getElementById('sale-id').value = id;
+                    document.getElementById('sale-item').value = data.item;
+                    document.getElementById('sale-number').value = data.numberSold;
+                    document.getElementById('sale-bp').value = data.buyingPrice;
+                    document.getElementById('sale-sp').value = data.sellingPrice;
+                    addAuditLog('Edit Sale', `Opened edit form for sale of item: ${data.item}`);
+                }
+            } catch (e) {
+                console.error("Error fetching sale for edit: ", e);
+            }
+        }
+
+        function deleteSale(id, itemName) {
+            showModal('Confirm Deletion', `Are you sure you want to delete this sale record for ${itemName}?`, async () => {
+                if (!isAuthReady) { console.error("Auth not ready."); return; }
+                try {
+                    await deleteDoc(doc(db, `artifacts/${__app_id}/users/${userId}/sales`, id));
+                    addAuditLog('Delete Sale', `Deleted sale record for item: ${itemName}`);
+                } catch (e) {
+                    console.error("Error deleting sale: ", e);
+                }
+            });
+        }
+
+        // --- Expenses Functions ---
+
+        document.getElementById('expense-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!isAuthReady) { console.error("Auth not ready."); return; }
+
+            const id = document.getElementById('expense-id').value;
+            const description = document.getElementById('expense-description').value;
+            const amount = parseFloat(document.getElementById('expense-amount').value);
+            const receiptId = document.getElementById('expense-receiptId').value;
+            const source = document.getElementById('expense-source').value;
+            const responsible = document.getElementById('expense-responsible').value;
+            const expenseDate = new Date().toISOString().split('T')[0]; // Current date
+
+            const expense = {
+                description,
+                amount,
+                date: expenseDate,
+                receiptId,
+                source,
+                responsible,
+                timestamp: serverTimestamp()
+            };
+
+            try {
+                if (id) {
+                    await setDoc(doc(db, `artifacts/${__app_id}/users/${userId}/expenses`, id), expense);
+                    addAuditLog('Update Expense', `Updated expense: ${description}`);
+                } else {
+                    await addDoc(collection(db, `artifacts/${__app_id}/users/${userId}/expenses`), expense);
+                    addAuditLog('Record Expense', `Recorded new expense: ${description}, amount: ${amount}`);
+                }
+                document.getElementById('expense-form').reset();
+                document.getElementById('expense-id').value = '';
+            } catch (e) {
+                console.error("Error saving expense: ", e);
+            }
+        });
+
+        async function fetchExpenses() {
+            if (!isAuthReady) { console.error("Auth not ready."); return; }
+            // onSnapshot listener already handles real-time updates.
+            // Filtering in UI for simplicity.
+        }
+
+        function renderExpensesTable(expensesData) {
+            const tableBody = document.querySelector('#expenses-table tbody');
+            tableBody.innerHTML = '';
+
+            const dateFilter = document.getElementById('expenses-date-filter').value;
+
+            const filteredData = expensesData.filter(expense => {
+                return !dateFilter || expense.date === dateFilter;
+            });
+
+            // Sort by timestamp descending
+            filteredData.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+
+            filteredData.forEach(expense => {
+                const row = tableBody.insertRow();
+                row.className = 'border-b border-gray-200 hover:bg-gray-100';
+                row.innerHTML = `
+                    <td class="py-3 px-6 text-left whitespace-nowrap">${expense.description}</td>
+                    <td class="py-3 px-6 text-left">$${expense.amount.toFixed(2)}</td>
+                    <td class="py-3 px-6 text-left">${expense.date}</td>
+                    <td class="py-3 px-6 text-left">${expense.receiptId || 'N/A'}</td>
+                    <td class="py-3 px-6 text-left">${expense.source || 'N/A'}</td>
+                    <td class="py-3 px-6 text-left">${expense.responsible || 'N/A'}</td>
+                    <td class="py-3 px-6 text-left">
+                        <button onclick="editExpense('${expense.id}')" class="bg-yellow-500 text-white px-3 py-1 rounded-md text-xs hover:bg-yellow-600 mr-2">Edit</button>
+                        <button onclick="deleteExpense('${expense.id}', '${expense.description}')" class="bg-red-500 text-white px-3 py-1 rounded-md text-xs hover:bg-red-600">Delete</button>
+                    </td>
+                `;
+            });
+        }
+
+        async function editExpense(id) {
+            if (!isAuthReady) { console.error("Auth not ready."); return; }
+            try {
+                const docRef = doc(db, `artifacts/${__app_id}/users/${userId}/expenses`, id);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    document.getElementById('expense-id').value = id;
+                    document.getElementById('expense-description').value = data.description;
+                    document.getElementById('expense-amount').value = data.amount;
+                    document.getElementById('expense-receiptId').value = data.receiptId || '';
+                    document.getElementById('expense-source').value = data.source || '';
+                    document.getElementById('expense-responsible').value = data.responsible || '';
+                    addAuditLog('Edit Expense', `Opened edit form for expense: ${data.description}`);
+                }
+            } catch (e) {
+                console.error("Error fetching expense for edit: ", e);
+            }
+        }
+
+        function deleteExpense(id, description) {
+            showModal('Confirm Deletion', `Are you sure you want to delete the expense: ${description}?`, async () => {
+                if (!isAuthReady) { console.error("Auth not ready."); return; }
+                try {
+                    await deleteDoc(doc(db, `artifacts/${__app_id}/users/${userId}/expenses`, id));
+                    addAuditLog('Delete Expense', `Deleted expense: ${description}`);
+                } catch (e) {
+                    console.error("Error deleting expense: ", e);
+                }
+            });
+        }
+
+        // --- Cash Management Functions ---
+
+        document.getElementById('cash-journal-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!isAuthReady) { console.error("Auth not ready."); return; }
+
+            const id = document.getElementById('cash-journal-id').value;
+            const cashAtHand = parseFloat(document.getElementById('cash-at-hand').value);
+            const cashBanked = parseFloat(document.getElementById('cash-banked').value);
+            const bankReceiptId = document.getElementById('bank-receipt-id').value;
+            const responsiblePerson = document.getElementById('responsible-person').value;
+            const cashDate = document.getElementById('cash-date').value;
+
+            const cashEntry = {
+                cashAtHand,
+                cashBanked,
+                bankReceiptId,
+                responsiblePerson,
+                date: cashDate,
+                timestamp: serverTimestamp()
+            };
+
+            try {
+                if (id) {
+                    await setDoc(doc(db, `artifacts/${__app_id}/users/${userId}/cashJournal`, id), cashEntry);
+                    addAuditLog('Update Cash Entry', `Updated cash entry for date: ${cashDate}`);
+                } else {
+                    await addDoc(collection(db, `artifacts/${__app_id}/users/${userId}/cashJournal`), cashEntry);
+                    addAuditLog('Record Cash Entry', `Recorded cash entry for date: ${cashDate}`);
+                }
+                document.getElementById('cash-journal-form').reset();
+                document.getElementById('cash-journal-id').value = '';
+            } catch (e) {
+                console.error("Error saving cash entry: ", e);
+            }
+        });
+
+        async function fetchCashJournal() {
+            if (!isAuthReady) { console.error("Auth not ready."); return; }
+            // onSnapshot listener already handles real-time updates.
+            // Filtering in UI for simplicity.
+        }
+
+        function renderCashJournalTable(cashData) {
+            const tableBody = document.querySelector('#cash-journal-table tbody');
+            tableBody.innerHTML = '';
+
+            const dateFilter = document.getElementById('cash-filter-date').value;
+            const responsibleFilter = document.getElementById('cash-filter-responsible').value.toLowerCase();
+
+            const filteredData = cashData.filter(entry => {
+                const matchesDate = !dateFilter || entry.date === dateFilter;
+                const matchesResponsible = !responsibleFilter || (entry.responsiblePerson && entry.responsiblePerson.toLowerCase().includes(responsibleFilter));
+                return matchesDate && matchesResponsible;
+            });
+
+            // Sort by timestamp descending
+            filteredData.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+
+            filteredData.forEach(entry => {
+                const row = tableBody.insertRow();
+                row.className = 'border-b border-gray-200 hover:bg-gray-100';
+                row.innerHTML = `
+                    <td class="py-3 px-6 text-left">${entry.date}</td>
+                    <td class="py-3 px-6 text-left">$${entry.cashAtHand.toFixed(2)}</td>
+                    <td class="py-3 px-6 text-left">$${entry.cashBanked.toFixed(2)}</td>
+                    <td class="py-3 px-6 text-left">${entry.bankReceiptId}</td>
+                    <td class="py-3 px-6 text-left">${entry.responsiblePerson}</td>
+                    <td class="py-3 px-6 text-left">
+                        <button onclick="editCashEntry('${entry.id}')" class="bg-yellow-500 text-white px-3 py-1 rounded-md text-xs hover:bg-yellow-600 mr-2">Edit</button>
+                        <button onclick="deleteCashEntry('${entry.id}', '${entry.date}')" class="bg-red-500 text-white px-3 py-1 rounded-md text-xs hover:bg-red-600">Delete</button>
+                    </td>
+                `;
+            });
+        }
+
+        async function editCashEntry(id) {
+            if (!isAuthReady) { console.error("Auth not ready."); return; }
+            try {
+                const docRef = doc(db, `artifacts/${__app_id}/users/${userId}/cashJournal`, id);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    document.getElementById('cash-journal-id').value = id;
+                    document.getElementById('cash-at-hand').value = data.cashAtHand;
+                    document.getElementById('cash-banked').value = data.cashBanked;
+                    document.getElementById('bank-receipt-id').value = data.bankReceiptId;
+                    document.getElementById('responsible-person').value = data.responsiblePerson;
+                    document.getElementById('cash-date').value = data.date;
+                    addAuditLog('Edit Cash Entry', `Opened edit form for cash entry: ${data.date}`);
+                }
+            } catch (e) {
+                console.error("Error fetching cash entry for edit: ", e);
+            }
+        }
+
+        function deleteCashEntry(id, date) {
+            showModal('Confirm Deletion', `Are you sure you want to delete the cash entry for ${date}?`, async () => {
+                if (!isAuthReady) { console.error("Auth not ready."); return; }
+                try {
+                    await deleteDoc(doc(db, `artifacts/${__app_id}/users/${userId}/cashJournal`, id));
+                    addAuditLog('Delete Cash Entry', `Deleted cash entry for date: ${date}`);
+                } catch (e) {
+                    console.error("Error deleting cash entry: ", e);
+                }
+            });
+        }
+
+        // --- Reports Functions ---
+
+        async function generateReports() {
+            if (!isAuthReady) { console.error("Auth not ready."); return; }
+
+            const startDateStr = document.getElementById('report-start-date').value;
+            const endDateStr = document.getElementById('report-end-date').value;
+
+            let totalSales = 0;
+            let totalExpenses = 0;
+
+            try {
+                // Fetch sales
+                const salesSnapshot = await getDocs(collection(db, `artifacts/${__app_id}/users/${userId}/sales`));
+                salesSnapshot.forEach(doc => {
+                    const sale = doc.data();
+                    if (sale.date >= startDateStr && sale.date <= endDateStr) {
+                        totalSales += sale.numberSold * sale.sellingPrice;
+                    }
+                });
+
+                // Fetch expenses
+                const expensesSnapshot = await getDocs(collection(db, `artifacts/${__app_id}/users/${userId}/expenses`));
+                expensesSnapshot.forEach(doc => {
+                    const expense = doc.data();
+                    if (expense.date >= startDateStr && expense.date <= endDateStr) {
+                        totalExpenses += expense.amount;
+                    }
+                });
+
+                const netBalance = totalSales - totalExpenses;
+
+                document.getElementById('overall-sales').textContent = `$${totalSales.toFixed(2)}`;
+                document.getElementById('overall-expenses').textContent = `$${totalExpenses.toFixed(2)}`;
+                document.getElementById('overall-balance').textContent = `$${netBalance.toFixed(2)}`;
+
+                // Departmental reports (placeholder - would require 'department' field in sales/expenses)
+                const departmentalTableBody = document.querySelector('#departmental-reports-table tbody');
+                departmentalTableBody.innerHTML = `
+                    <tr>
+                        <td class="py-3 px-6 border-b border-gray-200">N/A (Requires Department Field)</td>
+                        <td class="py-3 px-6 border-b border-gray-200">0</td>
+                        <td class="py-3 px-6 border-b border-gray-200">0</td>
+                        <td class="py-3 px-6 border-b border-gray-200">0</td>
+                    </tr>
+                `;
+                addAuditLog('Generate Report', `Generated financial report from ${startDateStr} to ${endDateStr}`);
+
+            } catch (e) {
+                console.error("Error generating reports: ", e);
+            }
+        }
+
+        // --- Audit Logs Functions ---
+
+        async function addAuditLog(action, details) {
+            if (!isAuthReady) { console.error("Auth not ready for audit log."); return; }
+            try {
+                await addDoc(collection(db, `artifacts/${__app_id}/users/${userId}/auditLogs`), {
+                    timestamp: serverTimestamp(),
+                    user: auth.currentUser ? auth.currentUser.email || auth.currentUser.uid : 'anonymous',
+                    action: action,
+                    details: details
+                });
+            } catch (e) {
+                console.error("Error adding audit log: ", e);
+            }
+        }
+
+        async function fetchAuditLogs() {
+            if (!isAuthReady) { console.error("Auth not ready."); return; }
+            // onSnapshot listener already handles real-time updates.
+        }
+
+        function renderAuditLogsTable(auditLogsData) {
+            const tableBody = document.querySelector('#audit-logs-table tbody');
+            tableBody.innerHTML = '';
+
+            // Sort logs by timestamp descending
+            auditLogsData.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+
+            auditLogsData.forEach(log => {
+                const row = tableBody.insertRow();
+                row.className = 'border-b border-gray-200 hover:bg-gray-100';
+                const date = log.timestamp ? new Date(log.timestamp.seconds * 1000).toLocaleString() : 'N/A';
+                row.innerHTML = `
+                    <td class="py-3 px-6 text-left whitespace-nowrap">${date}</td>
+                    <td class="py-3 px-6 text-left">${log.user}</td>
+                    <td class="py-3 px-6 text-left">${log.action}</td>
+                    <td class="py-3 px-6 text-left">${log.details}</td>
+                `;
+            });
+        }
+
+        // Initial setup for filter buttons
+        document.getElementById('search-inventory-item').addEventListener('input', fetchInventory);
+        document.getElementById('search-inventory-low').addEventListener('input', fetchInventory);
+        document.getElementById('sales-date-filter').addEventListener('change', fetchSales);
+        document.getElementById('expenses-date-filter').addEventListener('change', fetchExpenses);
+        document.getElementById('cash-filter-date').addEventListener('change', fetchCashJournal);
+        document.getElementById('cash-filter-responsible').addEventListener('input', fetchCashJournal);
+
+    </script>
+</body>
+</html>
