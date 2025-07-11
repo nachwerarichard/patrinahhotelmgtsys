@@ -184,7 +184,7 @@
             max-width: 400px;
             width: 90%; /* Responsive width */
             box-sizing: border-box; /* Include padding in width */
-            display:block;
+            display: block; /* Initially visible */
         }
         #login-section h2 {
             color: #007bff;
@@ -487,6 +487,7 @@
                             <td id="overall-balance">0</td>
                         </tr>
                     </tbody>
+                </tbody>
                 </table>
 
                 <h3>Departmental Totals</h3>
@@ -600,15 +601,18 @@
             const mainContainer = document.getElementById('main-container'); // Get reference to the main container
             const navButtons = document.querySelectorAll('nav button');
 
+            console.log('updateUIForUserRole called. AuthToken present:', !!authToken); // Debugging log
+
             if (authToken && currentUsername && currentUserRole) {
                 userDisplay.textContent = `Logged in as: ${currentUsername} (${currentUserRole})`;
                 
                 // --- Hide Login Section, Show Main Container ---
                 loginSection.style.display = 'none';
-                // loginSection.classList.remove('active'); // No longer strictly needed for display, but good for consistency
+                console.log('loginSection.style.display set to:', loginSection.style.display); // Debugging log
                 
-                mainContainer.style.display = 'block'; // Show the main container
-                mainContent.style.display = 'block'; // Ensure main content itself is block (it's inside mainContainer)
+                mainContainer.style.display = 'block';
+                console.log('mainContainer.style.display set to:', mainContainer.style.display); // Debugging log
+                mainContent.style.display = 'block';
                 
                 // --- Manage Navigation Button Visibility based on role ---
                 navButtons.forEach(button => {
@@ -638,10 +642,12 @@
                 userDisplay.textContent = '';
                 mainContent.style.display = 'none'; // Ensure main content is hidden
                 mainContainer.style.display = 'none'; // Hide the main container
+                console.log('mainContainer.style.display set to:', mainContainer.style.display); // Debugging log
                 
                 loginSection.style.display = 'block';
-                // loginSection.classList.add('active'); // No longer strictly needed for display, but good for consistency
+                console.log('loginSection.style.display set to:', loginSection.style.display); // Debugging log
             }
+            console.log('End of updateUIForUserRole.'); // Debugging log
         }
 
 
@@ -811,6 +817,7 @@
                     localStorage.setItem('userRole', currentUserRole);
 
                     loginMessage.textContent = '';
+                    console.log('Login successful, calling updateUIForUserRole...'); // Debugging log
                     updateUIForUserRole(); // Update UI based on new role
                     
                 } else {
@@ -820,6 +827,8 @@
                     currentUsername = '';
                     currentUserRole = '';
                     localStorage.clear();
+                    console.log('Login failed.'); // Debugging log
+                    updateUIForUserRole(); // Ensure UI resets to login form
                 }
             } catch (error) {
                 console.error('Login error:', error);
@@ -828,6 +837,7 @@
                 currentUsername = '';
                 currentUserRole = '';
                 localStorage.clear();
+                updateUIForUserRole();
             }
         }
 
@@ -1161,7 +1171,7 @@
             }
 
             expenses.forEach(expense => {
-                const row = tbody.insertRow();
+                const row = tbody.insertCell();
                 row.insertCell().textContent = expense.description;
                 row.insertCell().textContent = expense.amount;
                 row.insertCell().textContent = new Date(expense.date).toLocaleDateString();
