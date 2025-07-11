@@ -487,7 +487,6 @@
                             <td id="overall-balance">0</td>
                         </tr>
                     </tbody>
-                </tbody>
                 </table>
 
                 <h3>Departmental Totals</h3>
@@ -594,16 +593,16 @@
          * Updates the display of the current logged-in user and manages navigation button visibility.
          * Ensures the login form is hidden on success and sets nav button visibility based on role.
          */
-        ffunction updateUIForUserRole() {
+        function updateUIForUserRole() {
             const userDisplay = document.getElementById('current-user-display');
-            const mainContent = document.getElementById('main-content');
+            const mainContent = document.getElementById('main-content'); // This is inside #main-container
             const loginSection = document.getElementById('login-section');
-            const mainContainer = document.getElementById('main-container');
+            const mainContainer = document.getElementById('main-container'); // Get reference to the main container
             const navButtons = document.querySelectorAll('nav button');
 
-            console.log('updateUIForUserRole called. AuthToken present:', !!authToken);
-            console.log('Current Username:', currentUsername); // ADDED THIS LINE
-            console.log('Current User Role:', currentUserRole); // ADDED THIS LINE
+            console.log('updateUIForUserRole called. AuthToken present:', !!authToken); // Debugging log
+            console.log('Current Username:', currentUsername); // ADDED THIS LINE FOR DEBUGGING
+            console.log('Current User Role:', currentUserRole); // ADDED THIS LINE FOR DEBUGGING
 
             if (authToken && currentUsername && currentUserRole) {
                 userDisplay.textContent = `Logged in as: ${currentUsername} (${currentUserRole})`;
@@ -642,8 +641,8 @@
             } else {
                 // Not logged in: Show login section, hide main container
                 userDisplay.textContent = '';
-                mainContent.style.display = 'none';
-                mainContainer.style.display = 'none';
+                mainContent.style.display = 'none'; // Ensure main content is hidden
+                mainContainer.style.display = 'none'; // Hide the main container
                 console.log('mainContainer.style.display set to:', mainContainer.style.display);
                 
                 loginSection.style.display = 'block';
@@ -651,6 +650,13 @@
             }
             console.log('End of updateUIForUserRole.');
         }
+
+
+        /**
+         * Hides all sections and shows the specified one.
+         * Includes role-based access checks and special handling for bar staff sales view.
+         * @param {string} sectionId The ID of the section to show.
+         */
         function showSection(sectionId) {
             // Define which sections are allowed for each role
             const allowedSections = {
@@ -812,7 +818,7 @@
                     localStorage.setItem('userRole', currentUserRole);
 
                     loginMessage.textContent = '';
-                    console.log('Login successful, calling updateUIForUserRole...'); // Debugging log
+                    console.log('Login successful, calling updateUIForUserRole...');
                     updateUIForUserRole(); // Update UI based on new role
                     
                 } else {
@@ -822,7 +828,7 @@
                     currentUsername = '';
                     currentUserRole = '';
                     localStorage.clear();
-                    console.log('Login failed.'); // Debugging log
+                    console.log('Login failed.');
                     updateUIForUserRole(); // Ensure UI resets to login form
                 }
             } catch (error) {
@@ -1166,7 +1172,7 @@
             }
 
             expenses.forEach(expense => {
-                const row = tbody.insertCell();
+                const row = tbody.insertRow(); // Changed from tbody.insertCell() to tbody.insertRow()
                 row.insertCell().textContent = expense.description;
                 row.insertCell().textContent = expense.amount;
                 row.insertCell().textContent = new Date(expense.date).toLocaleDateString();
