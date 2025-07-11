@@ -604,7 +604,7 @@
             console.log('Current Username:', currentUsername); // ADDED THIS LINE FOR DEBUGGING
             console.log('Current User Role:', currentUserRole); // ADDED THIS LINE FOR DEBUGGING
 
-            if (authToken && currentUsername && currentUserRole) {
+            if (authToken  && currentUserRole) {
                 userDisplay.textContent = `Logged in as: ${currentUsername} (${currentUserRole})`;
                 
                 // --- Hide Login Section, Show Main Container ---
