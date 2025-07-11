@@ -776,22 +776,50 @@
         /**
          * Handles user login. Authenticates with hardcoded credentials and sets authToken.
          */
-        function login() {
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            const loginMessage = document.getElementById('login-message');
+// In your <script> tag in index.html
 
-            if (username === 'admin' && password === '123') { // Hardcoded credentials as per backend
-                authToken = btoa(`${username}:${password}`); // Base64 encode "admin:123"
-                document.getElementById('login-section').classList.remove('active');
-                document.getElementById('main-content').style.display = 'block';
-                document.getElementById('login-section').style.display = 'none';
-                loginMessage.textContent = '';
-                showSection('inventory'); // Show inventory section by default after successful login
-            } else {
-                loginMessage.textContent = 'Invalid username or password.';
-            }
+// ... (existing API_BASE_URL, authToken declaration) ...
+
+// Use a separate fetch function for login, as authenticatedFetch requires authToken
+async function login() {
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    const loginMessage = document.getElementById('login-message');
+
+    loginMessage.textContent = 'Logging in...'; // Provide feedback
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/login`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ username, password })
+        });
+
+        if (response.ok) { // Check if the response status is 200-299
+            // If login is successful, store the base64 encoded token
+            authToken = btoa(`${username}:${password}`); // Generate token AFTER successful validation
+            
+            document.getElementById('login-section').classList.remove('active');
+            document.getElementById('main-content').style.display = 'block';
+            document.getElementById('login-section').style.display = 'none';
+            loginMessage.textContent = '';
+            showSection('inventory'); // Show inventory section by default after successful login
+
+        } else {
+            const errorData = await response.json(); // Read error message from backend
+            loginMessage.textContent = errorData.error || 'Invalid username or password.';
+            authToken = null; // Clear token if login fails
         }
+    } catch (error) {
+        console.error('Login error:', error);
+        loginMessage.textContent = 'Network error or server unavailable.';
+        authToken = null;
+    }
+}
+
+// ... (rest of your JavaScript code, including authenticatedFetch, showSection, etc.) ...
 
         /**
          * Logs out the user by clearing the authToken and showing the login section.
