@@ -43,11 +43,12 @@
             border-radius: 8px;
             display: flex;
             justify-content: center;
+            flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
+            gap: 10px; /* Space between buttons */
             box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
         }
         nav button {
             padding: 12px 25px;
-            margin: 0 10px;
             border: none;
             background-color: #007bff;
             color: white;
@@ -85,7 +86,9 @@
         }
         form input[type="text"],
         form input[type="number"],
-        form input[type="date"] {
+        form input[type="date"],
+        form input[type="password"],
+        form select { /* Added select for roles */
             width: calc(100% - 24px);
             padding: 12px;
             margin-bottom: 15px;
@@ -97,7 +100,9 @@
         }
         form input[type="text"]:focus,
         form input[type="number"]:focus,
-        form input[type="date"]:focus {
+        form input[type="date"]:focus,
+        form input[type="password"]:focus,
+        form select:focus {
             border-color: #007bff;
             outline: none;
             box-shadow: 0 0 5px rgba(0, 123, 255, 0.2);
@@ -254,6 +259,12 @@
         .filter-controls button:hover {
             background-color: #138496;
         }
+        .username-display {
+            float: left;
+            margin-top: 10px;
+            font-weight: bold;
+            color: #0056b3;
+        }
     </style>
 </head>
 <body>
@@ -262,67 +273,153 @@
 
         <div id="login-section" class="active">
             <h2>Login</h2>
-            <input type="text" id="username" placeholder="Username (admin)">
-            <input type="password" id="password" placeholder="Password (123)">
+            <input type="text" id="username" placeholder="Username">
+            <input type="password" id="password" placeholder="Password">
             <button onclick="login()">Login</button>
             <p id="login-message"></p>
         </div>
 
         <div id="main-content" style="display: none;">
+            <span id="current-user-display" class="username-display"></span>
             <button id="logout-button" onclick="logout()">Logout</button>
             <nav>
-                <button onclick="showSection('inventory')">Inventory</button>
-                <button onclick="showSection('sales')">Sales</button>
-                <button onclick="showSection('expenses')">Expenses</button>
-                <button onclick="showSection('cash-management')">Cash Management</button> <!-- NEW BUTTON -->
-                <button onclick="showSection('reports')">Reports</button> <!-- NEW BUTTON -->
+                <button id="nav-inventory" onclick="showSection('inventory')">Inventory</button>
+                <button id="nav-sales" onclick="showSection('sales')">Sales</button>
+                <button id="nav-expenses" onclick="showSection('expenses')">Expenses</button>
+                <button id="nav-cash-management" onclick="showSection('cash-management')">Cash Management</button>
+                <button id="nav-reports" onclick="showSection('reports')">Reports</button>
+                <button id="nav-users" onclick="showSection('users')" style="display: none;">User Management</button> <!-- Admin Only -->
+                <button id="nav-audit-logs" onclick="showSection('audit-logs')" style="display: none;">Audit Logs</button> <!-- Admin Only -->
             </nav>
 
-             <!-- Reports Section -->
-            <div id="reports-section" class="section">
-                <h2>Financial Reports</h2>
+            <!-- Inventory Section -->
+            <div id="inventory-section" class="section">
+                <h2>Inventory Management</h2>
 
+                <h3>Add/Update Inventory Item</h3>
+                <form id="inventory-form">
+                    <input type="hidden" id="inventory-id">
+                    <label for="item">Item:</label>
+                    <input type="text" id="item" required>
+                    <label for="opening">Opening Stock:</label>
+                    <input type="number" id="opening" min="0" required>
+                    <label for="purchases">Purchases:</label>
+                    <input type="number" id="purchases" min="0" required>
+                    <label for="inventory-sales">Sales (deducted from inventory):</label>
+                    <input type="number" id="inventory-sales" min="0" required>
+                    <label for="spoilage">Spoilage:</label>
+                    <input type="number" id="spoilage" min="0" required>
+                    <button type="submit">Save Inventory</button>
+                </form>
+
+                <h3>Current Inventory</h3>
                 <div class="filter-controls">
-                    <label for="report-start-date">Start Date:</label>
-                    <input type="date" id="report-start-date">
-                    <label for="report-end-date">End Date:</label>
-                    <input type="date" id="report-end-date">
-                    <button onclick="generateReports()">Generate Reports</button>
+                    <input type="text" id="search-inventory-item" placeholder="Search by item name">
+                    <input type="number" id="search-inventory-low" placeholder="Filter by closing stock <">
+                    <button onclick="fetchInventory()">Apply Filters</button>
                 </div>
-
-                <h3>Overall Totals</h3>
-                <table id="overall-reports-table">
+                <table id="inventory-table">
                     <thead>
                         <tr>
-                            <th>Total Sales</th>
-                            <th>Total Expenses</th>
-                            <th>Net Balance</th>
+                            <th>Item</th>
+                            <th>Opening</th>
+                            <th>Purchases</th>
+                            <th>Sales</th>
+                            <th>Spoilage</th>
+                            <th>Closing</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td id="overall-sales">0</td>
-                            <td id="overall-expenses">0</td>
-                            <td id="overall-balance">0</td>
-                        </tr>
+                        <!-- Inventory items will be loaded here -->
                     </tbody>
                 </table>
+            </div>
 
-              <!--  <h3>Departmental Totals</h3>
-                <table id="departmental-reports-table">
+            <!-- Sales Section -->
+            <div id="sales-section" class="section">
+                <h2>Sales Management</h2>
+
+                <h3>Record New Sale</h3>
+                <form id="sale-form">
+                    <input type="hidden" id="sale-id">
+                    <label for="sale-item">Item:</label>
+                    <input type="text" id="sale-item" required>
+                    <label for="sale-number">Number Sold:</label>
+                    <input type="number" id="sale-number" min="1" required>
+                    <label for="sale-bp">Buying Price (BP):</label>
+                    <input type="number" id="sale-bp" step="0.01" min="0" required>
+                    <label for="sale-sp">Selling Price (SP):</label>
+                    <input type="number" id="sale-sp" step="0.01" min="0" required>
+                    <button type="submit">Record Sale</button>
+                </form>
+
+                <h3>Sales Records</h3>
+                <div class="filter-controls">
+                    <label for="sales-date-filter" style="margin-bottom:0;">Filter by Date:</label>
+                    <input type="date" id="sales-date-filter" onchange="fetchSales()">
+                </div>
+                <table id="sales-table">
                     <thead>
                         <tr>
-                            <th>Department</th>
-                            <th>Total Sales</th>
-                            <th>Total Expenses</th>
-                            <th>Net Balance</th>
+                            <th>Item</th>
+                            <th>Number</th>
+                            <th>BP</th>
+                            <th>SP</th>
+                            <th>Date</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- Department reports will be loaded here -->
-                    <!--</tbody>
-                </table> -->
+                        <!-- Sales records will be loaded here -->
+                    </tbody>
+                </table>
             </div>
+
+            <!-- Expenses Section -->
+            <div id="expenses-section" class="section">
+                <h2>Expenses Management</h2>
+
+                <h3>Record New Expense</h3>
+                <form id="expense-form">
+                    <input type="hidden" id="expense-id">
+                    <label for="expense-description">Description:</label>
+                    <input type="text" id="expense-description" required>
+                    <label for="expense-amount">Amount:</label>
+                    <input type="number" id="expense-amount" step="0.01" min="0" required>
+                    <label for="expense-receiptId">Receipt ID (Optional):</label>
+                    <input type="text" id="expense-receiptId">
+                    <label for="expense-source">Source (Optional):</label>
+                    <input type="text" id="expense-source">
+                    <label for="expense-responsible">Responsible Person (Optional):</label>
+                    <input type="text" id="expense-responsible">
+                    <button type="submit">Record Expense</button>
+                </form>
+
+                <h3>Expense Records</h3>
+                <div class="filter-controls">
+                    <label for="expenses-date-filter" style="margin-bottom:0;">Filter by Date:</label>
+                    <input type="date" id="expenses-date-filter" onchange="fetchExpenses()">
+                </div>
+                <table id="expenses-table">
+                    <thead>
+                        <tr>
+                            <th>Description</th>
+                            <th>Amount</th>
+                            <th>Date</th>
+                            <th>Receipt ID</th>
+                            <th>Source</th>
+                            <th>Responsible</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Expense records will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Cash Management Section -->
             <div id="cash-management-section" class="section">
                 <h2>Cash Management</h2>
 
@@ -367,355 +464,175 @@
                 </table>
             </div>
 
+            <!-- Reports Section -->
+            <div id="reports-section" class="section">
+                <h2>Financial Reports</h2>
 
-            <div id="inventory-section" class="section">
-                <h2>Inventory Management</h2>
-
-                <h3>Add/Update Inventory Item</h3>
-                <form id="inventory-form">
-                    <input type="hidden" id="inventory-id">
-                    <label for="item">Item:</label>
-                    <input type="text" id="item" required>
-                    <label for="opening">Opening Stock:</label>
-                    <input type="number" id="opening" min="0" required>
-                    <label for="purchases">Purchases:</label>
-                    <input type="number" id="purchases" min="0" required>
-                    <label for="inventory-sales">Sales (deducted from inventory):</label>
-                    <input type="number" id="inventory-sales" min="0" required>
-                    <label for="spoilage">Spoilage:</label>
-                    <input type="number" id="spoilage" min="0" required>
-                    <button type="submit">Save Inventory</button>
-                </form>
-
-                <h3>Current Inventory</h3>
                 <div class="filter-controls">
-                    <input type="text" id="search-inventory-item" placeholder="Search by item name">
-                    <input type="number" id="search-inventory-low" placeholder="Filter by closing stock <">
-                    <button onclick="fetchInventory()">Apply Filters</button>
+                    <label for="report-start-date">Start Date:</label>
+                    <input type="date" id="report-start-date">
+                    <label for="report-end-date">End Date:</label>
+                    <input type="date" id="report-end-date">
+                    <button onclick="generateReports()">Generate Reports</button>
                 </div>
-                <table id="inventory-table">
+
+                <h3>Overall Totals</h3>
+                <table id="overall-reports-table">
                     <thead>
                         <tr>
-                            <th>Item</th>
-                            <th>Opening</th>
-                            <th>Purchases</th>
-                            <th>Sales</th>
-                            <th>Spoilage</th>
-                            <th>Closing</th>
+                            <th>Total Sales</th>
+                            <th>Total Expenses</th>
+                            <th>Net Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td id="overall-sales">0</td>
+                            <td id="overall-expenses">0</td>
+                            <td id="overall-balance">0</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Departmental Totals</h3>
+                <table id="departmental-reports-table">
+                    <thead>
+                        <tr>
+                            <th>Department</th>
+                            <th>Total Sales</th>
+                            <th>Total Expenses</th>
+                            <th>Net Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Department reports will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- NEW: User Management Section -->
+            <div id="users-section" class="section">
+                <h2>User Management</h2>
+
+                <h3>Create New User</h3>
+                <form id="user-form">
+                    <input type="hidden" id="user-id">
+                    <label for="new-username">Username:</label>
+                    <input type="text" id="new-username" required>
+                    <label for="new-password">Password:</label>
+                    <input type="password" id="new-password" required>
+                    <label for="new-role">Role:</label>
+                    <select id="new-role" required>
+                        <option value="bar_staff">Bar Staff</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                    <button type="submit">Create User</button>
+                </form>
+
+                <h3>Existing Users</h3>
+                <table id="users-table">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Role</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        </tbody>
+                        <!-- Users will be loaded here -->
+                    </tbody>
                 </table>
             </div>
 
-            <div id="sales-section" class="section">
-                <h2>Sales Management</h2>
+            <!-- NEW: Audit Logs Section -->
+            <div id="audit-logs-section" class="section">
+                <h2>Audit Logs</h2>
 
-                <h3>Record New Sale</h3>
-                <form id="sale-form">
-                    <input type="hidden" id="sale-id">
-                    <label for="sale-item">Item:</label>
-                    <input type="text" id="sale-item" required>
-                    <label for="sale-number">Number Sold:</label>
-                    <input type="number" id="sale-number" min="1" required>
-                    <label for="sale-bp">Buying Price (BP):</label>
-                    <input type="number" id="sale-bp" step="0.01" min="0" required>
-                    <label for="sale-sp">Selling Price (SP):</label>
-                    <input type="number" id="sale-sp" step="0.01" min="0" required>
-                    <button type="submit">Record Sale</button>
-                </form>
-
-                <h3>Sales Records</h3>
-                <div class="filter-controls">
-                    <label for="sales-date-filter" style="margin-bottom:0;">Filter by Date:</label>
-                    <input type="date" id="sales-date-filter" onchange="fetchSales()">
-                </div>
-                <table id="sales-table">
+                <table id="audit-logs-table">
                     <thead>
                         <tr>
-                            <th>Item</th>
-                            <th>Number</th>
-                            <th>BP</th>
-                            <th>SP</th>
-                            <th>Date</th>
-                            <th>Actions</th>
+                            <th>Timestamp</th>
+                            <th>User</th>
+                            <th>Action</th>
+                            <th>Details</th>
                         </tr>
                     </thead>
                     <tbody>
-                        </tbody>
+                        <!-- Audit logs will be loaded here -->
+                    </tbody>
                 </table>
             </div>
 
-            <div id="expenses-section" class="section">
-                <h2>Expenses Management</h2>
-
-                <h3>Record New Expense</h3>
-                <form id="expense-form">
-                    <input type="hidden" id="expense-id">
-                    <label for="expense-description">Description:</label>
-                    <input type="text" id="expense-description" required>
-                    <label for="expense-amount">Amount:</label>
-                    <input type="number" id="expense-amount" step="0.01" min="0" required>
-                    <label for="expense-receiptId">Receipt ID (Optional):</label>
-                    <input type="text" id="expense-receiptId">
-                    <label for="expense-source">Source (Optional):</label>
-                    <input type="text" id="expense-source">
-                    <label for="expense-responsible">Responsible Person (Optional):</label>
-                    <input type="text" id="expense-responsible">
-                    <button type="submit">Record Expense</button>
-                </form>
-
-                <h3>Expense Records</h3>
-                <div class="filter-controls">
-                    <label for="expenses-date-filter" style="margin-bottom:0;">Filter by Date:</label>
-                    <input type="date" id="expenses-date-filter" onchange="fetchExpenses()">
-                </div>
-                <table id="expenses-table">
-                    <thead>
-                        <tr>
-                            <th>Description</th>
-                            <th>Amount</th>
-                            <th>Date</th>
-                            <th>Receipt ID</th>
-                            <th>Source</th>
-                            <th>Responsible</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        </tbody>
-                </table>
-            </div>
         </div>
     </div>
-    <script src="script3.js"></script>
-    
-        <script>
-    // ... (Your existing API_BASE_URL, authToken, authenticatedFetch, login, logout functions) ...
 
-    // --- Utility Functions (UPDATED showSection) ---
-
-    /**
-     * Hides all sections and shows the specified one.
-     * Also triggers data fetching for the shown section.
-     * @param {string} sectionId The ID of the section to show (e.g., 'inventory', 'sales', 'expenses', 'reports', 'cash-management').
-     */
-    function showSection(sectionId) {
-        document.querySelectorAll('.section').forEach(section => {
-            section.classList.remove('active');
-        });
-        document.getElementById(`${sectionId}-section`).classList.add('active');
-
-        // Fetch data when a section is made active
-        if (sectionId === 'inventory') {
-            fetchInventory();
-        } else if (sectionId === 'sales') {
-            fetchSales();
-        } else if (sectionId === 'expenses') {
-            fetchExpenses();
-        } else if (sectionId === 'cash-management') {
-            // Set default date filter for cash management to today
-            const today = new Date();
-            const yyyy = today.getFullYear();
-            const mm = String(today.getMonth() + 1).padStart(2, '0');
-            const dd = String(today.getDate()).padStart(2, '0');
-            const todayString = `${yyyy}-${mm}-${dd}`;
-            document.getElementById('cash-date').value = todayString; // Default for new entry form
-            document.getElementById('cash-filter-date').value = todayString; // Default for filter
-            fetchCashJournal();
-        } else if (sectionId === 'reports') { // NEW: Automatically generate reports
-            // Set default dates for reports to last 30 days or current month
-            const today = new Date();
-            const thirtyDaysAgo = new Date(today);
-            thirtyDaysAgo.setDate(today.getDate() - 30);
-
-            const startInput = document.getElementById('report-start-date');
-            const endInput = document.getElementById('report-end-date');
-
-            if (!startInput.value) {
-                startInput.value = thirtyDaysAgo.toISOString().split('T')[0];
-            }
-            if (!endInput.value) {
-                endInput.value = today.toISOString().split('T')[0];
-            }
-            generateReports();
-        }
-    }
-
-    // --- NEW: Helper function for departmental identification ---
-    /**
-     * Extracts the department from an item name or expense description/source.
-     * This is crucial for your current differentiation strategy based on naming conventions.
-     * @param {string} text The item name (e.g., "Bar-Whiskey") or expense description/source.
-     * @returns {string} The identified department (e.g., "Bar", "Restaurant", "Conference", "Gardens", "Accommodation") or "Other".
-     */
-    function getDepartmentFromText(text) {
-        const lowerText = text.toLowerCase();
-        if (lowerText.startsWith('bar-') || lowerText.includes('bar ')) return 'Bar';
-        if (lowerText.startsWith('rest-') || lowerText.includes('restaurant')) return 'Restaurant';
-        if (lowerText.startsWith('conf-') || lowerText.includes('conference')) return 'Conference';
-        if (lowerText.startsWith('grdn-') || lowerText.includes('garden')) return 'Gardens';
-        if (lowerText.startsWith('accomm-') || lowerText.includes('accommodation') || lowerText.includes('room')) return 'Accommodation';
-        return 'Other'; // Fallback for items/expenses not clearly categorized
-    }
-
-    // --- NEW: Report Generation Functions ---
-
-    /**
-     * Generates and displays financial reports for overall and by department.
-     * Filters data based on the selected date range.
-     */
-    async function generateReports() {
-        const startDateString = document.getElementById('report-start-date').value;
-        const endDateString = document.getElementById('report-end-date').value;
-
-        if (!startDateString || !endDateString) {
-            alert('Please select both start and end dates for the reports.');
-            return;
-        }
-
-        const startDate = new Date(startDateString);
-        const endDate = new Date(endDateString);
-        endDate.setHours(23, 59, 59, 999); // Set to end of the day for inclusive range
-
-        let allSales = [];
-        let allExpenses = [];
-
-        try {
-            // Fetch all sales (backend filters by start date, then we filter by end date)
-            const salesResponse = await authenticatedFetch(`${API_BASE_URL}/sales?date=${startDateString}`);
-            if (salesResponse) {
-                const salesData = await salesResponse.json();
-                allSales = salesData.filter(s => {
-                    const saleDate = new Date(s.date);
-                    return saleDate >= startDate && saleDate <= endDate;
-                });
-            }
-
-            // Fetch all expenses (backend filters by start date, then we filter by end date)
-            const expensesResponse = await authenticatedFetch(`${API_BASE_URL}/expenses?date=${startDateString}`);
-            if (expensesResponse) {
-                const expensesData = await expensesResponse.json();
-                allExpenses = expensesData.filter(e => {
-                    const expenseDate = new Date(e.date);
-                    return expenseDate >= startDate && expenseDate <= endDate;
-                });
-            }
-
-            // Initialize report aggregates
-            const departmentReports = {}; // { 'Bar': { sales: 0, expenses: 0 }, 'Restaurant': ... }
-            let overallSales = 0;
-            let overallExpenses = 0;
-
-            // Process Sales
-            allSales.forEach(sale => {
-                const department = getDepartmentFromText(sale.item);
-                const saleAmount = sale.number * sale.sp; // Assuming SP is the actual sales price
-                
-                overallSales += saleAmount;
-                if (!departmentReports[department]) {
-                    departmentReports[department] = { sales: 0, expenses: 0 };
-                }
-                departmentReports[department].sales += saleAmount;
-            });
-
-            // Process Expenses
-            allExpenses.forEach(expense => {
-                // Combine description and source for better keyword search
-                const department = getDepartmentFromText(expense.description + ' ' + (expense.source || ''));
-                
-                overallExpenses += expense.amount;
-                if (!departmentReports[department]) {
-                    departmentReports[department] = { sales: 0, expenses: 0 };
-                }
-                departmentReports[department].expenses += expense.amount;
-            });
-
-            // Display Overall Totals
-            document.getElementById('overall-sales').textContent = overallSales.toFixed(2);
-            document.getElementById('overall-expenses').textContent = overallExpenses.toFixed(2);
-            document.getElementById('overall-balance').textContent = (overallSales - overallExpenses).toFixed(2);
-
-            // Display Departmental Totals
-            const tbody = document.querySelector('#departmental-reports-table tbody');
-            tbody.innerHTML = ''; // Clear previous reports
-
-            // Sort departments for consistent display
-            const sortedDepartments = Object.keys(departmentReports).sort();
-
-            if (sortedDepartments.length === 0) {
-                const row = tbody.insertRow();
-                row.insertCell().colSpan = 4;
-                row.insertCell().textContent = 'No data found for the selected period or departments.';
-            } else {
-                sortedDepartments.forEach(dept => {
-                    const data = departmentReports[dept];
-                    const deptSales = data.sales;
-                    const deptExpenses = data.expenses;
-                    const deptBalance = deptSales - deptExpenses;
-
-                    const row = tbody.insertRow();
-                    row.insertCell().textContent = dept;
-                    row.insertCell().textContent = deptSales.toFixed(2);
-                    row.insertCell().textContent = deptExpenses.toFixed(2);
-                    row.insertCell().textContent = deptBalance.toFixed(2);
-                });
-            }
-
-        } catch (error) {
-            console.error('Error generating reports:', error);
-            alert('Failed to generate reports: ' + error.message);
-        }
-    }
-
-    // ... (Your existing fetchInventory, renderInventoryTable, submitInventoryForm, etc. functions) ...
-    // ... (Your existing fetchSales, renderSalesTable, submitSaleForm, etc. functions) ...
-    // ... (Your existing fetchExpenses, renderExpensesTable, submitExpenseForm, etc. functions) ...
-    // ... (Your existing fetchCashJournal, renderCashJournalTable, submitCashJournalForm, etc. functions) ...
-
-    // --- UPDATED Event Listener (DOMContentLoaded) ---
-    document.addEventListener('DOMContentLoaded', () => {
-        // ... (Your existing login-section and main-content display logic) ...
-
-        // Attach form submission handlers (ensure these are already there)
-        document.getElementById('inventory-form').addEventListener('submit', submitInventoryForm);
-        document.getElementById('sale-form').addEventListener('submit', submitSaleForm);
-        document.getElementById('expense-form').addEventListener('submit', submitExpenseForm);
-        document.getElementById('cash-journal-form').addEventListener('submit', submitCashJournalForm); // Ensure this is there
-
-        // Set initial date filter for sales/expenses/cash management/reports to today or a range
-        const today = new Date();
-        const yyyy = today.getFullYear();
-        const mm = String(today.getMonth() + 1).padStart(2, '0');
-        const dd = String(today.getDate()).padStart(2, '0');
-        const todayString = `${yyyy}-${mm}-${dd}`;
-
-        document.getElementById('sales-date-filter').value = todayString;
-        document.getElementById('expenses-date-filter').value = todayString;
-        document.getElementById('cash-date').value = todayString; // For new cash entry form
-        document.getElementById('cash-filter-date').value = todayString; // For cash filter
-
-        // For reports, set default to last 30 days
-        const thirtyDaysAgo = new Date(today);
-        thirtyDaysAgo.setDate(today.getDate() - 30);
-        document.getElementById('report-start-date').value = thirtyDaysAgo.toISOString().split('T')[0];
-        document.getElementById('report-end-date').value = todayString;
-    });
-</script>
-    </script>
     <script>
-        // IMPORTANT: Set this to your deployed backend URL
-        const API_BASE_URL = 'https://patrinahhotelmgtsys.onrender.com'; 
-        let authToken = ''; // This will store the base64 encoded "admin:123" after login
+        const API_BASE_URL = 'https://patrinahhotelmgtsys.onrender.com';
+        let authToken = localStorage.getItem('authToken') || ''; // Get token from local storage
+        let currentUsername = localStorage.getItem('username') || ''; // Get username
+        let currentUserRole = localStorage.getItem('userRole') || ''; // Get role
 
         // --- Utility Functions ---
 
         /**
+         * Updates the display of the current logged-in user and manages navigation button visibility.
+         */
+        function updateUIForUserRole() {
+            const userDisplay = document.getElementById('current-user-display');
+            const mainContent = document.getElementById('main-content');
+            const loginSection = document.getElementById('login-section');
+
+            if (authToken && currentUsername && currentUserRole) {
+                userDisplay.textContent = `Logged in as: ${currentUsername} (${currentUserRole})`;
+                mainContent.style.display = 'block';
+                loginSection.style.display = 'none';
+                loginSection.classList.remove('active');
+
+                // Manage navigation button visibility based on role
+                const adminOnlyButtons = ['nav-users', 'nav-audit-logs'];
+                adminOnlyButtons.forEach(buttonId => {
+                    const button = document.getElementById(buttonId);
+                    if (button) {
+                        button.style.display = (currentUserRole === 'admin') ? 'inline-block' : 'none';
+                    }
+                });
+
+                // Bar staff can only access Sales, Expenses, Cash Management, Reports
+                const barStaffAllowedButtons = ['nav-sales', 'nav-expenses', 'nav-cash-management', 'nav-reports'];
+                document.querySelectorAll('nav button').forEach(button => {
+                    if (!adminOnlyButtons.includes(button.id)) { // Don't hide admin buttons
+                        if (currentUserRole === 'bar_staff' && !barStaffAllowedButtons.includes(button.id)) {
+                            button.style.display = 'none';
+                        } else if (currentUserRole === 'bar_staff' && barStaffAllowedButtons.includes(button.id)) {
+                             button.style.display = 'inline-block'; // Ensure they are shown
+                        } else if (currentUserRole === 'admin') {
+                            // Admins see all by default, ensure they are not hidden by bar_staff logic
+                            button.style.display = 'inline-block';
+                        }
+                    }
+                });
+
+
+                // Show default section based on role
+                if (currentUserRole === 'admin') {
+                    showSection('inventory'); // Admins start with inventory
+                } else if (currentUserRole === 'bar_staff') {
+                    showSection('sales'); // Bar staff start with sales
+                }
+
+            } else {
+                userDisplay.textContent = '';
+                mainContent.style.display = 'none';
+                loginSection.style.display = 'block';
+                loginSection.classList.add('active');
+            }
+        }
+
+
+        /**
          * Hides all sections and shows the specified one.
          * Also triggers data fetching for the shown section.
-         * @param {string} sectionId The ID of the section to show (e.g., 'inventory', 'sales', 'expenses').
+         * @param {string} sectionId The ID of the section to show.
          */
         function showSection(sectionId) {
             document.querySelectorAll('.section').forEach(section => {
@@ -730,6 +647,44 @@
                 fetchSales();
             } else if (sectionId === 'expenses') {
                 fetchExpenses();
+            } else if (sectionId === 'cash-management') {
+                const today = new Date();
+                const yyyy = today.getFullYear();
+                const mm = String(today.getMonth() + 1).padStart(2, '0');
+                const dd = String(today.getDate()).padStart(2, '0');
+                const todayString = `${yyyy}-${mm}-${dd}`;
+                document.getElementById('cash-date').value = todayString;
+                document.getElementById('cash-filter-date').value = todayString;
+                fetchCashJournal();
+            } else if (sectionId === 'reports') {
+                const today = new Date();
+                const thirtyDaysAgo = new Date(today);
+                thirtyDaysAgo.setDate(today.getDate() - 30);
+
+                const startInput = document.getElementById('report-start-date');
+                const endInput = document.getElementById('report-end-date');
+
+                if (!startInput.value) {
+                    startInput.value = thirtyDaysAgo.toISOString().split('T')[0];
+                }
+                if (!endInput.value) {
+                    endInput.value = today.toISOString().split('T')[0];
+                }
+                generateReports();
+            } else if (sectionId === 'users') { // NEW: User Management
+                if (currentUserRole === 'admin') {
+                    fetchUsers();
+                } else {
+                    alert('Access Denied: Only administrators can view user management.');
+                    showSection(currentUserRole === 'bar_staff' ? 'sales' : 'inventory'); // Redirect if not admin
+                }
+            } else if (sectionId === 'audit-logs') { // NEW: Audit Logs
+                if (currentUserRole === 'admin') {
+                    fetchAuditLogs();
+                } else {
+                    alert('Access Denied: Only administrators can view audit logs.');
+                    showSection(currentUserRole === 'bar_staff' ? 'sales' : 'inventory'); // Redirect if not admin
+                }
             }
         }
 
@@ -742,7 +697,7 @@
         async function authenticatedFetch(url, options = {}) {
             if (!authToken) {
                 alert('You are not logged in. Please log in first.');
-                logout(); // Redirect to login
+                logout();
                 return null;
             }
 
@@ -756,88 +711,91 @@
                 const response = await fetch(url, options);
 
                 if (response.status === 401 || response.status === 403) {
-                    alert('Session expired or invalid credentials. Please log in again.');
+                    const errorData = await response.json();
+                    alert(`Access Denied: ${errorData.error || 'Invalid credentials or insufficient permissions.'}`);
                     logout();
                     return null;
                 }
-                if (!response.ok && response.status !== 204) { // 204 No Content is a success for DELETE
+                if (!response.ok && response.status !== 204) {
                     const errorData = await response.json();
                     throw new Error(errorData.error || `HTTP error! Status: ${response.status}`);
                 }
                 return response;
             } catch (error) {
                 console.error('Network or fetch error:', error);
-                throw new Error('Could not connect to the server or process request: ' + error.message);
+                alert('Could not connect to the server or process request: ' + error.message);
+                return null;
             }
         }
 
-        // --- Login/Logout ---
+        // --- Login/Logout (MODIFIED) ---
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const loginMessage = document.getElementById('login-message');
 
-        /**
-         * Handles user login. Authenticates with hardcoded credentials and sets authToken.
-         */
-// In your <script> tag in index.html
+            loginMessage.textContent = 'Logging in...';
 
-// ... (existing API_BASE_URL, authToken declaration) ...
+            try {
+                const response = await fetch(`${API_BASE_URL}/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
 
-// Use a separate fetch function for login, as authenticatedFetch requires authToken
-async function login() {
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
-    const loginMessage = document.getElementById('login-message');
+                if (response.ok) {
+                    const data = await response.json();
+                    authToken = btoa(`${username}:${password}`); // Generate token AFTER successful validation
+                    currentUsername = data.username;
+                    currentUserRole = data.role;
 
-    loginMessage.textContent = 'Logging in...'; // Provide feedback
+                    localStorage.setItem('authToken', authToken);
+                    localStorage.setItem('username', currentUsername);
+                    localStorage.setItem('userRole', currentUserRole);
 
-    try {
-        const response = await fetch(`${API_BASE_URL}/login`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ username, password })
-        });
-
-        if (response.ok) { // Check if the response status is 200-299
-            // If login is successful, store the base64 encoded token
-            authToken = btoa(`${username}:${password}`); // Generate token AFTER successful validation
-            
-            document.getElementById('login-section').classList.remove('active');
-            document.getElementById('main-content').style.display = 'block';
-            document.getElementById('login-section').style.display = 'none';
-            loginMessage.textContent = '';
-            showSection('inventory'); // Show inventory section by default after successful login
-
-        } else {
-            const errorData = await response.json(); // Read error message from backend
-            loginMessage.textContent = errorData.error || 'Invalid username or password.';
-            authToken = null; // Clear token if login fails
+                    loginMessage.textContent = '';
+                    updateUIForUserRole(); // Update UI based on new role
+                    
+                } else {
+                    const errorData = await response.json();
+                    loginMessage.textContent = errorData.error || 'Invalid username or password.';
+                    authToken = '';
+                    currentUsername = '';
+                    currentUserRole = '';
+                    localStorage.clear();
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                loginMessage.textContent = 'Network error or server unavailable.';
+                authToken = '';
+                currentUsername = '';
+                currentUserRole = '';
+                localStorage.clear();
+            }
         }
-    } catch (error) {
-        console.error('Login error:', error);
-        loginMessage.textContent = 'Network error or server unavailable.';
-        authToken = null;
-    }
-}
 
-// ... (rest of your JavaScript code, including authenticatedFetch, showSection, etc.) ...
+        async function logout() {
+            try {
+                // Optionally notify backend of logout for audit logging
+                await authenticatedFetch(`${API_BASE_URL}/logout`, { method: 'POST' });
+            } catch (error) {
+                console.warn('Error notifying backend of logout:', error);
+                // Continue with logout even if backend notification fails
+            }
 
-        /**
-         * Logs out the user by clearing the authToken and showing the login section.
-         */
-        function logout() {
             authToken = '';
-            document.getElementById('main-content').style.display = 'none';
-            document.getElementById('login-section').style.display ='block';
-            document.getElementById('username').value = ''; // Clear input fields
+            currentUsername = '';
+            currentUserRole = '';
+            localStorage.clear(); // Clear all stored user data
+            updateUIForUserRole(); // Reset UI to login state
+            document.getElementById('username').value = '';
             document.getElementById('password').value = '';
             document.getElementById('login-message').textContent = '';
         }
 
         // --- Inventory Functions ---
-
-        /**
-         * Fetches and displays inventory data. Supports filtering by item name and low stock.
-         */
         async function fetchInventory() {
             try {
                 const itemFilter = document.getElementById('search-inventory-item').value;
@@ -853,7 +811,7 @@ async function login() {
                 }
 
                 const response = await authenticatedFetch(url);
-                if (!response) return; // If authenticatedFetch returned null, it means login failed
+                if (!response) return;
                 const inventory = await response.json();
                 renderInventoryTable(inventory);
             } catch (error) {
@@ -862,13 +820,9 @@ async function login() {
             }
         }
 
-        /**
-         * Renders the fetched inventory data into the inventory table.
-         * @param {Array} inventory An array of inventory objects.
-         */
         function renderInventoryTable(inventory) {
             const tbody = document.querySelector('#inventory-table tbody');
-            tbody.innerHTML = ''; // Clear existing rows
+            tbody.innerHTML = '';
             if (inventory.length === 0) {
                 const row = tbody.insertRow();
                 row.insertCell().colSpan = 7;
@@ -887,55 +841,58 @@ async function login() {
                 const actionsCell = row.insertCell();
                 actionsCell.className = 'actions';
 
-                const editButton = document.createElement('button');
-                editButton.textContent = 'Edit';
-                editButton.className = 'edit';
-                editButton.onclick = () => populateInventoryForm(item);
-                actionsCell.appendChild(editButton);
+                if (currentUserRole === 'admin') { // Admin can edit/delete
+                    const editButton = document.createElement('button');
+                    editButton.textContent = 'Edit';
+                    editButton.className = 'edit';
+                    editButton.onclick = () => populateInventoryForm(item);
+                    actionsCell.appendChild(editButton);
 
-                const deleteButton = document.createElement('button');
-                deleteButton.textContent = 'Delete';
-                deleteButton.className = 'delete';
-                deleteButton.onclick = () => deleteInventory(item._id);
-                actionsCell.appendChild(deleteButton);
+                    const deleteButton = document.createElement('button');
+                    deleteButton.textContent = 'Delete';
+                    deleteButton.className = 'delete';
+                    deleteButton.onclick = () => deleteInventory(item._id);
+                    actionsCell.appendChild(deleteButton);
+                } else {
+                    actionsCell.textContent = 'View Only';
+                }
             });
         }
 
-        /**
-         * Handles the submission of the inventory form (add or update).
-         * @param {Event} event The form submission event.
-         */
         async function submitInventoryForm(event) {
-            event.preventDefault(); // Prevent default form submission
-
+            event.preventDefault();
+            if (currentUserRole !== 'admin') {
+                alert('Permission Denied: Only administrators can add/update inventory.');
+                return;
+            }
             const id = document.getElementById('inventory-id').value;
             const item = document.getElementById('item').value;
             const opening = parseInt(document.getElementById('opening').value);
             const purchases = parseInt(document.getElementById('purchases').value);
-            const sales = parseInt(document.getElementById('inventory-sales').value); // This is from inventory decrease
+            const sales = parseInt(document.getElementById('inventory-sales').value);
             const spoilage = parseInt(document.getElementById('spoilage').value);
 
             const inventoryData = { item, opening, purchases, sales, spoilage };
 
             try {
                 let response;
-                if (id) { // If ID exists, it's an update operation
+                if (id) {
                     response = await authenticatedFetch(`${API_BASE_URL}/inventory/${id}`, {
                         method: 'PUT',
                         body: JSON.stringify(inventoryData)
                     });
-                } else { // Otherwise, it's a new item creation
+                } else {
                     response = await authenticatedFetch(`${API_BASE_URL}/inventory`, {
                         method: 'POST',
                         body: JSON.stringify(inventoryData)
                     });
                 }
                 if (response) {
-                    await response.json(); // Parse response to ensure success or catch specific errors
-                    alert(`Inventory item ${id ? 'updated' : 'added'} successfully!`);
-                    document.getElementById('inventory-form').reset(); // Clear the form
-                    document.getElementById('inventory-id').value = ''; // Clear ID for next new entry
-                    fetchInventory(); // Refresh the table
+                    await response.json();
+                    alert('Inventory item saved successfully!');
+                    document.getElementById('inventory-form').reset();
+                    document.getElementById('inventory-id').value = '';
+                    fetchInventory();
                 }
             } catch (error) {
                 console.error('Error saving inventory item:', error);
@@ -943,10 +900,6 @@ async function login() {
             }
         }
 
-        /**
-         * Populates the inventory form with data from an existing item for editing.
-         * @param {object} item The inventory item object.
-         */
         function populateInventoryForm(item) {
             document.getElementById('inventory-id').value = item._id;
             document.getElementById('item').value = item.item;
@@ -956,24 +909,22 @@ async function login() {
             document.getElementById('spoilage').value = item.spoilage;
         }
 
-        /**
-         * Deletes an inventory item by its ID.
-         * @param {string} id The ID of the inventory item to delete.
-         */
         async function deleteInventory(id) {
-            if (!confirm('Are you sure you want to delete this inventory item?')) {
-                return; // User cancelled
+            if (currentUserRole !== 'admin') {
+                alert('Permission Denied: Only administrators can delete inventory.');
+                return;
             }
+            if (!confirm('Are you sure you want to delete this inventory item?')) return;
             try {
                 const response = await authenticatedFetch(`${API_BASE_URL}/inventory/${id}`, {
                     method: 'DELETE'
                 });
-                if (response && response.status === 204) { // 204 No Content indicates successful deletion
+                if (response && response.status === 204) {
                     alert('Inventory item deleted successfully!');
-                    fetchInventory(); // Refresh the table
+                    fetchInventory();
                 } else if (response) {
-                    const errorData = await response.json(); // Try to get more specific error from backend
-                    alert('Failed to delete inventory item: ' + errorData.error);
+                     const errorData = await response.json();
+                     alert('Failed to delete inventory item: ' + errorData.error);
                 }
             } catch (error) {
                 console.error('Error deleting inventory item:', error);
@@ -982,10 +933,6 @@ async function login() {
         }
 
         // --- Sales Functions ---
-
-        /**
-         * Fetches and displays sales data. Supports filtering by date.
-         */
         async function fetchSales() {
             try {
                 const dateFilter = document.getElementById('sales-date-filter').value;
@@ -1004,10 +951,6 @@ async function login() {
             }
         }
 
-        /**
-         * Renders the fetched sales data into the sales table.
-         * @param {Array} sales An array of sale objects.
-         */
         function renderSalesTable(sales) {
             const tbody = document.querySelector('#sales-table tbody');
             tbody.innerHTML = '';
@@ -1028,22 +971,30 @@ async function login() {
                 const actionsCell = row.insertCell();
                 actionsCell.className = 'actions';
 
-                const editButton = document.createElement('button');
-                editButton.textContent = 'Edit';
-                editButton.className = 'edit';
-                editButton.onclick = () => populateSaleForm(sale);
-                actionsCell.appendChild(editButton);
-                // No delete button as per backend API
+                if (currentUserRole === 'admin') { // Admin can edit/delete
+                    const editButton = document.createElement('button');
+                    editButton.textContent = 'Edit';
+                    editButton.className = 'edit';
+                    editButton.onclick = () => populateSaleForm(sale);
+                    actionsCell.appendChild(editButton);
+
+                    const deleteButton = document.createElement('button');
+                    deleteButton.textContent = 'Delete';
+                    deleteButton.className = 'delete';
+                    deleteButton.onclick = () => deleteSale(sale._id);
+                    actionsCell.appendChild(deleteButton);
+                } else {
+                    actionsCell.textContent = 'View Only';
+                }
             });
         }
 
-        /**
-         * Handles the submission of the sale form (record new sale or update).
-         * @param {Event} event The form submission event.
-         */
         async function submitSaleForm(event) {
             event.preventDefault();
-
+            if (currentUserRole !== 'admin' && currentUserRole !== 'bar_staff') {
+                alert('Permission Denied: You do not have permission to record sales.');
+                return;
+            }
             const id = document.getElementById('sale-id').value;
             const item = document.getElementById('sale-item').value;
             const number = parseInt(document.getElementById('sale-number').value);
@@ -1054,12 +1005,16 @@ async function login() {
 
             try {
                 let response;
-                if (id) {
+                if (id) { // Edit operation (Admin only)
+                    if (currentUserRole !== 'admin') {
+                        alert('Permission Denied: Only administrators can edit sales.');
+                        return;
+                    }
                     response = await authenticatedFetch(`${API_BASE_URL}/sales/${id}`, {
                         method: 'PUT',
                         body: JSON.stringify(saleData)
                     });
-                } else {
+                } else { // New sale creation (Admin or Bar Staff)
                     response = await authenticatedFetch(`${API_BASE_URL}/sales`, {
                         method: 'POST',
                         body: JSON.stringify(saleData)
@@ -1067,7 +1022,7 @@ async function login() {
                 }
                 if (response) {
                     await response.json();
-                    alert(`Sale ${id ? 'updated' : 'recorded'} successfully!`);
+                    alert('Sale recorded successfully!');
                     document.getElementById('sale-form').reset();
                     document.getElementById('sale-id').value = '';
                     fetchSales();
@@ -1078,10 +1033,6 @@ async function login() {
             }
         }
 
-        /**
-         * Populates the sale form with data from an existing sale for editing.
-         * @param {object} sale The sale object.
-         */
         function populateSaleForm(sale) {
             document.getElementById('sale-id').value = sale._id;
             document.getElementById('sale-item').value = sale.item;
@@ -1090,11 +1041,30 @@ async function login() {
             document.getElementById('sale-sp').value = sale.sp;
         }
 
-        // --- Expenses Functions ---
+        async function deleteSale(id) {
+            if (currentUserRole !== 'admin') {
+                alert('Permission Denied: Only administrators can delete sales.');
+                return;
+            }
+            if (!confirm('Are you sure you want to delete this sale record?')) return;
+            try {
+                const response = await authenticatedFetch(`${API_BASE_URL}/sales/${id}`, {
+                    method: 'DELETE'
+                });
+                if (response && response.status === 204) {
+                    alert('Sale record deleted successfully!');
+                    fetchSales();
+                } else if (response) {
+                    const errorData = await response.json();
+                    alert('Failed to delete sale record: ' + errorData.error);
+                }
+            } catch (error) {
+                console.error('Error deleting sale record:', error);
+                alert('Failed to delete sale record: ' + error.message);
+            }
+        }
 
-        /**
-         * Fetches and displays expense data. Supports filtering by date.
-         */
+        // --- Expenses Functions ---
         async function fetchExpenses() {
             try {
                 const dateFilter = document.getElementById('expenses-date-filter').value;
@@ -1113,10 +1083,6 @@ async function login() {
             }
         }
 
-        /**
-         * Renders the fetched expense data into the expenses table.
-         * @param {Array} expenses An array of expense objects.
-         */
         function renderExpensesTable(expenses) {
             const tbody = document.querySelector('#expenses-table tbody');
             tbody.innerHTML = '';
@@ -1132,33 +1098,36 @@ async function login() {
                 row.insertCell().textContent = expense.description;
                 row.insertCell().textContent = expense.amount;
                 row.insertCell().textContent = new Date(expense.date).toLocaleDateString();
-                row.insertCell().textContent = expense.receiptId || 'N/A'; // Handle optional fields
+                row.insertCell().textContent = expense.receiptId || 'N/A';
                 row.insertCell().textContent = expense.source || 'N/A';
                 row.insertCell().textContent = expense.responsible || 'N/A';
                 const actionsCell = row.insertCell();
                 actionsCell.className = 'actions';
 
-                const editButton = document.createElement('button');
-                editButton.textContent = 'Edit';
-                editButton.className = 'edit';
-                editButton.onclick = () => populateExpenseForm(expense);
-                actionsCell.appendChild(editButton);
+                if (currentUserRole === 'admin') { // Admin can edit/delete
+                    const editButton = document.createElement('button');
+                    editButton.textContent = 'Edit';
+                    editButton.className = 'edit';
+                    editButton.onclick = () => populateExpenseForm(expense);
+                    actionsCell.appendChild(editButton);
 
-                const deleteButton = document.createElement('button');
-                deleteButton.textContent = 'Delete';
-                deleteButton.className = 'delete';
-                deleteButton.onclick = () => deleteExpense(expense._id);
-                actionsCell.appendChild(deleteButton);
+                    const deleteButton = document.createElement('button');
+                    deleteButton.textContent = 'Delete';
+                    deleteButton.className = 'delete';
+                    deleteButton.onclick = () => deleteExpense(expense._id);
+                    actionsCell.appendChild(deleteButton);
+                } else {
+                    actionsCell.textContent = 'View Only';
+                }
             });
         }
 
-        /**
-         * Handles the submission of the expense form (record new expense or update).
-         * @param {Event} event The form submission event.
-         */
         async function submitExpenseForm(event) {
             event.preventDefault();
-
+            if (currentUserRole !== 'admin' && currentUserRole !== 'bar_staff') {
+                alert('Permission Denied: You do not have permission to record expenses.');
+                return;
+            }
             const id = document.getElementById('expense-id').value;
             const description = document.getElementById('expense-description').value;
             const amount = parseFloat(document.getElementById('expense-amount').value);
@@ -1170,12 +1139,16 @@ async function login() {
 
             try {
                 let response;
-                if (id) {
+                if (id) { // Edit operation (Admin only)
+                    if (currentUserRole !== 'admin') {
+                        alert('Permission Denied: Only administrators can edit expenses.');
+                        return;
+                    }
                     response = await authenticatedFetch(`${API_BASE_URL}/expenses/${id}`, {
                         method: 'PUT',
                         body: JSON.stringify(expenseData)
                     });
-                } else {
+                } else { // New expense creation (Admin or Bar Staff)
                     response = await authenticatedFetch(`${API_BASE_URL}/expenses`, {
                         method: 'POST',
                         body: JSON.stringify(expenseData)
@@ -1183,7 +1156,7 @@ async function login() {
                 }
                 if (response) {
                     await response.json();
-                    alert(`Expense ${id ? 'updated' : 'recorded'} successfully!`);
+                    alert('Expense recorded successfully!');
                     document.getElementById('expense-form').reset();
                     document.getElementById('expense-id').value = '';
                     fetchExpenses();
@@ -1194,10 +1167,6 @@ async function login() {
             }
         }
 
-        /**
-         * Populates the expense form with data from an existing expense for editing.
-         * @param {object} expense The expense object.
-         */
         function populateExpenseForm(expense) {
             document.getElementById('expense-id').value = expense._id;
             document.getElementById('expense-description').value = expense.description;
@@ -1207,14 +1176,12 @@ async function login() {
             document.getElementById('expense-responsible').value = expense.responsible || '';
         }
 
-        /**
-         * Deletes an expense record by its ID.
-         * @param {string} id The ID of the expense record to delete.
-         */
         async function deleteExpense(id) {
-            if (!confirm('Are you sure you want to delete this expense record?')) {
+            if (currentUserRole !== 'admin') {
+                alert('Permission Denied: Only administrators can delete expenses.');
                 return;
             }
+            if (!confirm('Are you sure you want to delete this expense record?')) return;
             try {
                 const response = await authenticatedFetch(`${API_BASE_URL}/expenses/${id}`, {
                     method: 'DELETE'
@@ -1232,25 +1199,409 @@ async function login() {
             }
         }
 
-        // --- Initial Setup and Event Listeners ---
+        // --- Cash Management Functions ---
+        async function fetchCashJournal() {
+            try {
+                const dateFilter = document.getElementById('cash-filter-date').value;
+                const responsibleFilter = document.getElementById('cash-filter-responsible').value;
+
+                let url = `${API_BASE_URL}/cash-journal`;
+                const params = new URLSearchParams();
+                if (dateFilter) params.append('date', dateFilter);
+                if (responsibleFilter) params.append('responsiblePerson', responsibleFilter);
+
+                if (params.toString()) {
+                    url += `?${params.toString()}`;
+                }
+
+                const response = await authenticatedFetch(url);
+                if (!response) return;
+                const records = await response.json();
+                renderCashJournalTable(records);
+            } catch (error) {
+                console.error('Error fetching cash journal:', error);
+                alert('Failed to fetch cash journal: ' + error.message);
+            }
+        }
+
+        function renderCashJournalTable(records) {
+            const tbody = document.querySelector('#cash-journal-table tbody');
+            tbody.innerHTML = '';
+            if (records.length === 0) {
+                const row = tbody.insertRow();
+                row.insertCell().colSpan = 6;
+                row.insertCell().textContent = 'No cash records found for the selected filters.';
+                return;
+            }
+
+            records.forEach(record => {
+                const row = tbody.insertRow();
+                row.insertCell().textContent = new Date(record.date).toLocaleDateString();
+                row.insertCell().textContent = record.cashAtHand.toFixed(2);
+                row.insertCell().textContent = record.cashBanked.toFixed(2);
+                row.insertCell().textContent = record.bankReceiptId;
+                row.insertCell().textContent = record.responsiblePerson;
+                const actionsCell = row.insertCell();
+                actionsCell.className = 'actions';
+
+                if (currentUserRole === 'admin') { // Admin can edit/delete
+                    const editButton = document.createElement('button');
+                    editButton.textContent = 'Edit';
+                    editButton.className = 'edit';
+                    editButton.onclick = () => populateCashJournalForm(record);
+                    actionsCell.appendChild(editButton);
+
+                    const deleteButton = document.createElement('button');
+                    deleteButton.textContent = 'Delete';
+                    deleteButton.className = 'delete';
+                    deleteButton.onclick = () => deleteCashJournal(record._id);
+                    actionsCell.appendChild(deleteButton);
+                } else {
+                    actionsCell.textContent = 'View Only';
+                }
+            });
+        }
+
+        async function submitCashJournalForm(event) {
+            event.preventDefault();
+            if (currentUserRole !== 'admin' && currentUserRole !== 'bar_staff') {
+                alert('Permission Denied: You do not have permission to record cash entries.');
+                return;
+            }
+            const id = document.getElementById('cash-journal-id').value;
+            const cashAtHand = parseFloat(document.getElementById('cash-at-hand').value);
+            const cashBanked = parseFloat(document.getElementById('cash-banked').value);
+            const bankReceiptId = document.getElementById('bank-receipt-id').value;
+            const responsiblePerson = document.getElementById('responsible-person').value;
+            const date = document.getElementById('cash-date').value;
+
+            const cashData = { cashAtHand, cashBanked, bankReceiptId, responsiblePerson, date };
+
+            try {
+                let response;
+                if (id) { // Edit operation (Admin only)
+                    if (currentUserRole !== 'admin') {
+                        alert('Permission Denied: Only administrators can edit cash entries.');
+                        return;
+                    }
+                    response = await authenticatedFetch(`${API_BASE_URL}/cash-journal/${id}`, {
+                        method: 'PUT',
+                        body: JSON.stringify(cashData)
+                    });
+                } else { // New entry creation (Admin or Bar Staff)
+                    response = await authenticatedFetch(`${API_BASE_URL}/cash-journal`, {
+                        method: 'POST',
+                        body: JSON.stringify(cashData)
+                    });
+                }
+                if (response) {
+                    await response.json();
+                    alert('Cash entry saved successfully!');
+                    document.getElementById('cash-journal-form').reset();
+                    document.getElementById('cash-journal-id').value = '';
+                    const today = new Date();
+                    const yyyy = today.getFullYear();
+                    const mm = String(today.getMonth() + 1).padStart(2, '0');
+                    const dd = String(today.getDate()).padStart(2, '0');
+                    document.getElementById('cash-date').value = `${yyyy}-${mm}-${dd}`;
+                    fetchCashJournal();
+                }
+            } catch (error) {
+                console.error('Error saving cash entry:', error);
+                alert('Failed to save cash entry: ' + error.message);
+            }
+        }
+
+        function populateCashJournalForm(record) {
+            document.getElementById('cash-journal-id').value = record._id;
+            document.getElementById('cash-at-hand').value = record.cashAtHand;
+            document.getElementById('cash-banked').value = record.cashBanked;
+            document.getElementById('bank-receipt-id').value = record.bankReceiptId;
+            document.getElementById('responsible-person').value = record.responsiblePerson;
+            document.getElementById('cash-date').value = new Date(record.date).toISOString().split('T')[0];
+        }
+
+        async function deleteCashJournal(id) {
+            if (currentUserRole !== 'admin') {
+                alert('Permission Denied: Only administrators can delete cash entries.');
+                return;
+            }
+            if (!confirm('Are you sure you want to delete this cash journal entry?')) return;
+            try {
+                const response = await authenticatedFetch(`${API_BASE_URL}/cash-journal/${id}`, {
+                    method: 'DELETE'
+                });
+                if (response && response.status === 204) {
+                    alert('Cash entry deleted successfully!');
+                    fetchCashJournal();
+                } else if (response) {
+                    const errorData = await response.json();
+                    alert('Failed to delete cash entry: ' + errorData.error);
+                }
+            } catch (error) {
+                console.error('Error deleting cash entry:', error);
+                alert('Failed to delete cash entry: ' + error.message);
+            }
+        }
+
+        // --- Reports Functions (Existing) ---
+        function getDepartmentFromText(text) {
+            const lowerText = text.toLowerCase();
+            if (lowerText.startsWith('bar-') || lowerText.includes('bar ')) return 'Bar';
+            if (lowerText.startsWith('rest-') || lowerText.includes('restaurant')) return 'Restaurant';
+            if (lowerText.startsWith('conf-') || lowerText.includes('conference')) return 'Conference';
+            if (lowerText.startsWith('grdn-') || lowerText.includes('garden')) return 'Gardens';
+            if (lowerText.startsWith('accomm-') || lowerText.includes('accommodation') || lowerText.includes('room')) return 'Accommodation';
+            return 'Other';
+        }
+
+        async function generateReports() {
+            const startDateString = document.getElementById('report-start-date').value;
+            const endDateString = document.getElementById('report-end-date').value;
+
+            if (!startDateString || !endDateString) {
+                alert('Please select both start and end dates for the reports.');
+                return;
+            }
+
+            const startDate = new Date(startDateString);
+            const endDate = new Date(endDateString);
+            endDate.setHours(23, 59, 59, 999);
+
+            let allSales = [];
+            let allExpenses = [];
+
+            try {
+                const salesResponse = await authenticatedFetch(`${API_BASE_URL}/sales?date=${startDateString}`);
+                if (salesResponse) {
+                    const salesData = await salesResponse.json();
+                    allSales = salesData.filter(s => {
+                        const saleDate = new Date(s.date);
+                        return saleDate >= startDate && saleDate <= endDate;
+                    });
+                }
+
+                const expensesResponse = await authenticatedFetch(`${API_BASE_URL}/expenses?date=${startDateString}`);
+                if (expensesResponse) {
+                    const expensesData = await expensesResponse.json();
+                    allExpenses = expensesData.filter(e => {
+                        const expenseDate = new Date(e.date);
+                        return expenseDate >= startDate && expenseDate <= endDate;
+                    });
+                }
+
+                const departmentReports = {};
+                let overallSales = 0;
+                let overallExpenses = 0;
+
+                allSales.forEach(sale => {
+                    const department = getDepartmentFromText(sale.item);
+                    const saleAmount = sale.number * sale.sp;
+                    
+                    overallSales += saleAmount;
+                    if (!departmentReports[department]) {
+                        departmentReports[department] = { sales: 0, expenses: 0 };
+                    }
+                    departmentReports[department].sales += saleAmount;
+                });
+
+                allExpenses.forEach(expense => {
+                    const department = getDepartmentFromText(expense.description + ' ' + (expense.source || ''));
+                    
+                    overallExpenses += expense.amount;
+                    if (!departmentReports[department]) {
+                        departmentReports[department] = { sales: 0, expenses: 0 };
+                    }
+                    departmentReports[department].expenses += expense.amount;
+                });
+
+                document.getElementById('overall-sales').textContent = overallSales.toFixed(2);
+                document.getElementById('overall-expenses').textContent = overallExpenses.toFixed(2);
+                document.getElementById('overall-balance').textContent = (overallSales - overallExpenses).toFixed(2);
+
+                const tbody = document.querySelector('#departmental-reports-table tbody');
+                tbody.innerHTML = '';
+
+                const sortedDepartments = Object.keys(departmentReports).sort();
+
+                if (sortedDepartments.length === 0) {
+                    const row = tbody.insertRow();
+                    row.insertCell().colSpan = 4;
+                    row.insertCell().textContent = 'No data found for the selected period or departments.';
+                } else {
+                    sortedDepartments.forEach(dept => {
+                        const data = departmentReports[dept];
+                        const deptSales = data.sales;
+                        const deptExpenses = data.expenses;
+                        const deptBalance = deptSales - deptExpenses;
+
+                        const row = tbody.insertRow();
+                        row.insertCell().textContent = dept;
+                        row.insertCell().textContent = deptSales.toFixed(2);
+                        row.insertCell().textContent = deptExpenses.toFixed(2);
+                        row.insertCell().textContent = deptBalance.toFixed(2);
+                    });
+                }
+
+            } catch (error) {
+                console.error('Error generating reports:', error);
+                alert('Failed to generate reports: ' + error.message);
+            }
+        }
+
+        // --- NEW: User Management Functions ---
+        async function fetchUsers() {
+            try {
+                const response = await authenticatedFetch(`${API_BASE_URL}/users`);
+                if (!response) return;
+                const users = await response.json();
+                renderUsersTable(users);
+            } catch (error) {
+                console.error('Error fetching users:', error);
+                alert('Failed to fetch users: ' + error.message);
+            }
+        }
+
+        function renderUsersTable(users) {
+            const tbody = document.querySelector('#users-table tbody');
+            tbody.innerHTML = '';
+            if (users.length === 0) {
+                const row = tbody.insertRow();
+                row.insertCell().colSpan = 3;
+                row.insertCell().textContent = 'No users found.';
+                return;
+            }
+
+            users.forEach(user => {
+                const row = tbody.insertRow();
+                row.insertCell().textContent = user.username;
+                row.insertCell().textContent = user.role;
+                const actionsCell = row.insertCell();
+                actionsCell.className = 'actions';
+
+                // Only admin can delete users (no edit endpoint for users in backend yet)
+                if (currentUserRole === 'admin') {
+                    const deleteButton = document.createElement('button');
+                    deleteButton.textContent = 'Delete';
+                    deleteButton.className = 'delete';
+                    deleteButton.onclick = () => deleteUser(user._id, user.username);
+                    actionsCell.appendChild(deleteButton);
+                }
+            });
+        }
+
+        async function submitUserForm(event) {
+            event.preventDefault();
+            if (currentUserRole !== 'admin') {
+                alert('Permission Denied: Only administrators can create users.');
+                return;
+            }
+            const username = document.getElementById('new-username').value;
+            const password = document.getElementById('new-password').value;
+            const role = document.getElementById('new-role').value;
+
+            try {
+                const response = await authenticatedFetch(`${API_BASE_URL}/users`, {
+                    method: 'POST',
+                    body: JSON.stringify({ username, password, role })
+                });
+                if (response) {
+                    const result = await response.json();
+                    alert(result.message);
+                    document.getElementById('user-form').reset();
+                    fetchUsers();
+                }
+            } catch (error) {
+                console.error('Error creating user:', error);
+                alert('Failed to create user: ' + error.message);
+            }
+        }
+
+        async function deleteUser(id, username) {
+            if (currentUserRole !== 'admin') {
+                alert('Permission Denied: Only administrators can delete users.');
+                return;
+            }
+            if (!confirm(`Are you sure you want to delete user "${username}"?`)) return;
+            try {
+                const response = await authenticatedFetch(`${API_BASE_URL}/users/${id}`, {
+                    method: 'DELETE'
+                });
+                if (response && response.status === 204) {
+                    alert('User deleted successfully!');
+                    fetchUsers();
+                } else if (response) {
+                    const errorData = await response.json();
+                    alert('Failed to delete user: ' + errorData.error);
+                }
+            } catch (error) {
+                console.error('Error deleting user:', error);
+                alert('Failed to delete user: ' + error.message);
+            }
+        }
+
+        // --- NEW: Audit Logs Functions ---
+        async function fetchAuditLogs() {
+            try {
+                const response = await authenticatedFetch(`${API_BASE_URL}/audit-logs`);
+                if (!response) return;
+                const logs = await response.json();
+                renderAuditLogsTable(logs);
+            } catch (error) {
+                console.error('Error fetching audit logs:', error);
+                alert('Failed to fetch audit logs: ' + error.message);
+            }
+        }
+
+        function renderAuditLogsTable(logs) {
+            const tbody = document.querySelector('#audit-logs-table tbody');
+            tbody.innerHTML = '';
+            if (logs.length === 0) {
+                const row = tbody.insertRow();
+                row.insertCell().colSpan = 4;
+                row.insertCell().textContent = 'No audit logs found.';
+                return;
+            }
+
+            logs.forEach(log => {
+                const row = tbody.insertRow();
+                row.insertCell().textContent = new Date(log.timestamp).toLocaleString();
+                row.insertCell().textContent = log.user;
+                row.insertCell().textContent = log.action;
+                row.insertCell().textContent = JSON.stringify(log.details); // Display details as string
+            });
+        }
+
+
+        // --- Initial Setup and Event Listeners (MODIFIED) ---
         document.addEventListener('DOMContentLoaded', () => {
-            // Initially, only show the login section
-            document.getElementById('login-section').classList.add('active');
-            document.getElementById('main-content').style.display = 'none';
+            // Check authentication status on page load
+            updateUIForUserRole();
 
             // Attach form submission handlers
             document.getElementById('inventory-form').addEventListener('submit', submitInventoryForm);
             document.getElementById('sale-form').addEventListener('submit', submitSaleForm);
             document.getElementById('expense-form').addEventListener('submit', submitExpenseForm);
+            document.getElementById('cash-journal-form').addEventListener('submit', submitCashJournalForm);
+            document.getElementById('user-form').addEventListener('submit', submitUserForm); // NEW
 
-            // Set initial date filter for sales/expenses to today
+            // Set initial date filters for various sections
             const today = new Date();
             const yyyy = today.getFullYear();
-            const mm = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
             const dd = String(today.getDate()).padStart(2, '0');
             const todayString = `${yyyy}-${mm}-${dd}`;
+
             document.getElementById('sales-date-filter').value = todayString;
             document.getElementById('expenses-date-filter').value = todayString;
+            document.getElementById('cash-date').value = todayString;
+            document.getElementById('cash-filter-date').value = todayString;
+
+            // For reports, set default to last 30 days
+            const thirtyDaysAgo = new Date(today);
+            thirtyDaysAgo.setDate(today.getDate() - 30);
+            document.getElementById('report-start-date').value = thirtyDaysAgo.toISOString().split('T')[0];
+            document.getElementById('report-end-date').value = todayString;
         });
 
     </script>
