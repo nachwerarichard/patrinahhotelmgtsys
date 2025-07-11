@@ -555,7 +555,6 @@
                 // Set display properties directly and immediately
                 mainContent.style.display = 'block';
                 loginSection.style.display = 'none';
-                loginSection.classList.remove('active'); // Ensure active class is removed for CSS rules
 
                 // Manage navigation button visibility based on role
                 const navButtons = document.querySelectorAll('nav button');
@@ -589,7 +588,6 @@
                 userDisplay.textContent = '';
                 mainContent.style.display = 'none';
                 loginSection.style.display = 'block';
-                loginSection.classList.add('active'); // Ensure active class is added for CSS rules
             }
         }
 
