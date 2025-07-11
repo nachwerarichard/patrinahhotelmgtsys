@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -812,8 +813,9 @@
                     const data = await response.json();
                     // For hardcoded auth, the token is derived from the plain credentials
                     authToken = btoa(`${username}:${password}`); 
-                    currentUsername = user.username; // <--- Changed: Now it looks inside the 'user' box for 'username'
-                    currentUserRole = user.role;
+                    currentUsername = data.username;
+                    currentUserRole = data.role;
+
                     localStorage.setItem('authToken', authToken);
                     localStorage.setItem('username', currentUsername);
                     localStorage.setItem('userRole', currentUserRole);
