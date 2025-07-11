@@ -510,9 +510,6 @@
                 </table>
             </div>
 
-            <!-- REMOVED: User Management Section - No longer supported by hardcoded backend -->
-            <!-- <div id="users-section" class="section">...</div> -->
-
             <!-- Audit Logs Section -->
             <div id="audit-logs-section" class="section">
                 <h2>Audit Logs</h2>
@@ -545,6 +542,7 @@
 
         /**
          * Updates the display of the current logged-in user and manages navigation button visibility.
+         * This function is now more robust to ensure immediate UI update.
          */
         function updateUIForUserRole() {
             const userDisplay = document.getElementById('current-user-display');
@@ -553,19 +551,20 @@
 
             if (authToken && currentUsername && currentUserRole) {
                 userDisplay.textContent = `Logged in as: ${currentUsername} (${currentUserRole})`;
+                
+                // Set display properties directly and immediately
                 mainContent.style.display = 'block';
                 loginSection.style.display = 'none';
+                loginSection.classList.remove('active'); // Ensure active class is removed for CSS rules
 
                 // Manage navigation button visibility based on role
                 const navButtons = document.querySelectorAll('nav button');
                 navButtons.forEach(button => {
-                    button.style.display = 'inline-block'; // Default to visible
+                    button.style.display = 'inline-block'; // Default to visible for all nav buttons
 
                     if (currentUserRole === 'admin') {
                         // Admins see all buttons (including Audit Logs)
-                        if (button.id === 'nav-audit-logs') {
-                            button.style.display = 'inline-block';
-                        }
+                        // No specific hiding logic needed here, as default is inline-block
                     } else if (currentUserRole === 'bar_staff') {
                         // Bar staff can only access Sales, Expenses, Cash Management, Reports
                         const barStaffAllowedButtons = ['nav-sales', 'nav-expenses', 'nav-cash-management', 'nav-reports'];
@@ -590,7 +589,7 @@
                 userDisplay.textContent = '';
                 mainContent.style.display = 'none';
                 loginSection.style.display = 'block';
-                loginSection.classList.add('active');
+                loginSection.classList.add('active'); // Ensure active class is added for CSS rules
             }
         }
 
@@ -1411,13 +1410,6 @@
             }
         }
 
-        // --- REMOVED: User Management Functions - No longer supported by hardcoded backend ---
-        // async function fetchUsers() { ... }
-        // function renderUsersTable(users) { ... }
-        // async function submitUserForm(event) { ... }
-        // async function deleteUser(id, username) { ... }
-
-
         // --- Audit Logs Functions ---
         async function fetchAuditLogs() {
             try {
@@ -1451,7 +1443,7 @@
         }
 
 
-        // --- Initial Setup and Event Listeners (MODIFIED) ---
+        // --- Initial Setup and Event Listeners ---
         document.addEventListener('DOMContentLoaded', () => {
             // Check authentication status on page load
             updateUIForUserRole();
