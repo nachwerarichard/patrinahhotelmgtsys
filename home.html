@@ -353,13 +353,13 @@
                     <button type="submit">Record Sale</button>
                 </form>
 
-                <h3>Sales Records</h3>
-                <div class="filter-controls">
+                <h3 class="sales-records-heading">Sales Records</h3>
+                <div class="filter-controls sales-filter-controls">
                     <label for="sales-date-filter" style="margin-bottom:0;">Filter by Date:</label>
-                    <input type="date" id="sales-date-filter" onchange="fetchSales()">
+                    <input type="date" id="sales-date-filter">
                     <button onclick="fetchSales()">Apply Filters</button>
                 </div>
-                <table id="sales-table">
+                <table id="sales-table" class="sales-table">
                     <thead>
                         <tr>
                             <th>Item</th>
@@ -396,13 +396,13 @@
                     <button type="submit">Record Expense</button>
                 </form>
 
-                <h3>Expense Records</h3>
-                <div class="filter-controls">
+                <h3 class="expenses-records-heading">Expense Records</h3>
+                <div class="filter-controls expenses-filter-controls">
                     <label for="expenses-date-filter" style="margin-bottom:0;">Filter by Date:</label>
-                    <input type="date" id="expenses-date-filter" onchange="fetchExpenses()">
+                    <input type="date" id="expenses-date-filter">
                     <button onclick="fetchExpenses()">Apply Filters</button>
                 </div>
-                <table id="expenses-table">
+                <table id="expenses-table" class="expenses-table">
                     <thead>
                         <tr>
                             <th>Description</th>
@@ -542,6 +542,50 @@
         // --- Utility Functions ---
 
         /**
+         * Applies specific UI restrictions for 'bar_staff' role in Sales and Expenses sections.
+         * Hides headings, filters, and tables, showing only the forms.
+         * @param {string} sectionId The ID of the currently active section.
+         */
+        function applyBarStaffUIRestrictions(sectionId) {
+            if (currentUserRole === 'bar_staff') {
+                if (sectionId === 'sales') {
+                    document.querySelector('.sales-records-heading').style.display = 'none';
+                    document.querySelector('.sales-filter-controls').style.display = 'none';
+                    document.getElementById('sales-table').style.display = 'none';
+                } else {
+                    // Ensure these are visible if not in sales section (e.g., if admin switches to sales)
+                    document.querySelector('.sales-records-heading').style.display = 'block';
+                    document.querySelector('.sales-filter-controls').style.display = 'flex'; // Use flex for filter controls
+                    document.getElementById('sales-table').style.display = 'table';
+                }
+
+                if (sectionId === 'expenses') {
+                    document.querySelector('.expenses-records-heading').style.display = 'none';
+                    document.querySelector('.expenses-filter-controls').style.display = 'none';
+                    document.getElementById('expenses-table').style.display = 'none';
+                } else {
+                    // Ensure these are visible if not in expenses section
+                    document.querySelector('.expenses-records-heading').style.display = 'block';
+                    document.querySelector('.expenses-filter-controls').style.display = 'flex'; // Use flex for filter controls
+                    document.getElementById('expenses-table').style.display = 'table';
+                }
+            } else {
+                // For admin or other roles, ensure all elements are visible in sales/expenses sections
+                if (document.querySelector('.sales-records-heading')) {
+                    document.querySelector('.sales-records-heading').style.display = 'block';
+                    document.querySelector('.sales-filter-controls').style.display = 'flex';
+                    document.getElementById('sales-table').style.display = 'table';
+                }
+                if (document.querySelector('.expenses-records-heading')) {
+                    document.querySelector('.expenses-records-heading').style.display = 'block';
+                    document.querySelector('.expenses-filter-controls').style.display = 'flex';
+                    document.getElementById('expenses-table').style.display = 'table';
+                }
+            }
+        }
+
+
+        /**
          * Updates the display of the current logged-in user and manages navigation button visibility.
          * Ensures the login form is hidden on success and sets nav button visibility based on role.
          */
@@ -554,14 +598,11 @@
             if (authToken && currentUsername && currentUserRole) {
                 userDisplay.textContent = `Logged in as: ${currentUsername} (${currentUserRole})`;
                 
-                // --- CRITICAL FIX: Ensure display properties are applied after a short delay ---
-                // This helps the browser render the changes correctly without needing a refresh.
-                setTimeout(() => {
-                    mainContent.style.display = 'block';
-                    loginSection.style.display = 'none';
-                    loginSection.classList.remove('active'); // Ensure active class is removed for CSS rules
-                }, 50); // Small delay, e.g., 50ms
-
+                // --- Hide Login Section, Show Main Content ---
+                loginSection.style.display = 'none';
+                loginSection.classList.remove('active'); // Ensure active class is removed for CSS rules
+                mainContent.style.display = 'block';
+                
                 // --- Manage Navigation Button Visibility based on role ---
                 navButtons.forEach(button => {
                     button.style.display = 'none'; // Hide all buttons by default
@@ -576,7 +617,6 @@
                     // Bar staff ONLY see Sales and Expenses
                     document.getElementById('nav-sales').style.display = 'inline-block';
                     document.getElementById('nav-expenses').style.display = 'inline-block';
-                    // Other buttons (inventory, cash, reports, audit) remain hidden by default
                 }
 
                 // Show default section based on role
@@ -626,15 +666,19 @@
             });
             document.getElementById(`${sectionId}-section`).classList.add('active');
 
+            // --- Apply Bar Staff UI Restrictions (Headings, Filters, Tables) ---
+            applyBarStaffUIRestrictions(sectionId);
+
+
             // --- Fetch Data based on Section and Role ---
             if (sectionId === 'inventory') {
                 fetchInventory();
             } else if (sectionId === 'sales') {
                 if (currentUserRole === 'bar_staff') {
-                    // For bar staff, activate sales section but don't auto-fetch on initial load.
-                    // Clear the table and show a message to prompt filtering.
-                    document.querySelector('#sales-table tbody').innerHTML = '<tr><td colspan="6" style="text-align: center; color: #555;">Click "Apply Filters" to load sales data.</td></tr>';
-                    // Ensure the date filter is set to today for convenience if they click "Apply Filters"
+                    // For bar staff, clear the table and show a message to prompt filtering.
+                    // Data will only load if they explicitly use the form or if fetchSales is called by another means.
+                    document.querySelector('#sales-table tbody').innerHTML = '<tr><td colspan="6" style="text-align: center; color: #555;">Use the form above to record a new sale.</td></tr>';
+                    // Ensure the date filter is set to today for convenience if they click "Apply Filters" (though filters are hidden)
                     const today = new Date();
                     const yyyy = today.getFullYear();
                     const mm = String(today.getMonth() + 1).padStart(2, '0');
@@ -645,7 +689,19 @@
                     fetchSales();
                 }
             } else if (sectionId === 'expenses') {
-                fetchExpenses();
+                if (currentUserRole === 'bar_staff') {
+                    // For bar staff, clear the table and show a message to prompt recording.
+                    document.querySelector('#expenses-table tbody').innerHTML = '<tr><td colspan="7" style="text-align: center; color: #555;">Use the form above to record a new expense.</td></tr>';
+                    // Ensure the date filter is set to today for convenience
+                    const today = new Date();
+                    const yyyy = today.getFullYear();
+                    const mm = String(today.getMonth() + 1).padStart(2, '0');
+                    const dd = String(today.getDate()).padStart(2, '0');
+                    document.getElementById('expenses-date-filter').value = `${yyyy}-${mm}-${dd}`;
+                } else {
+                    // For admin or other roles, auto-fetch expenses
+                    fetchExpenses();
+                }
             } else if (sectionId === 'cash-management') {
                 // Set default date for new entry and filter
                 const today = new Date();
@@ -944,6 +1000,12 @@
 
         function renderSalesTable(sales) {
             const tbody = document.querySelector('#sales-table tbody');
+            // Only render table if not bar_staff, as per new requirement
+            if (currentUserRole === 'bar_staff') {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #555;">Use the form above to record a new sale.</td></tr>';
+                return;
+            }
+
             tbody.innerHTML = '';
             if (sales.length === 0) {
                 const row = tbody.insertRow();
@@ -1076,6 +1138,12 @@
 
         function renderExpensesTable(expenses) {
             const tbody = document.querySelector('#expenses-table tbody');
+            // Only render table if not bar_staff, as per new requirement
+            if (currentUserRole === 'bar_staff') {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #555;">Use the form above to record a new expense.</td></tr>';
+                return;
+            }
+
             tbody.innerHTML = '';
             if (expenses.length === 0) {
                 const row = tbody.insertRow();
@@ -1363,12 +1431,7 @@
             let allExpenses = [];
 
             try {
-                // Fetch sales and expenses for the entire duration if the backend supports range,
-                // or filter on client side if only single date filter is supported.
-                // Assuming backend's date filter takes a single day, fetching all and filtering client-side
-                // for simplicity with the current backend.
-                // For a proper range, backend would need to support ?startDate=X&endDate=Y
-                
+                // Fetch all sales and expenses and filter client-side for the report range
                 const salesResponse = await authenticatedFetch(`${API_BASE_URL}/sales`);
                 if (salesResponse) {
                     const salesData = await salesResponse.json();
