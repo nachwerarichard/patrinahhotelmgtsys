@@ -309,9 +309,10 @@ app.post('/sales', auth, authorize(['admin', 'bar_staff']), async (req, res) => 
   }
 });
 
-app.get('/sales', auth, authorize(['admin', 'bar_staff']), async (req, res) => { // Both roles can view
+app.get('/sales', auth, authorize(['admin', 'bar_staff']), async (req, res) => {
   try {
-    const { date } = req.query;
+    const { date, page = 1, limit = 5 } = req.query;
+
     let query = {};
     if (date) {
       const start = new Date(date);
@@ -319,12 +320,22 @@ app.get('/sales', auth, authorize(['admin', 'bar_staff']), async (req, res) => {
       end.setHours(23, 59, 59, 999);
       query.date = { $gte: start, $lte: end };
     }
-    const sales = await Sale.find(query).sort({ date: -1 });
-    res.json(sales);
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const total = await Sale.countDocuments(query);
+    const sales = await Sale.find(query).sort({ date: -1 }).skip(skip).limit(Number(limit));
+
+    res.json({
+      data: sales,
+      total,
+      page: Number(page),
+      pages: Math.ceil(total / limit)
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
+
 
 app.put('/sales/:id', auth, authorize('admin'), async (req, res) => { // Admin only for edit/delete
   try {
