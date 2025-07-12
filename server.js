@@ -204,18 +204,30 @@ app.post('/inventory', auth, authorize('admin'), async (req, res) => {
   }
 });
 
+
 app.get('/inventory', auth, authorize('admin'), async (req, res) => {
   try {
-    const { item, low } = req.query;
+    const { item, low, page = 1, limit = 5 } = req.query;
+
     const filter = {};
     if (item) filter.item = new RegExp(item, 'i');
     if (low) filter.closing = { $lt: Number(low) };
-    const docs = await Inventory.find(filter);
-    res.json(docs);
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const total = await Inventory.countDocuments(filter);
+    const docs = await Inventory.find(filter).skip(skip).limit(Number(limit));
+
+    res.json({
+      data: docs,
+      total,
+      page: Number(page),
+      pages: Math.ceil(total / limit)
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
+
 
 app.put('/inventory/:id', auth, authorize('admin'), async (req, res) => {
   try {
