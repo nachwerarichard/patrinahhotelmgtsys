@@ -73,7 +73,7 @@ async function auth(req, res, next) {
     }
 
     // Attach user object (including role) to the request
-    req.user = { username: user.username, role: user.role, id: username }; // Using username as ID
+     req.user = { username: username, role: user.role, id: username };
     next();
   } catch (err) {
     console.error('Authentication error:', err);
