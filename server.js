@@ -372,7 +372,7 @@ app.post('/expenses', auth, authorize(['admin', 'bar_staff']), async (req, res) 
 
 app.get('/expenses', auth, authorize(['admin', 'bar_staff']), async (req, res) => {
   try {
-    const { date, page = 1, limit = 10 } = req.query;
+    const { date, page = 1, limit = 5 } = req.query;
 
     let query = {};
     if (date) {
