@@ -491,13 +491,27 @@ app.delete('/cash-journal/:id', auth, authorize('admin'), async (req, res) => { 
 
 // --- NEW: Audit Log Endpoints (Admin Only) ---
 app.get('/audit-logs', auth, authorize('admin'), async (req, res) => {
-    try {
-        const logs = await AuditLog.find().sort({ timestamp: -1 }).limit(100); // Limit to last 100 for performance
-        res.json(logs);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+  try {
+    const { page = 1, limit = 5 } = req.query;
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const total = await AuditLog.countDocuments();
+    const logs = await AuditLog.find()
+      .sort({ timestamp: -1 })
+      .skip(skip)
+      .limit(Number(limit));
+
+    res.json({
+      data: logs,
+      total,
+      page: Number(page),
+      pages: Math.ceil(total / limit)
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
+
 
 
 // Start server
