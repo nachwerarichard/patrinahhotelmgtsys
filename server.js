@@ -10,7 +10,7 @@ app.use(express.json());
 
 // CORS config - allow your frontend origin
 app.use(cors({
-  origin: 'https://endearing-toffee-c8a2aa.netlify.app',
+  origin: 'https://stirring-pony-fe2347.netlify.app',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
