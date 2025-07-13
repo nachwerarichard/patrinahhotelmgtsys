@@ -21,6 +21,11 @@ app.use(cors({
 const HARDCODED_USERS = {
     'admin': { password: '123', role: 'admin' },
     'bar_staff_user': { password: '456', role: 'bar_staff' },
+   'Nachwera Richard': { password: '123', role: 'Nahwera Rihard' },
+     'Wanambi Nelson': { password: '123', role: 'Wanambi Nelson ' },
+   'Nabudde Florence': { password: '123', role: 'Nabudde Florence' },
+    'Woniala Joshua': { password: '456', role: 'Woniala Joshua' },
+    'Martha': { password: '456', role: 'Martha' }
     // Add more hardcoded users as needed for testing
 };
 // --- !!! END OF WARNING !!! ---
