@@ -20,7 +20,7 @@ app.use(cors({
 // DO NOT USE THIS IN PRODUCTION OR FOR ANY REAL APPLICATION.
 const HARDCODED_USERS = {
     'admin': { password: '123', role: 'admin' },
-    'Martha': { password: '456', role: 'bar_staff' },
+    'Martha': { password: '456', role: 'Martha' },
     // Add more hardcoded users as needed for testing
 };
 // --- !!! END OF WARNING !!! ---
@@ -275,7 +275,7 @@ app.delete('/inventory/:id', auth, authorize('admin'), async (req, res) => {
 });
 
 // --- MODIFIED: Sales endpoints (Admin: All, Bar Staff: POST only) ---
-app.post('/sales', auth, authorize(['admin', 'bar_staff']), async (req, res) => {
+app.post('/sales', auth, authorize(['admin', 'Martha']), async (req, res) => {
   try {
     const { item, number } = req.body;
     const sale = await Sale.create({ ...req.body, date: new Date() });
@@ -309,7 +309,7 @@ app.post('/sales', auth, authorize(['admin', 'bar_staff']), async (req, res) => 
   }
 });
 
-app.get('/sales', auth, authorize(['admin', 'bar_staff']), async (req, res) => {
+app.get('/sales', auth, authorize(['admin', 'Martha']), async (req, res) => {
   try {
     const { date, page = 1, limit = 5 } = req.query;
 
@@ -360,7 +360,7 @@ app.delete('/sales/:id', auth, authorize('admin'), async (req, res) => { // Admi
 });
 
 // --- MODIFIED: Expenses endpoints (Admin: All, Bar Staff: POST only) ---
-app.post('/expenses', auth, authorize(['admin', 'bar_staff']), async (req, res) => {
+app.post('/expenses', auth, authorize(['admin', 'Martha']), async (req, res) => {
   try {
     const exp = await Expense.create({ ...req.body, date: new Date() });
     await logAction('Expense Created', req.user.username, { expenseId: exp._id, description: exp.description, amount: exp.amount });
@@ -370,7 +370,7 @@ app.post('/expenses', auth, authorize(['admin', 'bar_staff']), async (req, res) 
   }
 });
 
-app.get('/expenses', auth, authorize(['admin', 'bar_staff']), async (req, res) => {
+app.get('/expenses', auth, authorize(['admin', 'Martha']), async (req, res) => {
   try {
     const { date, page = 1, limit = 5 } = req.query;
 
@@ -421,7 +421,7 @@ app.delete('/expenses/:id', auth, authorize('admin'), async (req, res) => { // A
 });
 
 // --- MODIFIED: Cash Management Endpoints (Admin: All, Bar Staff: POST only) ---
-app.post('/cash-journal', auth, authorize(['admin', 'bar_staff']), async (req, res) => {
+app.post('/cash-journal', auth, authorize(['admin', 'Martha']), async (req, res) => {
     try {
         const { cashAtHand, cashBanked, bankReceiptId, responsiblePerson, date } = req.body;
         const newEntry = await CashJournal.create({
@@ -438,7 +438,7 @@ app.post('/cash-journal', auth, authorize(['admin', 'bar_staff']), async (req, r
     }
 });
 
-app.get('/cash-journal', auth, authorize(['admin', 'bar_staff']), async (req, res) => { // Both roles can view
+app.get('/cash-journal', auth, authorize(['admin', 'Martha']), async (req, res) => { // Both roles can view
     try {
         const { date, responsiblePerson } = req.query;
         const filter = {};
