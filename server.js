@@ -342,7 +342,7 @@ app.get('/sales', auth, authorize(['admin', 'bar_staff']), async (req, res) => {
 });
 
 
-app.put('/sales/:id', auth, authorize('admin'), async (req, res) => { // Admin only for edit/delete
+app.put('/sales/:id', auth, authorize(['admin','Nachwera Richard']), async (req, res) => { // Admin only for edit/delete
   try {
     const updated = await Sale.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!updated) return res.status(404).json({ error: 'Sale not found' });
@@ -353,7 +353,7 @@ app.put('/sales/:id', auth, authorize('admin'), async (req, res) => { // Admin o
   }
 });
 
-app.delete('/sales/:id', auth, authorize('admin'), async (req, res) => { // Admin only for edit/delete
+app.delete('/sales/:id', auth, authorize(['admin','Nachwera Richard']), async (req, res) => { // Admin only for edit/delete
   try {
     const deleted = await Sale.findByIdAndDelete(req.params.id);
     if (!deleted) return res.status(404).json({ error: 'Sale not found' });
@@ -365,7 +365,7 @@ app.delete('/sales/:id', auth, authorize('admin'), async (req, res) => { // Admi
 });
 
 // --- MODIFIED: Expenses endpoints (Admin: All, Bar Staff: POST only) ---
-app.post('/expenses', auth, authorize(['admin', 'bar_staff']), async (req, res) => {
+app.post('/expenses', auth, authorize(['admin','Nachwera Richard', 'bar_staff','Martha']), async (req, res) => {
   try {
     const exp = await Expense.create({ ...req.body, date: new Date() });
     await logAction('Expense Created', req.user.username, { expenseId: exp._id, description: exp.description, amount: exp.amount });
@@ -375,7 +375,7 @@ app.post('/expenses', auth, authorize(['admin', 'bar_staff']), async (req, res) 
   }
 });
 
-app.get('/expenses', auth, authorize(['admin', 'bar_staff']), async (req, res) => {
+app.get('/expenses', auth, authorize(['admin', 'bar_staff','Nachwera Richard','Martha']), async (req, res) => {
   try {
     const { date, page = 1, limit = 5 } = req.query;
 
@@ -403,7 +403,7 @@ app.get('/expenses', auth, authorize(['admin', 'bar_staff']), async (req, res) =
 });
 
 
-app.put('/expenses/:id', auth, authorize('admin'), async (req, res) => { // Admin only for edit/delete
+app.put('/expenses/:id', auth, authorize(['admin','Nachwera Richard']), async (req, res) => { // Admin only for edit/delete
   try {
     const updated = await Expense.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!updated) return res.status(404).json({ error: 'Expense not found' });
@@ -414,7 +414,7 @@ app.put('/expenses/:id', auth, authorize('admin'), async (req, res) => { // Admi
   }
 });
 
-app.delete('/expenses/:id', auth, authorize('admin'), async (req, res) => { // Admin only for edit/delete
+app.delete('/expenses/:id', auth, authorize(['admin','Nachwera Richard']), async (req, res) => { // Admin only for edit/delete
   try {
     const deleted = await Expense.findByIdAndDelete(req.params.id);
     if (!deleted) return res.status(404).json({ error: 'Expense not found' });
@@ -426,7 +426,7 @@ app.delete('/expenses/:id', auth, authorize('admin'), async (req, res) => { // A
 });
 
 // --- MODIFIED: Cash Management Endpoints (Admin: All, Bar Staff: POST only) ---
-app.post('/cash-journal', auth, authorize(['admin', 'bar_staff']), async (req, res) => {
+app.post('/cash-journal', auth, authorize(['admin','Nachwera Richard', 'bar_staff','Martha']), async (req, res) => {
     try {
         const { cashAtHand, cashBanked, bankReceiptId, responsiblePerson, date } = req.body;
         const newEntry = await CashJournal.create({
@@ -443,7 +443,7 @@ app.post('/cash-journal', auth, authorize(['admin', 'bar_staff']), async (req, r
     }
 });
 
-app.get('/cash-journal', auth, authorize(['admin', 'bar_staff']), async (req, res) => { // Both roles can view
+app.get('/cash-journal', auth, authorize(['admin', 'bar_staff','Martha']), async (req, res) => { // Both roles can view
     try {
         const { date, responsiblePerson } = req.query;
         const filter = {};
