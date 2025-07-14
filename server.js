@@ -20,6 +20,8 @@ app.use(cors({
 // DO NOT USE THIS IN PRODUCTION OR FOR ANY REAL APPLICATION.
 const HARDCODED_USERS = {
     'Nachwera Richard': { password: '123', role: 'Nachwera Richard' },
+      'Wanambi Nelson': { password: '123', role: 'Wanambi Nelson' },
+    'Florence': { password: '123', role: 'Florence' },
     'Martha': { password: '456', role: 'Martha' },
       'Joshua': { password: '456', role: 'Joshua' }
 
@@ -191,7 +193,7 @@ app.post('/logout', auth, async (req, res) => {
 
 
 // --- MODIFIED: Inventory Endpoints (Nachwera Richard Only) ---
-app.post('/inventory', auth, authorize('Nachwera Richard'), async (req, res) => {
+app.post('/inventory', auth, authorize(['Nachwera Richard','wanambi Nelson,'Florence']), async (req, res) => {
   try {
     const { item, opening, purchases, sales, spoilage } = req.body;
     const total = opening + purchases - sales - spoilage;
@@ -207,7 +209,7 @@ app.post('/inventory', auth, authorize('Nachwera Richard'), async (req, res) => 
 });
 
 
-app.get('/inventory', auth, authorize('Nachwera Richard'), async (req, res) => {
+app.get('/inventory', auth, authorize(['Nachwera Richard','Florence','Wanambi Nelson']), async (req, res) => {
   try {
     const { item, low, page = 1, limit = 5 } = req.query;
 
