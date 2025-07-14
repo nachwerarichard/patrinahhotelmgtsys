@@ -20,7 +20,7 @@ app.use(cors({
 // DO NOT USE THIS IN PRODUCTION OR FOR ANY REAL APPLICATION.
 const HARDCODED_USERS = {
     'admin': { password: '123', role: 'admin' },
-    'bar_staff_user': { password: '456', role: 'bar_staff' },
+    'Martha': { password: '456', role: 'bar_staff' },
     // Add more hardcoded users as needed for testing
 };
 // --- !!! END OF WARNING !!! ---
