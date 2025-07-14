@@ -19,7 +19,7 @@ app.use(cors({
 // Hardcoding users for demonstration purposes only.
 // DO NOT USE THIS IN PRODUCTION OR FOR ANY REAL APPLICATION.
 const HARDCODED_USERS = {
-    'admin': { password: '123', role: 'admin' },
+    'Nachwera Richard': { password: '123', role: 'Nachwera Richard' },
     'Martha': { password: '456', role: 'Martha' },
       'Joshua': { password: '456', role: 'Joshua' }
 
@@ -157,8 +157,8 @@ async function notifyLowStock(item, current) {
 
 
 // --- REMOVED: User Management Endpoints (No longer managing users in DB) ---
-// app.post('/users', auth, authorize('admin'), async (req, res) => { ... });
-// app.get('/users', auth, authorize('admin'), async (req, res) => { ... });
+// app.post('/users', auth, authorize('Nachwera Richard'), async (req, res) => { ... });
+// app.get('/users', auth, authorize('Nachwera Richard'), async (req, res) => { ... });
 
 
 // --- MODIFIED: Login Endpoint (Uses hardcoded users) ---
@@ -190,8 +190,8 @@ app.post('/logout', auth, async (req, res) => {
 });
 
 
-// --- MODIFIED: Inventory Endpoints (Admin Only) ---
-app.post('/inventory', auth, authorize('admin'), async (req, res) => {
+// --- MODIFIED: Inventory Endpoints (Nachwera Richard Only) ---
+app.post('/inventory', auth, authorize('Nachwera Richard'), async (req, res) => {
   try {
     const { item, opening, purchases, sales, spoilage } = req.body;
     const total = opening + purchases - sales - spoilage;
@@ -207,7 +207,7 @@ app.post('/inventory', auth, authorize('admin'), async (req, res) => {
 });
 
 
-app.get('/inventory', auth, authorize('admin'), async (req, res) => {
+app.get('/inventory', auth, authorize('Nachwera Richard'), async (req, res) => {
   try {
     const { item, low, page = 1, limit = 5 } = req.query;
 
@@ -231,7 +231,7 @@ app.get('/inventory', auth, authorize('admin'), async (req, res) => {
 });
 
 
-app.put('/inventory/:id', auth, authorize('admin'), async (req, res) => {
+app.put('/inventory/:id', auth, authorize('Nachwera Richard'), async (req, res) => {
   try {
     const existingDoc = await Inventory.findById(req.params.id);
     if (!existingDoc) {
@@ -263,7 +263,7 @@ app.put('/inventory/:id', auth, authorize('admin'), async (req, res) => {
   }
 });
 
-app.delete('/inventory/:id', auth, authorize('admin'), async (req, res) => {
+app.delete('/inventory/:id', auth, authorize('Nachwera Richard'), async (req, res) => {
   try {
     const deletedDoc = await Inventory.findByIdAndDelete(req.params.id);
     if (!deletedDoc) {
@@ -276,8 +276,8 @@ app.delete('/inventory/:id', auth, authorize('admin'), async (req, res) => {
   }
 });
 
-// --- MODIFIED: Sales endpoints (Admin: All, Bar Staff: POST only) ---
-app.post('/sales', auth, authorize(['admin', 'Martha','Joshua']), async (req, res) => {
+// --- MODIFIED: Sales endpoints (Nachwera Richard: All, Bar Staff: POST only) ---
+app.post('/sales', auth, authorize(['Nachwera Richard', 'Martha','Joshua']), async (req, res) => {
   try {
     const { item, number } = req.body;
     const sale = await Sale.create({ ...req.body, date: new Date() });
@@ -311,7 +311,7 @@ app.post('/sales', auth, authorize(['admin', 'Martha','Joshua']), async (req, re
   }
 });
 
-app.get('/sales', auth, authorize(['admin', 'Martha','Joshua']), async (req, res) => {
+app.get('/sales', auth, authorize(['Nachwera Richard', 'Martha','Joshua']), async (req, res) => {
   try {
     const { date, page = 1, limit = 5 } = req.query;
 
@@ -339,7 +339,7 @@ app.get('/sales', auth, authorize(['admin', 'Martha','Joshua']), async (req, res
 });
 
 
-app.put('/sales/:id', auth, authorize('admin'), async (req, res) => { // Admin only for edit/delete
+app.put('/sales/:id', auth, authorize('Nachwera Richard'), async (req, res) => { // Nachwera Richard only for edit/delete
   try {
     const updated = await Sale.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!updated) return res.status(404).json({ error: 'Sale not found' });
@@ -350,7 +350,7 @@ app.put('/sales/:id', auth, authorize('admin'), async (req, res) => { // Admin o
   }
 });
 
-app.delete('/sales/:id', auth, authorize('admin'), async (req, res) => { // Admin only for edit/delete
+app.delete('/sales/:id', auth, authorize('Nachwera Richard'), async (req, res) => { // Nachwera Richard only for edit/delete
   try {
     const deleted = await Sale.findByIdAndDelete(req.params.id);
     if (!deleted) return res.status(404).json({ error: 'Sale not found' });
@@ -361,8 +361,8 @@ app.delete('/sales/:id', auth, authorize('admin'), async (req, res) => { // Admi
   }
 });
 
-// --- MODIFIED: Expenses endpoints (Admin: All, Bar Staff: POST only) ---
-app.post('/expenses', auth, authorize(['admin', 'Martha','Joshua']), async (req, res) => {
+// --- MODIFIED: Expenses endpoints (Nachwera Richard: All, Bar Staff: POST only) ---
+app.post('/expenses', auth, authorize(['Nachwera Richard', 'Martha','Joshua']), async (req, res) => {
   try {
     const exp = await Expense.create({ ...req.body, date: new Date() });
     await logAction('Expense Created', req.user.username, { expenseId: exp._id, description: exp.description, amount: exp.amount });
@@ -372,7 +372,7 @@ app.post('/expenses', auth, authorize(['admin', 'Martha','Joshua']), async (req,
   }
 });
 
-app.get('/expenses', auth, authorize(['admin', 'Martha']), async (req, res) => {
+app.get('/expenses', auth, authorize(['Nachwera Richard', 'Martha']), async (req, res) => {
   try {
     const { date, page = 1, limit = 5 } = req.query;
 
@@ -400,7 +400,7 @@ app.get('/expenses', auth, authorize(['admin', 'Martha']), async (req, res) => {
 });
 
 
-app.put('/expenses/:id', auth, authorize('admin'), async (req, res) => { // Admin only for edit/delete
+app.put('/expenses/:id', auth, authorize('Nachwera Richard'), async (req, res) => { // Nachwera Richard only for edit/delete
   try {
     const updated = await Expense.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!updated) return res.status(404).json({ error: 'Expense not found' });
@@ -411,7 +411,7 @@ app.put('/expenses/:id', auth, authorize('admin'), async (req, res) => { // Admi
   }
 });
 
-app.delete('/expenses/:id', auth, authorize('admin'), async (req, res) => { // Admin only for edit/delete
+app.delete('/expenses/:id', auth, authorize('Nachwera Richard'), async (req, res) => { // Nachwera Richard only for edit/delete
   try {
     const deleted = await Expense.findByIdAndDelete(req.params.id);
     if (!deleted) return res.status(404).json({ error: 'Expense not found' });
@@ -422,8 +422,8 @@ app.delete('/expenses/:id', auth, authorize('admin'), async (req, res) => { // A
   }
 });
 
-// --- MODIFIED: Cash Management Endpoints (Admin: All, Bar Staff: POST only) ---
-app.post('/cash-journal', auth, authorize(['admin', 'Martha','Joshua']), async (req, res) => {
+// --- MODIFIED: Cash Management Endpoints (Nachwera Richard: All, Bar Staff: POST only) ---
+app.post('/cash-journal', auth, authorize(['Nachwera Richard', 'Martha','Joshua']), async (req, res) => {
     try {
         const { cashAtHand, cashBanked, bankReceiptId, responsiblePerson, date } = req.body;
         const newEntry = await CashJournal.create({
@@ -440,7 +440,7 @@ app.post('/cash-journal', auth, authorize(['admin', 'Martha','Joshua']), async (
     }
 });
 
-app.get('/cash-journal', auth, authorize(['admin', 'Martha','Joshua']), async (req, res) => { // Both roles can view
+app.get('/cash-journal', auth, authorize(['Nachwera Richard', 'Martha','Joshua']), async (req, res) => { // Both roles can view
     try {
         const { date, responsiblePerson } = req.query;
         const filter = {};
@@ -460,7 +460,7 @@ app.get('/cash-journal', auth, authorize(['admin', 'Martha','Joshua']), async (r
     }
 });
 
-app.put('/cash-journal/:id', auth, authorize('admin'), async (req, res) => { // Admin only for edit/delete
+app.put('/cash-journal/:id', auth, authorize('Nachwera Richard'), async (req, res) => { // Nachwera Richard only for edit/delete
     try {
         const { cashAtHand, cashBanked, bankReceiptId, responsiblePerson, date } = req.body;
         const updatedEntry = await CashJournal.findByIdAndUpdate(
@@ -478,7 +478,7 @@ app.put('/cash-journal/:id', auth, authorize('admin'), async (req, res) => { // 
     }
 });
 
-app.delete('/cash-journal/:id', auth, authorize('admin'), async (req, res) => { // Admin only for edit/delete
+app.delete('/cash-journal/:id', auth, authorize('Nachwera Richard'), async (req, res) => { // Nachwera Richard only for edit/delete
     try {
         const deletedEntry = await CashJournal.findByIdAndDelete(req.params.id);
         if (!deletedEntry) {
@@ -491,8 +491,8 @@ app.delete('/cash-journal/:id', auth, authorize('admin'), async (req, res) => { 
     }
 });
 
-// --- NEW: Audit Log Endpoints (Admin Only) ---
-app.get('/audit-logs', auth, authorize('admin'), async (req, res) => {
+// --- NEW: Audit Log Endpoints (Nachwera Richard Only) ---
+app.get('/audit-logs', auth, authorize('Nachwera Richard'), async (req, res) => {
   try {
     const { page = 1, limit = 5 } = req.query;
 
