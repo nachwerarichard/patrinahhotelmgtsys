@@ -361,7 +361,7 @@ app.delete('/sales/:id', auth, authorize('Nachwera Richard'), async (req, res) =
 });
 
 // --- MODIFIED: Expenses endpoints (Nachwera Richard: All, Bar Staff: POST only) ---
-app.post('/expenses', auth, authorize(['Nachwera Richard', 'Martha'), async (req, res) => {
+app.post('/expenses', auth, authorize(['Nachwera Richard', 'Martha']), async (req, res) => {
   try {
     const exp = await Expense.create({ ...req.body, date: new Date() });
     await logAction('Expense Created', req.user.username, { expenseId: exp._id, description: exp.description, amount: exp.amount });
