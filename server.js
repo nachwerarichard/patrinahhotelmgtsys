@@ -495,28 +495,56 @@ app.delete('/cash-journal/:id', auth, authorize(['Nachwera Richard','Nelson','Fl
 
 // --- NEW: Audit Log Endpoints (Nachwera Richard Only) ---
 app.get('/audit-logs', auth, authorize(['Nachwera Richard','Nelson','Florence']), async (req, res) => {
-  try {
-    const { page = 1, limit = 20 } = req.query;
+    try {
+        const { page = 1, limit = 20 } = req.query; // 'limit' controls how many audits are displayed per page
 
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-    const total = await AuditLog.countDocuments();
-    const logs = await AuditLog.find()
-      .sort({ timestamp: -1 })
-      .skip(skip)
-      .limit(Number(limit));
+        const MAX_AUDIT_LOGS_TO_KEEP = 200; // The maximum number of audit logs you want to store in total
 
-    res.json({
-      data: logs,
-      total,
-      page: Number(page),
-      pages: Math.ceil(total / limit)
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+        // --- IMPORTANT: BEGIN PRUNING LOGIC (Executed on every GET request) ---
+        // This block will ensure only the last 200 logs are kept before fetching for display.
+
+        const currentTotalLogs = await AuditLog.countDocuments();
+
+        if (currentTotalLogs > MAX_AUDIT_LOGS_TO_KEEP) {
+            // Find the oldest logs that exceed the desired limit
+            // Sort by timestamp in ascending order (oldest first)
+            // Skip the newest 'MAX_AUDIT_LOGS_TO_KEEP' logs to get the ones to delete
+            const logsToDelete = await AuditLog.find()
+                .sort({ timestamp: 1 }) // Sort by timestamp ascending (oldest first)
+                .skip(MAX_AUDIT_LOGS_TO_KEEP) // Skip the first 200 (which are the newest after sorting by oldest first)
+                .select('_id'); // Only retrieve the _id for efficiency in deletion
+
+            const idsToDelete = logsToDelete.map(log => log._id);
+
+            if (idsToDelete.length > 0) {
+                await AuditLog.deleteMany({ _id: { $in: idsToDelete } });
+                console.log(`[AuditLog GET Route] Pruned ${idsToDelete.length} old audit logs.`);
+            }
+        }
+        // --- END PRUNING LOGIC ---
+
+        // --- Pagination and Retrieval Logic (to display 20 audits) ---
+        // After potential pruning, now fetch the logs for display.
+
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+        const totalLogsAfterPruning = await AuditLog.countDocuments(); // Get the total count after pruning
+
+        const logs = await AuditLog.find()
+            .sort({ timestamp: -1 }) // Sort by timestamp in descending order (newest first for display)
+            .skip(skip)
+            .limit(Number(limit)); // Limit to 20 for display
+
+        res.json({
+            data: logs,
+            total: totalLogsAfterPruning,
+            page: Number(page),
+            pages: Math.ceil(totalLogsAfterPruning / limit)
+        });
+    } catch (err) {
+        console.error('Error in /audit-logs GET route:', err);
+        res.status(500).json({ error: err.message });
+    }
 });
-
-
 
 // Start server
 const PORT = process.env.PORT || 3000;
