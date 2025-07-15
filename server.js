@@ -494,28 +494,58 @@ app.delete('/cash-journal/:id', auth, authorize(['Nachwera Richard','Nelson','Fl
 });
 
 // --- NEW: Audit Log Endpoints (Nachwera Richard Only) ---
+// Assuming you have your imports and setup like so:
+// const express = require('express');
+// const router = express.Router(); // Or just use app if it's a single file
+// const AuditLog = require('./models/AuditLog'); // Your Mongoose model
+// const auth = require('./middleware/auth'); // Your authentication middleware
+// const authorize = require('./middleware/authorize'); // Your authorization middleware
+
+// Your existing fetchAuditLogs, renderAuditPagination, renderAuditLogsTable functions in the client-side JS are not relevant here.
+// Only the app.get('/audit-logs', ...) part from your server.js snippet.
+
 app.get('/audit-logs', auth, authorize(['Nachwera Richard','Nelson','Florence']), async (req, res) => {
-  try {
-    const { page = 1, limit = 20 } = req.query;
+    try {
+        const { page = 1, limit = 20, search } = req.query;
 
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-    const total = await AuditLog.countDocuments();
-    const logs = await AuditLog.find()
-      .sort({ timestamp: -1 })
-      .skip(skip)
-      .limit(Number(limit));
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+        let query = {}; // Initialize an empty query object
 
-    res.json({
-      data: logs,
-      total,
-      page: Number(page),
-      pages: Math.ceil(total / limit)
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+        // If a search term is provided, build the search query
+        if (search) {
+            const searchRegex = new RegExp(search, 'i'); // Case-insensitive regex
+            query = {
+                $or: [
+                    { user: searchRegex },
+                    { action: searchRegex },
+                    // If 'details' is an object and you want to search its string representation,
+                    // you might need to convert it to a string in your document or iterate its properties.
+                    // For simplicity, assuming details can be searched as a string or specific properties.
+                    // If 'details' is a string:
+                    { details: searchRegex },
+                    // If 'details' is an object and you want to search a specific field within it, e.g., details.someField
+                    // { 'details.someField': searchRegex }
+                ]
+            };
+        }
+
+        const total = await AuditLog.countDocuments(query); // Apply query to total count
+        const logs = await AuditLog.find(query) // Apply query to find logs
+            .sort({ timestamp: -1 })
+            .skip(skip)
+            .limit(Number(limit));
+
+        res.json({
+            data: logs,
+            total,
+            page: Number(page),
+            pages: Math.ceil(total / limit)
+        });
+    } catch (err) {
+        console.error('Error fetching audit logs on server:', err); // Log server-side errors
+        res.status(500).json({ error: err.message });
+    }
 });
-
 
 
 // Start server
