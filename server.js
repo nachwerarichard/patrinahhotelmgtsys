@@ -496,7 +496,7 @@ app.delete('/cash-journal/:id', auth, authorize(['Nachwera Richard','Nelson','Fl
 // --- NEW: Audit Log Endpoints (Nachwera Richard Only) ---
 app.get('/audit-logs', auth, authorize(['Nachwera Richard','Nelson','Florence']), async (req, res) => {
   try {
-    const { page = 1, limit = 5 } = req.query;
+    const { page = 1, limit = 20 } = req.query;
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const total = await AuditLog.countDocuments();
