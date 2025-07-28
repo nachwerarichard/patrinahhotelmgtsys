@@ -129,9 +129,9 @@ const Sale = mongoose.model('Sale', new mongoose.Schema({
 const Expense = mongoose.model('Expense', new mongoose.Schema({
   description: String,
   amount: Number,
+  receiptId: String, // Added to match frontend
   date: Date,
   source: String,
-  receiptId: String, // Added to match frontend
   recordedBy: String, // Renamed from 'responsible' to match frontend
  responsible: String // <--- ADD THIS LINE for the responsible person
 
@@ -370,9 +370,12 @@ app.post('/expenses', auth, authorize(['Nachwera Richard', 'Martha','Joshua','Ne
   try {
     const { description, amount, category, source, responsible } = req.body; // Destructure new field
     const exp = await Expense.create({
+
+
+      
       description,
       amount,
-      category,
+      receiptId,
       source,
       responsible, // Add this
       recordedBy: req.user.username, // Use req.user.username for who recorded it
