@@ -130,9 +130,9 @@ const Expense = mongoose.model('Expense', new mongoose.Schema({
   description: String,
   amount: Number,
   date: Date,
-  receiptId: String,
   source: String,
-  responsible: String
+  category: String, // Added to match frontend
+  recordedBy: String // Renamed from 'responsible' to match frontend
 }));
 
 
