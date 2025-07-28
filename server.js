@@ -368,7 +368,16 @@ app.delete('/sales/:id', auth, authorize(['Nachwera Richard','Florence','Nelson'
 // --- MODIFIED: Expenses endpoints (Nachwera Richard: All, Bar Staff: POST only) ---
 app.post('/expenses', auth, authorize(['Nachwera Richard', 'Martha','Joshua','Nelson','Florence']), async (req, res) => {
   try {
-    const exp = await Expense.create({ ...req.body, date: new Date() });
+    const { description, amount, category, source, responsible } = req.body; // Destructure new field
+    const exp = await Expense.create({
+      description,
+      amount,
+      category,
+      source,
+      responsible, // Add this
+      recordedBy: req.user.username, // Use req.user.username for who recorded it
+      date: new Date()
+    });
     await logAction('Expense Created', req.user.username, { expenseId: exp._id, description: exp.description, amount: exp.amount });
     res.status(201).json(exp);
   } catch (err) {
@@ -404,8 +413,10 @@ app.get('/expenses', auth, authorize(['Nachwera Richard', 'Martha','Nelson','Flo
 });
 
 
-app.put('/expenses/:id', auth, authorize('Nachwera Richard','Nelson','Florence'), async (req, res) => { // Nachwera Richard only for edit/delete
+
+app.put('/expenses/:id', auth, authorize('Nachwera Richard','Nelson','Florence'), async (req, res) => {
   try {
+    // You can keep req.body as is if you send all fields, or explicitly destructure
     const updated = await Expense.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!updated) return res.status(404).json({ error: 'Expense not found' });
     await logAction('Expense Updated', req.user.username, { expenseId: updated._id, description: updated.description, newAmount: updated.amount });
