@@ -131,8 +131,10 @@ const Expense = mongoose.model('Expense', new mongoose.Schema({
   amount: Number,
   date: Date,
   source: String,
-  category: String, // Added to match frontend
-  recordedBy: String // Renamed from 'responsible' to match frontend
+  receiptId: String, // Added to match frontend
+  recordedBy: String, // Renamed from 'responsible' to match frontend
+ responsible: String // <--- ADD THIS LINE for the responsible person
+
 }));
 
 
