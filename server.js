@@ -3,14 +3,13 @@ const express = require('express');
 const mongoose = require('mongoose');
 const nodemailer = require('nodemailer');
 const cors = require('cors');
-// const bcrypt = require('bcryptjs'); // REMOVED: Not needed for hardcoded passwords
 
 const app = express();
 app.use(express.json());
 
 // CORS config - allow your frontend origin
 app.use(cors({
-  origin: 'https://stirring-pony-fe2347.netlify.app',
+  origin: 'https://stirring-pony-fe2347.netlify.app', // Ensure this matches your frontend URL
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
@@ -20,25 +19,20 @@ app.use(cors({
 // DO NOT USE THIS IN PRODUCTION OR FOR ANY REAL APPLICATION.
 const HARDCODED_USERS = {
     'Nachwera Richard': { password: '123', role: 'Nachwera Richard' },
-      'Nelson': { password: '123', role: 'Nelson' },
+    'Nelson': { password: '123', role: 'Nelson' },
     'Florence': { password: '123', role: 'Florence' },
     'Martha': { password: '456', role: 'Martha' },
-      'Joshua': { password: '456', role: 'Joshua' }
-
-    // Add more hardcoded users as needed for testing
+    'Joshua': { password: '456', role: 'Joshua' }
 };
 // --- !!! END OF WARNING !!! ---
 
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGO_URI, { 
-  useNewUrlParser: true, 
-  useUnifiedTopology: true 
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
 }).then(() => console.log('MongoDB connected'))
   .catch(err => console.error('MongoDB connection error:', err));
-
-// --- REMOVED: User Schema (Not used for hardcoded auth) ---
-// const User = mongoose.model('User', new mongoose.Schema({ ... }));
 
 // --- NEW: Audit Log Schema ---
 const AuditLog = mongoose.model('AuditLog', new mongoose.Schema({
@@ -77,7 +71,7 @@ async function auth(req, res, next) {
     }
 
     // Attach user object (including role) to the request
-     req.user = { username: username, role: user.role, id: username };
+    req.user = { username: username, role: user.role, id: username };
     next();
   } catch (err) {
     console.error('Authentication error:', err);
@@ -102,10 +96,10 @@ function authorize(roles = []) {
 
 // Schemas (Existing ones)
 const CashJournal = mongoose.model('CashJournal', new mongoose.Schema({
-    cashAtHand: Number, 
+    cashAtHand: Number,
     cashBanked: Number,
     bankReceiptId: String,
-    responsiblePerson: String,
+    responsiblePerson: String, // This field is used in the backend, but frontend sends 'recordedBy'
     date: { type: Date, default: Date.now }
 }));
 
@@ -123,18 +117,18 @@ const Sale = mongoose.model('Sale', new mongoose.Schema({
   number: Number,
   bp: Number,
   sp: Number,
+  profit: Number, // Added profit and percentageprofit to schema
+  percentageprofit: Number,
   date: Date
 }));
 
 const Expense = mongoose.model('Expense', new mongoose.Schema({
   description: String,
   amount: Number,
-  receiptId: String, // Added to match frontend
+  receiptId: String,
   date: Date,
   source: String,
   recordedBy: String, // Renamed from 'responsible' to match frontend
- responsible: String // <--- ADD THIS LINE for the responsible person
-
 }));
 
 
@@ -149,7 +143,7 @@ async function notifyLowStock(item, current) {
   try {
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
-      to: process.env.EMAIL_USER, 
+      to: process.env.EMAIL_USER,
       subject: `Low stock alert: ${item}`,
       text: `Stock for ${item} is now ${current}, below threshold! Please reorder.`
     });
@@ -158,11 +152,6 @@ async function notifyLowStock(item, current) {
     console.error('Error sending low stock email:', err);
   }
 }
-
-
-// --- REMOVED: User Management Endpoints (No longer managing users in DB) ---
-// app.post('/users', auth, authorize('Nachwera Richard'), async (req, res) => { ... });
-// app.get('/users', auth, authorize('Nachwera Richard'), async (req, res) => { ... });
 
 
 // --- MODIFIED: Login Endpoint (Uses hardcoded users) ---
@@ -181,7 +170,7 @@ app.post('/login', async (req, res) => {
     // Login successful
     console.log(`Login successful for username: ${username}, role: ${user.role}`);
     await logAction('Login Successful', username);
-    
+
     // Respond with user info, including their role
     res.status(200).json({ username: user.username, role: user.role });
 });
@@ -194,8 +183,8 @@ app.post('/logout', auth, async (req, res) => {
 });
 
 
-// --- MODIFIED: Inventory Endpoints (Nachwera Richard Only) ---
-app.post('/inventory', auth, authorize(['Nachwera Richard','Nelson','Florence']), async (req, res) => {
+// --- MODIFIED: Inventory Endpoints ---
+app.post('/inventory', auth, authorize(['Nachwera Richard','Nelson','Florence','Martha', 'Joshua']), async (req, res) => { // Joshua can view, but not create/edit inventory
   try {
     const { item, opening, purchases, sales, spoilage } = req.body;
     const total = opening + purchases - sales - spoilage;
@@ -211,7 +200,7 @@ app.post('/inventory', auth, authorize(['Nachwera Richard','Nelson','Florence'])
 });
 
 
-app.get('/inventory', auth, authorize(['Nachwera Richard','Florence','Nelson']), async (req, res) => {
+app.get('/inventory', auth, authorize(['Nachwera Richard','Florence','Nelson','Joshua','Martha']), async (req, res) => {
   try {
     const { item, low, page = 1, limit = 5 } = req.query;
 
@@ -235,7 +224,7 @@ app.get('/inventory', auth, authorize(['Nachwera Richard','Florence','Nelson']),
 });
 
 
-app.put('/inventory/:id', auth, authorize(['Nachwera Richard','Nelson','Florence']), async (req, res) => {
+app.put('/inventory/:id', auth, authorize(['Nachwera Richard','Nelson','Florence']), async (req, res) => { // Joshua CANNOT edit inventory
   try {
     const existingDoc = await Inventory.findById(req.params.id);
     if (!existingDoc) {
@@ -250,7 +239,7 @@ app.put('/inventory/:id', auth, authorize(['Nachwera Richard','Nelson','Florence
       spoilage: req.body.spoilage !== undefined ? req.body.spoilage : existingDoc.spoilage,
     };
     const newClosing = updatedValues.opening + updatedValues.purchases - updatedValues.sales - updatedValues.spoilage;
-    
+
     const doc = await Inventory.findByIdAndUpdate(
       req.params.id,
       { ...updatedValues, closing: newClosing },
@@ -267,24 +256,28 @@ app.put('/inventory/:id', auth, authorize(['Nachwera Richard','Nelson','Florence
   }
 });
 
-app.delete('/inventory/:id', auth, authorize(['Nachwera Richard','Nelson','Florence']), async (req, res) => {
-  try {
-    const deletedDoc = await Inventory.findByIdAndDelete(req.params.id);
-    if (!deletedDoc) {
-        return res.status(404).json({ error: 'Inventory item not found' });
-    }
-    await logAction('Inventory Deleted', req.user.username, { itemId: deletedDoc._id, item: deletedDoc.item });
-    res.sendStatus(204);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+// REMOVED: app.delete('/inventory/:id', ...)
 
-// --- MODIFIED: Sales endpoints (Nachwera Richard: All, Bar Staff: POST only) ---
+
+// --- MODIFIED: Sales endpoints ---
 app.post('/sales', auth, authorize(['Nachwera Richard', 'Martha','Joshua','Nelson','Florence']), async (req, res) => {
   try {
-    const { item, number } = req.body;
-    const sale = await Sale.create({ ...req.body, date: new Date() });
+    const { item, number, bp, sp } = req.body; // Ensure bp and sp are destructured for profit calculation
+    // Calculate profit and percentageprofit on the backend before saving
+    const totalBuyingPrice = bp * number;
+    const totalSellingPrice = sp * number;
+    const profit = totalSellingPrice - totalBuyingPrice;
+    let percentageProfit = 0;
+    if (totalBuyingPrice !== 0) {
+        percentageProfit = (profit / totalBuyingPrice) * 100;
+    }
+
+    const sale = await Sale.create({
+      ...req.body,
+      profit: profit, // Save calculated profit
+      percentageprofit: percentageProfit, // Save calculated percentage profit
+      date: new Date()
+    });
 
     if (item && typeof number === 'number' && number > 0) {
       try {
@@ -343,7 +336,7 @@ app.get('/sales', auth, authorize(['Nachwera Richard', 'Martha','Joshua','Nelson
 });
 
 
-app.put('/sales/:id', auth, authorize(['Nachwera Richard','Nelson','Florence']), async (req, res) => { // Nachwera Richard only for edit/delete
+app.put('/sales/:id', auth, authorize(['Nachwera Richard','Nelson','Florence']), async (req, res) => { // Martha and Joshua CANNOT edit sales
   try {
     const updated = await Sale.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!updated) return res.status(404).json({ error: 'Sale not found' });
@@ -354,30 +347,18 @@ app.put('/sales/:id', auth, authorize(['Nachwera Richard','Nelson','Florence']),
   }
 });
 
-app.delete('/sales/:id', auth, authorize(['Nachwera Richard','Florence','Nelson']), async (req, res) => { // Nachwera Richard only for edit/delete
-  try {
-    const deleted = await Sale.findByIdAndDelete(req.params.id);
-    if (!deleted) return res.status(404).json({ error: 'Sale not found' });
-    await logAction('Sale Deleted', req.user.username, { saleId: deleted._id, item: deleted.item });
-    res.sendStatus(204);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+// REMOVED: app.delete('/sales/:id', ...)
 
-// --- MODIFIED: Expenses endpoints (Nachwera Richard: All, Bar Staff: POST only) ---
+
+// --- MODIFIED: Expenses endpoints ---
 app.post('/expenses', auth, authorize(['Nachwera Richard', 'Martha','Joshua','Nelson','Florence']), async (req, res) => {
   try {
-    const { description, amount, category, source, responsible } = req.body; // Destructure new field
+    const { description, amount, receiptId, source } = req.body; // Destructure all expected fields
     const exp = await Expense.create({
-
-
-      
       description,
       amount,
       receiptId,
       source,
-      responsible, // Add this
       recordedBy: req.user.username, // Use req.user.username for who recorded it
       date: new Date()
     });
@@ -388,7 +369,7 @@ app.post('/expenses', auth, authorize(['Nachwera Richard', 'Martha','Joshua','Ne
   }
 });
 
-app.get('/expenses', auth, authorize(['Nachwera Richard', 'Martha','Nelson','Florence']), async (req, res) => {
+app.get('/expenses', auth, authorize(['Nachwera Richard', 'Martha','Joshua','Nelson','Florence']), async (req, res) => { // Joshua also added for viewing expenses
   try {
     const { date, page = 1, limit = 5 } = req.query;
 
@@ -416,10 +397,8 @@ app.get('/expenses', auth, authorize(['Nachwera Richard', 'Martha','Nelson','Flo
 });
 
 
-
-app.put('/expenses/:id', auth, authorize('Nachwera Richard','Nelson','Florence'), async (req, res) => {
+app.put('/expenses/:id', auth, authorize(['Nachwera Richard','Nelson','Florence']), async (req, res) => { // Martha and Joshua CANNOT edit expenses
   try {
-    // You can keep req.body as is if you send all fields, or explicitly destructure
     const updated = await Expense.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!updated) return res.status(404).json({ error: 'Expense not found' });
     await logAction('Expense Updated', req.user.username, { expenseId: updated._id, description: updated.description, newAmount: updated.amount });
@@ -429,26 +408,18 @@ app.put('/expenses/:id', auth, authorize('Nachwera Richard','Nelson','Florence')
   }
 });
 
-app.delete('/expenses/:id', auth, authorize(['Nachwera Richard','Nelson','Florence']), async (req, res) => { // Nachwera Richard only for edit/delete
-  try {
-    const deleted = await Expense.findByIdAndDelete(req.params.id);
-    if (!deleted) return res.status(404).json({ error: 'Expense not found' });
-    await logAction('Expense Deleted', req.user.username, { expenseId: deleted._id, description: deleted.description });
-    res.sendStatus(204);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+// REMOVED: app.delete('/expenses/:id', ...)
 
-// --- MODIFIED: Cash Management Endpoints (Nachwera Richard: All, Bar Staff: POST only) ---
-app.post('/cash-journal', auth, authorize(['Nachwera Richard', 'Martha','Joshua','Nelson','Florence']), async (req, res) => {
+
+// --- MODIFIED: Cash Management Endpoints ---
+app.post('/cash-journal', auth, authorize(['Nachwera Richard', 'Martha','Nelson','Florence']), async (req, res) => {
     try {
-        const { cashAtHand, cashBanked, bankReceiptId, responsiblePerson, date } = req.body;
+        const { cashAtHand, cashBanked, bankReceiptId, date } = req.body; // Removed responsiblePerson as it's not sent from frontend
         const newEntry = await CashJournal.create({
             cashAtHand,
             cashBanked,
             bankReceiptId,
-            responsiblePerson,
+            responsiblePerson: req.user.username, // Use logged-in user as responsiblePerson
             date: date ? new Date(date) : new Date()
         });
         await logAction('Cash Entry Created', req.user.username, { entryId: newEntry._id, cashAtHand: newEntry.cashAtHand, cashBanked: newEntry.cashBanked });
@@ -458,7 +429,7 @@ app.post('/cash-journal', auth, authorize(['Nachwera Richard', 'Martha','Joshua'
     }
 });
 
-app.get('/cash-journal', auth, authorize(['Nachwera Richard', 'Martha','Joshua',]), async (req, res) => { // Both roles can view
+app.get('/cash-journal', auth, authorize(['Nachwera Richard', 'Martha','Nelson','Florence']), async (req, res) => { // Nelson and Florence also added for viewing cash journal
     try {
         const { date, responsiblePerson } = req.query;
         const filter = {};
@@ -478,12 +449,12 @@ app.get('/cash-journal', auth, authorize(['Nachwera Richard', 'Martha','Joshua',
     }
 });
 
-app.put('/cash-journal/:id', auth, authorize(['Nachwera Richard','Nelson','Florence']), async (req, res) => { // Nachwera Richard only for edit/delete
+app.put('/cash-journal/:id', auth, authorize(['Nachwera Richard','Nelson','Florence']), async (req, res) => { // Martha and Joshua CANNOT edit cash entries
     try {
-        const { cashAtHand, cashBanked, bankReceiptId, responsiblePerson, date } = req.body;
+        const { cashAtHand, cashBanked, bankReceiptId, date } = req.body; // Removed responsiblePerson from destructuring
         const updatedEntry = await CashJournal.findByIdAndUpdate(
             req.params.id,
-            { cashAtHand, cashBanked, bankReceiptId, responsiblePerson, date: date ? new Date(date) : undefined },
+            { cashAtHand, cashBanked, bankReceiptId, responsiblePerson: req.user.username, date: date ? new Date(date) : undefined }, // Ensure responsiblePerson is updated
             { new: true }
         );
         if (!updatedEntry) {
@@ -496,57 +467,29 @@ app.put('/cash-journal/:id', auth, authorize(['Nachwera Richard','Nelson','Flore
     }
 });
 
-app.delete('/cash-journal/:id', auth, authorize(['Nachwera Richard','Nelson','Florence']), async (req, res) => { // Nachwera Richard only for edit/delete
-    try {
-        const deletedEntry = await CashJournal.findByIdAndDelete(req.params.id);
-        if (!deletedEntry) {
-            return res.status(404).json({ error: 'Cash journal entry not found' });
-        }
-        await logAction('Cash Entry Deleted', req.user.username, { entryId: deletedEntry._id });
-        res.sendStatus(204);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
+// REMOVED: app.delete('/cash-journal/:id', ...)
 
-// --- NEW: Audit Log Endpoints (Nachwera Richard Only) ---
-// Assuming you have your imports and setup like so:
-// const express = require('express');
-// const router = express.Router(); // Or just use app if it's a single file
-// const AuditLog = require('./models/AuditLog'); // Your Mongoose model
-// const auth = require('./middleware/auth'); // Your authentication middleware
-// const authorize = require('./middleware/authorize'); // Your authorization middleware
-
-// Your existing fetchAuditLogs, renderAuditPagination, renderAuditLogsTable functions in the client-side JS are not relevant here.
-// Only the app.get('/audit-logs', ...) part from your server.js snippet.
-
+// --- NEW: Audit Log Endpoints (Nachwera Richard, Nelson, Florence Only) ---
 app.get('/audit-logs', auth, authorize(['Nachwera Richard','Nelson','Florence']), async (req, res) => {
     try {
         const { page = 1, limit = 20, search } = req.query;
 
         const skip = (parseInt(page) - 1) * parseInt(limit);
-        let query = {}; // Initialize an empty query object
+        let query = {};
 
-        // If a search term is provided, build the search query
         if (search) {
-            const searchRegex = new RegExp(search, 'i'); // Case-insensitive regex
+            const searchRegex = new RegExp(search, 'i');
             query = {
                 $or: [
                     { user: searchRegex },
                     { action: searchRegex },
-                    // If 'details' is an object and you want to search its string representation,
-                    // you might need to convert it to a string in your document or iterate its properties.
-                    // For simplicity, assuming details can be searched as a string or specific properties.
-                    // If 'details' is a string:
                     { details: searchRegex },
-                    // If 'details' is an object and you want to search a specific field within it, e.g., details.someField
-                    // { 'details.someField': searchRegex }
                 ]
             };
         }
 
-        const total = await AuditLog.countDocuments(query); // Apply query to total count
-        const logs = await AuditLog.find(query) // Apply query to find logs
+        const total = await AuditLog.countDocuments(query);
+        const logs = await AuditLog.find(query)
             .sort({ timestamp: -1 })
             .skip(skip)
             .limit(Number(limit));
@@ -558,7 +501,7 @@ app.get('/audit-logs', auth, authorize(['Nachwera Richard','Nelson','Florence'])
             pages: Math.ceil(total / limit)
         });
     } catch (err) {
-        console.error('Error fetching audit logs on server:', err); // Log server-side errors
+        console.error('Error fetching audit logs on server:', err);
         res.status(500).json({ error: err.message });
     }
 });
