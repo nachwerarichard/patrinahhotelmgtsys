@@ -184,7 +184,7 @@ app.post('/logout', auth, async (req, res) => {
 
 
 // --- MODIFIED: Inventory Endpoints ---
-app.post('/inventory', auth, authorize(['Nachwera Richard','Nelson','Florence']), async (req, res) => { // Joshua can view, but not create/edit inventory
+app.post('/inventory', auth, authorize(['Nachwera Richard','Nelson','Florence','Martha', 'Joshua']), async (req, res) => { // Joshua can view, but not create/edit inventory
   try {
     const { item, opening, purchases, sales, spoilage } = req.body;
     const total = opening + purchases - sales - spoilage;
@@ -200,7 +200,7 @@ app.post('/inventory', auth, authorize(['Nachwera Richard','Nelson','Florence'])
 });
 
 
-app.get('/inventory', auth, authorize(['Nachwera Richard','Florence','Nelson','Joshua']), async (req, res) => {
+app.get('/inventory', auth, authorize(['Nachwera Richard','Florence','Nelson','Joshua','Martha']), async (req, res) => {
   try {
     const { item, low, page = 1, limit = 5 } = req.query;
 
