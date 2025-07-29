@@ -209,7 +209,7 @@ app.post('/inventory', auth, authorize(['Nachwera Richard','Nelson','Florence','
 });
 
 
-app.get('/inventory', auth, authorize(['Nachwera Richard','Florence','Nelson']), async (req, res) => {
+app.get('/inventory', auth, authorize(['Nachwera Richard','Florence','Nelson','Joshua']), async (req, res) => {
   try {
     const { item, low, page = 1, limit = 5 } = req.query;
 
@@ -233,7 +233,7 @@ app.get('/inventory', auth, authorize(['Nachwera Richard','Florence','Nelson']),
 });
 
 
-app.put('/inventory/:id', auth, authorize(['Nachwera Richard','Nelson','Florence']), async (req, res) => {
+app.put('/inventory/:id', auth, authorize(['Nachwera Richard','Nelson','Florence','Joshua']), async (req, res) => {
   try {
     const existingDoc = await Inventory.findById(req.params.id);
     if (!existingDoc) {
