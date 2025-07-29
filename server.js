@@ -133,8 +133,6 @@ const Expense = mongoose.model('Expense', new mongoose.Schema({
   date: Date,
   source: String,
   recordedBy: String, // Renamed from 'responsible' to match frontend
- responsible: String // <--- ADD THIS LINE for the responsible person
-
 }));
 
 
@@ -377,7 +375,6 @@ app.post('/expenses', auth, authorize(['Nachwera Richard', 'Martha','Joshua','Ne
       amount,
       receiptId,
       source,
-      responsible, // Add this
       recordedBy: req.user.username, // Use req.user.username for who recorded it
       date: new Date()
     });
