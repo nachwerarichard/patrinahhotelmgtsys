@@ -412,7 +412,7 @@ app.put('/expenses/:id', auth, authorize(['Nachwera Richard','Nelson','Florence'
 
 
 // --- MODIFIED: Cash Management Endpoints ---
-app.post('/cash-journal', auth, authorize(['Nachwera Richard', 'Martha','Joshua','Nelson','Florence']), async (req, res) => {
+app.post('/cash-journal', auth, authorize(['Nachwera Richard', 'Martha','Nelson','Florence']), async (req, res) => {
     try {
         const { cashAtHand, cashBanked, bankReceiptId, date } = req.body; // Removed responsiblePerson as it's not sent from frontend
         const newEntry = await CashJournal.create({
@@ -429,7 +429,7 @@ app.post('/cash-journal', auth, authorize(['Nachwera Richard', 'Martha','Joshua'
     }
 });
 
-app.get('/cash-journal', auth, authorize(['Nachwera Richard', 'Martha','Joshua','Nelson','Florence']), async (req, res) => { // Nelson and Florence also added for viewing cash journal
+app.get('/cash-journal', auth, authorize(['Nachwera Richard', 'Martha','Nelson','Florence']), async (req, res) => { // Nelson and Florence also added for viewing cash journal
     try {
         const { date, responsiblePerson } = req.query;
         const filter = {};
