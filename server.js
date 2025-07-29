@@ -193,7 +193,7 @@ app.post('/logout', auth, async (req, res) => {
 
 
 // --- MODIFIED: Inventory Endpoints (Nachwera Richard Only) ---
-app.post('/inventory', auth, authorize(['Nachwera Richard','Nelson','Florence']), async (req, res) => {
+app.post('/inventory', auth, authorize(['Nachwera Richard','Nelson','Florence','Joshua']), async (req, res) => {
   try {
     const { item, opening, purchases, sales, spoilage } = req.body;
     const total = opening + purchases - sales - spoilage;
