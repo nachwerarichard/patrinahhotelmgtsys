@@ -257,7 +257,7 @@ app.put('/inventory/:id', auth, authorize(['Nachwera Richard','Nelson','Florence
 });
 
 // REMOVED: app.delete('/inventory/:id', ...)
-app.delete('/inventory/:id', auth, authorize('admin'), async (req, res) => {
+app.delete('/inventory/:id', auth, authorize(['Nachwera Richard','Nelson','Florence']), async (req, res) => {
   try {
     const deletedDoc = await Inventory.findByIdAndDelete(req.params.id);
     if (!deletedDoc) {
