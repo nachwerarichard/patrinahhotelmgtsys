@@ -358,6 +358,17 @@ app.put('/sales/:id', auth, authorize(['Nachwera Richard','Nelson','Florence']),
   }
 });
 
+app.delete('/sales/:id', auth, authorize('Nachwera Richard'), async (req, res) => { // Nachwera Richard only for edit/delete
+  try {
+    const deleted = await Sale.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ error: 'Sale not found' });
+    await logAction('Sale Deleted', req.user.username, { saleId: deleted._id, item: deleted.item });
+    res.sendStatus(204);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // REMOVED: app.delete('/sales/:id', ...)
 
 
