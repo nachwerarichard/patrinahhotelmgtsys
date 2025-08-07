@@ -358,7 +358,7 @@ app.put('/sales/:id', auth, authorize(['Nachwera Richard','Nelson','Florence']),
   }
 });
 
-app.delete('/sales/:id', auth, authorize('Nachwera Richard'), async (req, res) => { // Nachwera Richard only for edit/delete
+app.delete('/sales/:id', auth, authorize(['Nachwera Richard','Nelson','Florence']), async (req, res) => { // Nachwera Richard only for edit/delete
   try {
     const deleted = await Sale.findByIdAndDelete(req.params.id);
     if (!deleted) return res.status(404).json({ error: 'Sale not found' });
