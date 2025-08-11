@@ -33,10 +33,6 @@ mongoose.connect(process.env.MONGO_URI, {
   useUnifiedTopology: true
 }).then(() => {
   console.log('MongoDB connected');
-  
-  // The one-time update function is commented out here, which is correct.
-  // updateExistingDocuments();
-
 }).catch(err => console.error('MongoDB connection error:', err));
 
 // --- NEW: Audit Log Schema ---
@@ -104,7 +100,7 @@ const CashJournal = mongoose.model('CashJournal', new mongoose.Schema({
     cashAtHand: Number,
     cashBanked: Number,
     bankReceiptId: String,
-    responsiblePerson: String, // This field is used in the backend, but frontend sends 'recordedBy'
+    responsiblePerson: String,
     date: { type: Date, default: Date.now }
 }));
 
@@ -115,26 +111,14 @@ const Inventory = mongoose.model('Inventory', new mongoose.Schema({
   sales: Number,
   spoilage: Number,
   closing: Number,
-}, { timestamps: true })); // <-- ADDED: Timestamps option
+}, { timestamps: true })); 
 
-async function updateExistingDocuments() {
-  try {
-    const docs = await Inventory.find({ createdAt: { $exists: false } }); // Find documents without createdAt
-    for (const doc of docs) {
-      const creationTime = doc._id.getTimestamp();
-      await Inventory.findByIdAndUpdate(doc._id, { createdAt: creationTime });
-    }
-    console.log('Successfully updated existing documents.');
-  } catch (error) {
-    console.error('Error updating documents:', error);
-  }
-}
 const Sale = mongoose.model('Sale', new mongoose.Schema({
   item: String,
   number: Number,
   bp: Number,
   sp: Number,
-  profit: Number, // Added profit and percentageprofit to schema
+  profit: Number, 
   percentageprofit: Number,
   date: Date
 }));
@@ -145,7 +129,7 @@ const Expense = mongoose.model('Expense', new mongoose.Schema({
   receiptId: String,
   date: Date,
   source: String,
-  recordedBy: String, // Renamed from 'responsible' to match frontend
+  recordedBy: String,
 }));
 
 
@@ -201,7 +185,7 @@ app.post('/logout', auth, async (req, res) => {
 
 
 // --- MODIFIED: Inventory Endpoints ---
-app.post('/inventory', auth, authorize(['Nachwera Richard','Nelson','Florence','Martha', 'Joshua']), async (req, res) => { // Joshua can view, but not create/edit inventory
+app.post('/inventory', auth, authorize(['Nachwera Richard','Nelson','Florence','Martha', 'Joshua']), async (req, res) => { 
   try {
     const { item, opening, purchases, sales, spoilage } = req.body;
     const total = opening + purchases - sales - spoilage;
@@ -225,30 +209,19 @@ app.get('/inventory', auth, authorize(['Nachwera Richard','Florence','Nelson','J
     if (item) filter.item = new RegExp(item, 'i');
     if (low) filter.closing = { $lt: Number(low) };
 
-    // --- MODIFIED: Date Filter Logic for MM-DD-YYYY or MM/DD/YYYY format ---
+    // --- MODIFIED: Robust Date Filter Logic ---
     if (date) {
-      // Split the date string by either a dash or a slash
-      const dateParts = date.split(/[-\/]/);
-      // Rearrange to 'YYYY-MM-DD' for reliable Date object creation
-      if (dateParts.length === 3) {
-        const day = dateParts[1];
-        const month = dateParts[0];
-        const year = dateParts[2];
-        const formattedDate = `${year}-${month}-${day}`;
-        
-        const startDate = new Date(formattedDate);
-        const endDate = new Date(formattedDate);
-        endDate.setDate(endDate.getDate() + 1); // Add one day to filter until the beginning of the next day
-
-        filter.createdAt = {
-          $gte: startDate,
-          $lt: endDate,
-        };
-      } else {
-        console.error('Invalid date format received from frontend:', date);
+      const startDate = new Date(date + 'T00:00:00.000Z');
+      const endDate = new Date(date + 'T23:59:59.999Z');
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+          return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD.' });
       }
+      filter.createdAt = {
+        $gte: startDate,
+        $lte: endDate,
+      };
     }
-    // --- END: Date Filter Logic ---
+    // --- END: Robust Date Filter Logic ---
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const total = await Inventory.countDocuments(filter);
@@ -297,7 +270,6 @@ app.put('/inventory/:id', auth, authorize(['Nachwera Richard','Nelson','Florence
   }
 });
 
-// REMOVED: app.delete('/inventory/:id', ...)
 app.delete('/inventory/:id', auth, authorize(['Nachwera Richard','Nelson','Florence']), async (req, res) => {
   try {
     const deletedDoc = await Inventory.findByIdAndDelete(req.params.id);
@@ -314,8 +286,7 @@ app.delete('/inventory/:id', auth, authorize(['Nachwera Richard','Nelson','Flore
 // --- MODIFIED: Sales endpoints ---
 app.post('/sales', auth, authorize(['Nachwera Richard', 'Martha','Joshua','Nelson','Florence']), async (req, res) => {
   try {
-    const { item, number, bp, sp } = req.body; // Ensure bp and sp are destructured for profit calculation
-    // Calculate profit and percentageprofit on the backend before saving
+    const { item, number, bp, sp } = req.body; 
     const totalBuyingPrice = bp * number;
     const totalSellingPrice = sp * number;
     const profit = totalSellingPrice - totalBuyingPrice;
@@ -326,8 +297,8 @@ app.post('/sales', auth, authorize(['Nachwera Richard', 'Martha','Joshua','Nelso
 
     const sale = await Sale.create({
       ...req.body,
-      profit: profit, // Save calculated profit
-      percentageprofit: percentageProfit, // Save calculated percentage profit
+      profit: profit,
+      percentageprofit: percentageProfit,
       date: new Date()
     });
 
@@ -365,27 +336,16 @@ app.get('/sales', auth, authorize(['Nachwera Richard', 'Martha','Joshua','Nelson
     const { date, page = 1, limit = 5 } = req.query;
 
     let query = {};
-    // --- MODIFIED: Date Filter Logic for MM-DD-YYYY or MM/DD/YYYY format ---
+    // --- MODIFIED: Robust Date Filter Logic ---
     if (date) {
-      // Split the date string by either a dash or a slash
-      const dateParts = date.split(/[-\/]/);
-      // Rearrange to 'YYYY-MM-DD' for reliable Date object creation
-      if (dateParts.length === 3) {
-        const day = dateParts[1];
-        const month = dateParts[0];
-        const year = dateParts[2];
-        const formattedDate = `${year}-${month}-${day}`;
-
-        const startDate = new Date(formattedDate);
-        const endDate = new Date(formattedDate);
-        endDate.setDate(endDate.getDate() + 1); // Add one day to filter until the beginning of the next day
-
-        query.date = { $gte: startDate, $lt: endDate };
-      } else {
-        console.error('Invalid date format received from frontend:', date);
+      const startDate = new Date(date + 'T00:00:00.000Z');
+      const endDate = new Date(date + 'T23:59:59.999Z');
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+          return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD.' });
       }
+      query.date = { $gte: startDate, $lte: endDate };
     }
-    // --- END: Date Filter Logic ---
+    // --- END: Robust Date Filter Logic ---
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const total = await Sale.countDocuments(query);
@@ -425,19 +385,16 @@ app.delete('/sales/:id', auth, authorize(['Nachwera Richard','Nelson','Florence'
   }
 });
 
-// REMOVED: app.delete('/sales/:id', ...)
-
-
 // --- MODIFIED: Expenses endpoints ---
 app.post('/expenses', auth, authorize(['Nachwera Richard', 'Martha','Joshua','Nelson','Florence']), async (req, res) => {
   try {
-    const { description, amount, receiptId, source } = req.body; // Destructure all expected fields
+    const { description, amount, receiptId, source } = req.body; 
     const exp = await Expense.create({
       description,
       amount,
       receiptId,
       source,
-      recordedBy: req.user.username, // Use logged-in user as responsiblePerson
+      recordedBy: req.user.username, 
       date: new Date()
     });
     await logAction('Expense Created', req.user.username, { expenseId: exp._id, description: exp.description, amount: exp.amount });
@@ -452,27 +409,16 @@ app.get('/expenses', auth, authorize(['Nachwera Richard', 'Martha','Joshua','Nel
     const { date, page = 1, limit = 5 } = req.query;
 
     let query = {};
-    // --- MODIFIED: Date Filter Logic for MM-DD-YYYY or MM/DD/YYYY format ---
+    // --- MODIFIED: Robust Date Filter Logic ---
     if (date) {
-      // Split the date string by either a dash or a slash
-      const dateParts = date.split(/[-\/]/);
-      // Rearrange to 'YYYY-MM-DD' for reliable Date object creation
-      if (dateParts.length === 3) {
-        const day = dateParts[1];
-        const month = dateParts[0];
-        const year = dateParts[2];
-        const formattedDate = `${year}-${month}-${day}`;
-
-        const startDate = new Date(formattedDate);
-        const endDate = new Date(formattedDate);
-        endDate.setDate(endDate.getDate() + 1); // Add one day to filter until the beginning of the next day
-
-        query.date = { $gte: startDate, $lt: endDate };
-      } else {
-        console.error('Invalid date format received from frontend:', date);
+      const startDate = new Date(date + 'T00:00:00.000Z');
+      const endDate = new Date(date + 'T23:59:59.999Z');
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+          return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD.' });
       }
+      query.date = { $gte: startDate, $lte: endDate };
     }
-    // --- END: Date Filter Logic ---
+    // --- END: Robust Date Filter Logic ---
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const total = await Expense.countDocuments(query);
@@ -501,18 +447,15 @@ app.put('/expenses/:id', auth, authorize(['Nachwera Richard','Nelson','Florence'
   }
 });
 
-// REMOVED: app.delete('/expenses/:id', ...)
-
-
 // --- MODIFIED: Cash Management Endpoints ---
 app.post('/cash-journal', auth, authorize(['Nachwera Richard', 'Martha','Nelson','Florence']), async (req, res) => {
     try {
-        const { cashAtHand, cashBanked, bankReceiptId, date } = req.body; // Removed responsiblePerson as it's not sent from frontend
+        const { cashAtHand, cashBanked, bankReceiptId, date } = req.body;
         const newEntry = await CashJournal.create({
             cashAtHand,
             cashBanked,
             bankReceiptId,
-            responsiblePerson: req.user.username, // Use logged-in user as responsiblePerson
+            responsiblePerson: req.user.username, 
             date: date ? new Date(date) : new Date()
         });
         await logAction('Cash Entry Created', req.user.username, { entryId: newEntry._id, cashAtHand: newEntry.cashAtHand, cashBanked: newEntry.cashBanked });
@@ -522,31 +465,20 @@ app.post('/cash-journal', auth, authorize(['Nachwera Richard', 'Martha','Nelson'
     }
 });
 
-app.get('/cash-journal', auth, authorize(['Nachwera Richard', 'Martha','Nelson','Florence']), async (req, res) => { // Nelson and Florence also added for viewing cash journal
+app.get('/cash-journal', auth, authorize(['Nachwera Richard', 'Martha','Nelson','Florence']), async (req, res) => { 
     try {
         const { date, responsiblePerson } = req.query;
         const filter = {};
-        // --- MODIFIED: Date Filter Logic for MM-DD-YYYY or MM/DD/YYYY format ---
+        // --- MODIFIED: Robust Date Filter Logic ---
         if (date) {
-            // Split the date string by either a dash or a slash
-            const dateParts = date.split(/[-\/]/);
-            // Rearrange to 'YYYY-MM-DD' for reliable Date object creation
-            if (dateParts.length === 3) {
-                const day = dateParts[1];
-                const month = dateParts[0];
-                const year = dateParts[2];
-                const formattedDate = `${year}-${month}-${day}`;
-
-                const start = new Date(formattedDate);
-                const end = new Date(formattedDate);
-                end.setDate(end.getDate() + 1); // Add one day to filter until the beginning of the next day
-
-                filter.date = { $gte: start, $lt: end };
-            } else {
-                console.error('Invalid date format received from frontend:', date);
-            }
+            const startDate = new Date(date + 'T00:00:00.000Z');
+            const endDate = new Date(date + 'T23:59:59.999Z');
+            if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+                return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD.' });
+            }
+            filter.date = { $gte: startDate, $lte: endDate };
         }
-        // --- END: Date Filter Logic ---
+        // --- END: Robust Date Filter Logic ---
         if (responsiblePerson) {
             filter.responsiblePerson = new RegExp(responsiblePerson, 'i');
         }
@@ -557,12 +489,12 @@ app.get('/cash-journal', auth, authorize(['Nachwera Richard', 'Martha','Nelson',
     }
 });
 
-app.put('/cash-journal/:id', auth, authorize(['Nachwera Richard','Nelson','Florence']), async (req, res) => { // Martha and Joshua CANNOT edit cash entries
+app.put('/cash-journal/:id', auth, authorize(['Nachwera Richard','Nelson','Florence']), async (req, res) => { 
     try {
-        const { cashAtHand, cashBanked, bankReceiptId, date } = req.body; // Removed responsiblePerson from destructuring
+        const { cashAtHand, cashBanked, bankReceiptId, date } = req.body; 
         const updatedEntry = await CashJournal.findByIdAndUpdate(
             req.params.id,
-            { cashAtHand, cashBanked, bankReceiptId, responsiblePerson: req.user.username, date: date ? new Date(date) : undefined }, // Ensure responsiblePerson is updated
+            { cashAtHand, cashBanked, bankReceiptId, responsiblePerson: req.user.username, date: date ? new Date(date) : undefined }, 
             { new: true }
         );
         if (!updatedEntry) {
@@ -574,8 +506,6 @@ app.put('/cash-journal/:id', auth, authorize(['Nachwera Richard','Nelson','Flore
         res.status(500).json({ error: err.message });
     }
 });
-
-// REMOVED: app.delete('/cash-journal/:id', ...)
 
 // --- NEW: Audit Log Endpoints (Nachwera Richard, Nelson, Florence Only) ---
 app.get('/audit-logs', auth, authorize(['Nachwera Richard','Nelson','Florence']), async (req, res) => {
