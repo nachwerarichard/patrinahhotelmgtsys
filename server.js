@@ -110,7 +110,7 @@ const Inventory = mongoose.model('Inventory', new mongoose.Schema({
   sales: Number,
   spoilage: Number,
   closing: Number,
-}));
+}, { timestamps: true })); // <-- ADDED: Timestamps option
 
 const Sale = mongoose.model('Sale', new mongoose.Schema({
   item: String,
@@ -202,11 +202,24 @@ app.post('/inventory', auth, authorize(['Nachwera Richard','Nelson','Florence','
 
 app.get('/inventory', auth, authorize(['Nachwera Richard','Florence','Nelson','Joshua','Martha']), async (req, res) => {
   try {
-    const { item, low, page = 1, limit = 5 } = req.query;
+    const { item, low, date, page = 1, limit = 5 } = req.query;
 
     const filter = {};
     if (item) filter.item = new RegExp(item, 'i');
     if (low) filter.closing = { $lt: Number(low) };
+
+    // --- ADDED: Date Filter Logic ---
+    if (date) {
+      const startDate = new Date(date);
+      const endDate = new Date(date);
+      endDate.setDate(endDate.getDate() + 1); // Add one day to filter until the beginning of the next day
+
+      filter.createdAt = {
+        $gte: startDate,
+        $lt: endDate,
+      };
+    }
+    // --- END: Date Filter Logic ---
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const total = await Inventory.countDocuments(filter);
@@ -222,7 +235,6 @@ app.get('/inventory', auth, authorize(['Nachwera Richard','Florence','Nelson','J
     res.status(500).json({ error: err.message });
   }
 });
-
 
 app.put('/inventory/:id', auth, authorize(['Nachwera Richard','Nelson','Florence']), async (req, res) => { // Joshua CANNOT edit inventory
   try {
