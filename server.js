@@ -231,10 +231,12 @@ app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson',
       // If the query for the specific date returned no documents, find the most recent one before it.
       if (docs.length === 0) {
         // Create a new filter for the fallback query, preserving the 'item' and 'low' filters.
-        const fallbackFilter = { ...filter, date: { $lt: startDate } };
+        const fallbackFilter = { ...filter, date: { $lt: startDate, $exists: true, $type: 9 } };
         
         // Find the single most recent inventory document by sorting in descending order.
         const fallbackDocs = await Inventory.find(fallbackFilter).sort({ date: -1 }).limit(1);
+
+        console.log('Fallback query results:', fallbackDocs); // <-- Use this to debug on your server console.
 
         // If a fallback document is found, we use it for the response.
         if (fallbackDocs.length > 0) {
