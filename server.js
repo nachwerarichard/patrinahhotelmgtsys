@@ -33,6 +33,40 @@ mongoose.connect(process.env.MONGO_URI, {
   useUnifiedTopology: true
 }).then(() => {
   console.log('MongoDB connected');
+  
+  // --- TEMPORARY DATA CLEANUP SCRIPT: RUN ONCE AND THEN REMOVE ---
+  // This block will fix any old inventory records with string dates.
+  async function cleanupDates() {
+    console.log('Starting one-time date cleanup...');
+    try {
+      const recordsToUpdate = await Inventory.find({ date: { $type: 'string' } });
+
+      if (recordsToUpdate.length === 0) {
+        console.log('No string-based date fields found. Your data is already clean!');
+        return;
+      }
+
+      console.log(`Found ${recordsToUpdate.length} records to update...`);
+      for (const record of recordsToUpdate) {
+        const newDate = new Date(record.date);
+        if (!isNaN(newDate.getTime())) {
+          record.date = newDate;
+          await record.save();
+          console.log(`Updated record with ID: ${record._id}`);
+        } else {
+          console.error(`Failed to convert date for record with ID: ${record._id}. Value was: ${record.date}`);
+        }
+      }
+      console.log('Date cleanup complete!');
+    } catch (error) {
+      console.error('Error during date cleanup:', error);
+    }
+  }
+
+  // Call the cleanup function immediately after connection
+  cleanupDates();
+  // --- END OF TEMPORARY DATA CLEANUP SCRIPT ---
+
 }).catch(err => console.error('MongoDB connection error:', err));
 
 // --- NEW: Audit Log Schema ---
@@ -113,14 +147,14 @@ const Inventory = mongoose.model('Inventory', new mongoose.Schema({
   spoilage: Number,
   closing: Number,
   date: { type: Date, default: Date.now } // Using explicit date field
-})); 
+})); 
 
 const Sale = mongoose.model('Sale', new mongoose.Schema({
   item: String,
   number: Number,
   bp: Number,
   sp: Number,
-  profit: Number, 
+  profit: Number, 
   percentageprofit: Number,
   date: Date
 }));
@@ -187,7 +221,7 @@ app.post('/logout', auth, async (req, res) => {
 
 
 // --- MODIFIED: Inventory Endpoints ---
-app.post('/inventory', auth, authorize(['Nachwera Richard','Nelson','Florence','Martha', 'Joshua']), async (req, res) => { 
+app.post('/inventory', auth, authorize(['Nachwera Richard','Nelson','Florence','Martha', 'Joshua']), async (req, res) => { 
   try {
     const { item, opening, purchases, sales, spoilage } = req.body;
     const total = opening + purchases - sales - spoilage;
@@ -203,64 +237,64 @@ app.post('/inventory', auth, authorize(['Nachwera Richard','Nelson','Florence','
 });
 
 app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson', 'Joshua', 'Martha']), async (req, res) => {
-  try {
-    const { item, low, date, page = 1, limit = 5 } = req.query;
+  try {
+    const { item, low, date, page = 1, limit = 5 } = req.query;
 
-    const filter = {};
-    if (item) filter.item = new RegExp(item, 'i');
-    if (low) filter.closing = { $lt: Number(low) };
+    const filter = {};
+    if (item) filter.item = new RegExp(item, 'i');
+    if (low) filter.closing = { $lt: Number(low) };
 
-    let docs = [];
-    let total = 0;
-    
-    // First, try to find inventory for the exact date provided by the user.
-    if (date) {
-      const startDate = new Date(date + 'T00:00:00.000Z');
-      const endDate = new Date(date + 'T23:59:59.999Z');
-      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-          return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD.' });
-      }
+    let docs = [];
+    let total = 0;
+    
+    // First, try to find inventory for the exact date provided by the user.
+    if (date) {
+      const startDate = new Date(date + 'T00:00:00.000Z');
+      const endDate = new Date(date + 'T23:59:59.999Z');
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+          return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD.' });
+      }
 
-      const exactDateFilter = { ...filter, date: { $gte: startDate, $lte: endDate } };
-      
-      const skip = (parseInt(page) - 1) * parseInt(limit);
-      total = await Inventory.countDocuments(exactDateFilter);
-      docs = await Inventory.find(exactDateFilter).skip(skip).limit(Number(limit));
+      const exactDateFilter = { ...filter, date: { $gte: startDate, $lte: endDate } };
+      
+      const skip = (parseInt(page) - 1) * parseInt(limit);
+      total = await Inventory.countDocuments(exactDateFilter);
+      docs = await Inventory.find(exactDateFilter).skip(skip).limit(Number(limit));
 
-      // --- NEW LOGIC: Fallback to the previous day if no results are found ---
-      // If the query for the specific date returned no documents, find the most recent one before it.
-      if (docs.length === 0) {
-        // Create a new filter for the fallback query, preserving the 'item' and 'low' filters.
-        const fallbackFilter = { ...filter, date: { $lt: startDate, $exists: true, $type: 9 } };
-        
-        // Find the single most recent inventory document by sorting in descending order.
-        const fallbackDocs = await Inventory.find(fallbackFilter).sort({ date: -1 }).limit(1);
+      // --- NEW LOGIC: Fallback to the previous day if no results are found ---
+      // If the query for the specific date returned no documents, find the most recent one before it.
+      if (docs.length === 0) {
+        // Create a new filter for the fallback query, preserving the 'item' and 'low' filters.
+        const fallbackFilter = { ...filter, date: { $lt: startDate, $exists: true, $type: 9 } };
+        
+        // Find the single most recent inventory document by sorting in descending order.
+        const fallbackDocs = await Inventory.find(fallbackFilter).sort({ date: -1 }).limit(1);
 
-        console.log('Fallback query results:', fallbackDocs); // <-- Use this to debug on your server console.
+        console.log('Fallback query results:', fallbackDocs); // <-- Use this to debug on your server console.
 
-        // If a fallback document is found, we use it for the response.
-        if (fallbackDocs.length > 0) {
-          docs = fallbackDocs;
-          total = 1; // Since we are only returning one document, the total is 1.
-        }
-      }
-    } else {
-      // Original logic for when no date is provided.
-      const skip = (parseInt(page) - 1) * parseInt(limit);
-      total = await Inventory.countDocuments(filter);
-      docs = await Inventory.find(filter).skip(skip).limit(Number(limit));
-    }
-    // --- END NEW LOGIC ---
+        // If a fallback document is found, we use it for the response.
+        if (fallbackDocs.length > 0) {
+          docs = fallbackDocs;
+          total = 1; // Since we are only returning one document, the total is 1.
+        }
+      }
+    } else {
+      // Original logic for when no date is provided.
+      const skip = (parseInt(page) - 1) * parseInt(limit);
+      total = await Inventory.countDocuments(filter);
+      docs = await Inventory.find(filter).skip(skip).limit(Number(limit));
+    }
+    // --- END NEW LOGIC ---
 
-    res.json({
-      data: docs,
-      total,
-      page: Number(page),
-      pages: Math.ceil(total / limit)
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+    res.json({
+      data: docs,
+      total,
+      page: Number(page),
+      pages: Math.ceil(total / limit)
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 
@@ -312,7 +346,7 @@ app.delete('/inventory/:id', auth, authorize(['Nachwera Richard','Nelson','Flore
 // --- MODIFIED: Sales endpoints ---
 app.post('/sales', auth, authorize(['Nachwera Richard', 'Martha','Joshua','Nelson','Florence']), async (req, res) => {
   try {
-    const { item, number, bp, sp } = req.body; 
+    const { item, number, bp, sp } = req.body; 
     const totalBuyingPrice = bp * number;
     const totalSellingPrice = sp * number;
     const profit = totalSellingPrice - totalBuyingPrice;
@@ -364,11 +398,11 @@ app.get('/sales', auth, authorize(['Nachwera Richard', 'Martha','Joshua','Nelson
     let query = {};
     // --- MODIFIED: Robust Date Filter Logic ---
     if (date) {
-      const startDate = new Date(date + 'T00:00:00.000Z');
-      const endDate = new Date(date + 'T23:59:59.999Z');
-      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-          return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD.' });
-      }
+      const startDate = new Date(date + 'T00:00:00.000Z');
+      const endDate = new Date(date + 'T23:59:59.999Z');
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+          return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD.' });
+      }
       query.date = { $gte: startDate, $lte: endDate };
     }
     // --- END: Robust Date Filter Logic ---
@@ -414,13 +448,13 @@ app.delete('/sales/:id', auth, authorize(['Nachwera Richard','Nelson','Florence'
 // --- MODIFIED: Expenses endpoints ---
 app.post('/expenses', auth, authorize(['Nachwera Richard', 'Martha','Joshua','Nelson','Florence']), async (req, res) => {
   try {
-    const { description, amount, receiptId, source } = req.body; 
+    const { description, amount, receiptId, source } = req.body; 
     const exp = await Expense.create({
       description,
       amount,
       receiptId,
       source,
-      recordedBy: req.user.username, 
+      recordedBy: req.user.username, 
       date: new Date()
     });
     await logAction('Expense Created', req.user.username, { expenseId: exp._id, description: exp.description, amount: exp.amount });
@@ -437,11 +471,11 @@ app.get('/expenses', auth, authorize(['Nachwera Richard', 'Martha','Joshua','Nel
     let query = {};
     // --- MODIFIED: Robust Date Filter Logic ---
     if (date) {
-      const startDate = new Date(date + 'T00:00:00.000Z');
-      const endDate = new Date(date + 'T23:59:59.999Z');
-      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-          return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD.' });
-      }
+      const startDate = new Date(date + 'T00:00:00.000Z');
+      const endDate = new Date(date + 'T23:59:59.999Z');
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+          return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD.' });
+      }
       query.date = { $gte: startDate, $lte: endDate };
     }
     // --- END: Robust Date Filter Logic ---
@@ -481,7 +515,7 @@ app.post('/cash-journal', auth, authorize(['Nachwera Richard', 'Martha','Nelson'
             cashAtHand,
             cashBanked,
             bankReceiptId,
-            responsiblePerson: req.user.username, 
+            responsiblePerson: req.user.username, 
             date: date ? new Date(date) : new Date()
         });
         await logAction('Cash Entry Created', req.user.username, { entryId: newEntry._id, cashAtHand: newEntry.cashAtHand, cashBanked: newEntry.cashBanked });
@@ -491,17 +525,17 @@ app.post('/cash-journal', auth, authorize(['Nachwera Richard', 'Martha','Nelson'
     }
 });
 
-app.get('/cash-journal', auth, authorize(['Nachwera Richard', 'Martha','Nelson','Florence']), async (req, res) => { 
+app.get('/cash-journal', auth, authorize(['Nachwera Richard', 'Martha','Nelson','Florence']), async (req, res) => { 
     try {
         const { date, responsiblePerson } = req.query;
         const filter = {};
         // --- MODIFIED: Robust Date Filter Logic ---
         if (date) {
-            const startDate = new Date(date + 'T00:00:00.000Z');
-            const endDate = new Date(date + 'T23:59:59.999Z');
-            if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-                return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD.' });
-            }
+            const startDate = new Date(date + 'T00:00:00.000Z');
+            const endDate = new Date(date + 'T23:59:59.999Z');
+            if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+                return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD.' });
+            }
             filter.date = { $gte: startDate, $lte: endDate };
         }
         // --- END: Robust Date Filter Logic ---
@@ -515,12 +549,12 @@ app.get('/cash-journal', auth, authorize(['Nachwera Richard', 'Martha','Nelson',
     }
 });
 
-app.put('/cash-journal/:id', auth, authorize(['Nachwera Richard','Nelson','Florence']), async (req, res) => { 
+app.put('/cash-journal/:id', auth, authorize(['Nachwera Richard','Nelson','Florence']), async (req, res) => { 
     try {
-        const { cashAtHand, cashBanked, bankReceiptId, date } = req.body; 
+        const { cashAtHand, cashBanked, bankReceiptId, date } = req.body; 
         const updatedEntry = await CashJournal.findByIdAndUpdate(
             req.params.id,
-            { cashAtHand, cashBanked, bankReceiptId, responsiblePerson: req.user.username, date: date ? new Date(date) : undefined }, 
+            { cashAtHand, cashBanked, bankReceiptId, responsiblePerson: req.user.username, date: date ? new Date(date) : undefined }, 
             { new: true }
         );
         if (!updatedEntry) {
