@@ -33,6 +33,40 @@ mongoose.connect(process.env.MONGO_URI, {
   useUnifiedTopology: true
 }).then(() => {
   console.log('MongoDB connected');
+  
+  // --- TEMPORARY DATA CLEANUP SCRIPT: RUN ONCE AND THEN REMOVE ---
+  // This block will fix any old inventory records with string dates.
+  async function cleanupDates() {
+    console.log('Starting one-time date cleanup...');
+    try {
+      const recordsToUpdate = await Inventory.find({ date: { $type: 'string' } });
+
+      if (recordsToUpdate.length === 0) {
+        console.log('No string-based date fields found. Your data is already clean!');
+        return;
+      }
+
+      console.log(`Found ${recordsToUpdate.length} records to update...`);
+      for (const record of recordsToUpdate) {
+        const newDate = new Date(record.date);
+        if (!isNaN(newDate.getTime())) {
+          record.date = newDate;
+          await record.save();
+          console.log(`Updated record with ID: ${record._id}`);
+        } else {
+          console.error(`Failed to convert date for record with ID: ${record._id}. Value was: ${record.date}`);
+        }
+      }
+      console.log('Date cleanup complete!');
+    } catch (error) {
+      console.error('Error during date cleanup:', error);
+    }
+  }
+
+  // Call the cleanup function immediately after connection
+  cleanupDates();
+  // --- END OF TEMPORARY DATA CLEANUP SCRIPT ---
+
 }).catch(err => console.error('MongoDB connection error:', err));
 
 // --- NEW: Audit Log Schema ---
@@ -227,21 +261,28 @@ app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson',
       total = await Inventory.countDocuments(exactDateFilter);
       docs = await Inventory.find(exactDateFilter).skip(skip).limit(Number(limit));
 
-      // --- NEW LOGIC: Fallback to the previous day if no results are found ---
-      // If the query for the specific date returned no documents, find the most recent one before it.
+      // --- MODIFIED LOGIC: Fallback to the previous day OR items without a date field ---
       if (docs.length === 0) {
-        // Create a new filter for the fallback query, preserving the 'item' and 'low' filters.
-        const fallbackFilter = { ...filter, date: { $lt: startDate, $exists: true, $type: 9 } };
-        
-        // Find the single most recent inventory document by sorting in descending order.
-        const fallbackDocs = await Inventory.find(fallbackFilter).sort({ date: -1 }).limit(1);
+        // Fallback 1: Find the most recent inventory document with a date field before the given date.
+        const fallbackDateFilter = { ...filter, date: { $lt: startDate, $exists: true, $type: 9 } };
+        const fallbackDocsWithDate = await Inventory.find(fallbackDateFilter).sort({ date: -1 }).limit(1);
 
-        console.log('Fallback query results:', fallbackDocs); // <-- Use this to debug on your server console.
-
-        // If a fallback document is found, we use it for the response.
-        if (fallbackDocs.length > 0) {
-          docs = fallbackDocs;
-          total = 1; // Since we are only returning one document, the total is 1.
+        if (fallbackDocsWithDate.length > 0) {
+          docs = fallbackDocsWithDate;
+          total = 1;
+        } else {
+          // Fallback 2: If no records with a date are found, find the most recent record that has NO date field.
+          // We sort by `_id` in descending order, as it's a good proxy for creation time.
+          const fallbackNoDateFilter = { ...filter, date: { $exists: false } };
+          const fallbackDocsNoDate = await Inventory.find(fallbackNoDateFilter).sort({ _id: -1 }).limit(1);
+          
+          if (fallbackDocsNoDate.length > 0) {
+            console.log('Found old records without a date field.');
+            docs = fallbackDocsNoDate;
+            total = 1;
+          } else {
+            console.log('No inventory records found for the specified date, or any previous records.');
+          }
         }
       }
     } else {
@@ -250,7 +291,7 @@ app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson',
       total = await Inventory.countDocuments(filter);
       docs = await Inventory.find(filter).skip(skip).limit(Number(limit));
     }
-    // --- END NEW LOGIC ---
+    // --- END MODIFIED LOGIC ---
 
     res.json({
       data: docs,
