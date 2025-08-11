@@ -202,7 +202,6 @@ app.post('/inventory', auth, authorize(['Nachwera Richard','Nelson','Florence','
   }
 });
 
-
 app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson', 'Joshua', 'Martha']), async (req, res) => {
     try {
         const { item, low, date, page = 1, limit = 5 } = req.query;
@@ -263,11 +262,13 @@ app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson',
         }
         // --- END NEW LOGIC ---
 
-        // Check for records without a date field and log a message
-        const recordsWithoutDate = await Inventory.find({ date: { $exists: false } }).limit(1);
+        // --- UPDATED LOGIC: Find and log ALL records without a date field ---
+        const recordsWithoutDate = await Inventory.find({ date: { $exists: false } });
         if (recordsWithoutDate.length > 0) {
-            console.log('Found a record without a date field.');
+            console.log('Found the following records without a date field:');
+            console.log(recordsWithoutDate);
         }
+        // --- END UPDATED LOGIC ---
 
         res.json({
             data: docs,
@@ -279,7 +280,6 @@ app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson',
         res.status(500).json({ error: err.message });
     }
 });
-
 
 
 app.put('/inventory/:id', auth, authorize(['Nachwera Richard','Nelson','Florence']), async (req, res) => { // Joshua CANNOT edit inventory
