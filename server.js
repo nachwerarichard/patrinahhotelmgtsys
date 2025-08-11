@@ -220,23 +220,21 @@ app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson',
       if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
           return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD.' });
       }
-      filter.date = {
-        $gte: startDate,
-        $lte: endDate,
-      };
 
+      const exactDateFilter = { ...filter, date: { $gte: startDate, $lte: endDate } };
+      
       const skip = (parseInt(page) - 1) * parseInt(limit);
-      total = await Inventory.countDocuments(filter);
-      docs = await Inventory.find(filter).skip(skip).limit(Number(limit));
+      total = await Inventory.countDocuments(exactDateFilter);
+      docs = await Inventory.find(exactDateFilter).skip(skip).limit(Number(limit));
 
       // --- NEW LOGIC: Fallback to the previous day if no results are found ---
       // If the query for the specific date returned no documents, find the most recent one before it.
       if (docs.length === 0) {
-        // Reset the date filter to find any documents before the start of the selected day.
-        filter.date = { $lt: startDate };
-
+        // Create a new filter for the fallback query, preserving the 'item' and 'low' filters.
+        const fallbackFilter = { ...filter, date: { $lt: startDate } };
+        
         // Find the single most recent inventory document by sorting in descending order.
-        const fallbackDocs = await Inventory.find(filter).sort({ date: -1 }).limit(1);
+        const fallbackDocs = await Inventory.find(fallbackFilter).sort({ date: -1 }).limit(1);
 
         // If a fallback document is found, we use it for the response.
         if (fallbackDocs.length > 0) {
@@ -262,7 +260,6 @@ app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson',
     res.status(500).json({ error: err.message });
   }
 });
-
 
 
 app.put('/inventory/:id', auth, authorize(['Nachwera Richard','Nelson','Florence']), async (req, res) => { // Joshua CANNOT edit inventory
