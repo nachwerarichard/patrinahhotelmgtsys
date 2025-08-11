@@ -112,6 +112,18 @@ const Inventory = mongoose.model('Inventory', new mongoose.Schema({
   closing: Number,
 }, { timestamps: true })); // <-- ADDED: Timestamps option
 
+async function updateExistingDocuments() {
+  try {
+    const docs = await Inventory.find({ createdAt: { $exists: false } }); // Find documents without createdAt
+    for (const doc of docs) {
+      const creationTime = doc._id.getTimestamp();
+      await Inventory.findByIdAndUpdate(doc._id, { createdAt: creationTime });
+    }
+    console.log('Successfully updated existing documents.');
+  } catch (error) {
+    console.error('Error updating documents:', error);
+  }
+}
 const Sale = mongoose.model('Sale', new mongoose.Schema({
   item: String,
   number: Number,
