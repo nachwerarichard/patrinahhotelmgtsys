@@ -28,12 +28,19 @@ const HARDCODED_USERS = {
 
 
 // Connect to MongoDB
+// Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
-}).then(() => console.log('MongoDB connected'))
-  .catch(err => console.error('MongoDB connection error:', err));
+}).then(() => {
+  console.log('MongoDB connected');
+  
+  // --- ADDED: Call the one-time function here ---
+  updateExistingDocuments();
 
+}).catch(err => console.error('MongoDB connection error:', err));
+
+// --- NEW: Audit Log Schema
 // --- NEW: Audit Log Schema ---
 const AuditLog = mongoose.model('AuditLog', new mongoose.Schema({
   action: { type: String, required: true }, // e.g., 'Login', 'Logout', 'Sale Created', 'Inventory Updated'
