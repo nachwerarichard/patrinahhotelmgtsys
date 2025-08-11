@@ -202,6 +202,7 @@ app.post('/inventory', auth, authorize(['Nachwera Richard','Nelson','Florence','
   }
 });
 
+
 app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson', 'Joshua', 'Martha']), async (req, res) => {
     try {
         const { item, low, date, page = 1, limit = 5 } = req.query;
@@ -211,29 +212,62 @@ app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson',
         if (item) filter.item = new RegExp(item, 'i');
         if (low) filter.closing = { $lt: Number(low) };
 
-        // Filter by the single provided date, creating a full-day range.
+        // --- NEW LOGIC: Use a single date to get the most recent record for each item ---
+        let docs = [];
+        let total = 0;
+        
         if (date) {
-            const startDate = new Date(date + 'T00:00:00.000Z');
-            const endDate = new Date(date + 'T23:59:59.999Z');
-            if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+            const selectedDate = new Date(date + 'T23:59:59.999Z');
+            if (isNaN(selectedDate.getTime())) {
                 return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD.' });
             }
-            filter.date = {
-                $gte: startDate,
-                $lte: endDate,
-            };
+
+            // Find the most recent record for each unique item, on or before the selected date
+            const latestRecords = await Inventory.aggregate([
+                {
+                    // Step 1: Filter to only include records on or before the selected date
+                    $match: {
+                        date: { $lte: selectedDate },
+                        ...filter // Also apply item and low stock filters
+                    }
+                },
+                {
+                    // Step 2: Sort the records by item and then by date in descending order
+                    // This places the most recent record for each item at the top
+                    $sort: { item: 1, date: -1 }
+                },
+                {
+                    // Step 3: Group by item and take the first document in each group
+                    // This gives us the single latest record for each item
+                    $group: {
+                        _id: '$item',
+                        doc: { $first: '$$ROOT' }
+                    }
+                },
+                {
+                    // Step 4: Project the document back to the original format
+                    $replaceRoot: { newRoot: '$doc' }
+                }
+            ]);
+
+            // Now, we handle pagination on the aggregated results
+            total = latestRecords.length;
+            const skip = (parseInt(page) - 1) * parseInt(limit);
+            docs = latestRecords.slice(skip, skip + Number(limit));
+
+        } else {
+            // Original logic for when no date is provided
+            const skip = (parseInt(page) - 1) * parseInt(limit);
+            total = await Inventory.countDocuments(filter);
+            docs = await Inventory.find(filter).skip(skip).limit(Number(limit));
         }
+        // --- END NEW LOGIC ---
 
-        const skip = (parseInt(page) - 1) * parseInt(limit);
-        const total = await Inventory.countDocuments(filter);
-        const docs = await Inventory.find(filter).skip(skip).limit(Number(limit));
-
-        // --- NEW LOGIC: Check for records without a date field and log a message ---
+        // Check for records without a date field and log a message
         const recordsWithoutDate = await Inventory.find({ date: { $exists: false } }).limit(1);
         if (recordsWithoutDate.length > 0) {
             console.log('Found a record without a date field.');
         }
-        // --- END NEW LOGIC ---
 
         res.json({
             data: docs,
