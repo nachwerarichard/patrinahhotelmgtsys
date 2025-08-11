@@ -206,71 +206,68 @@ app.post('/inventory', auth, authorize(['Nachwera Richard','Nelson','Florence','
 });
 
 app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson', 'Joshua', 'Martha']), async (req, res) => {
-  try {
-    const { item, low, date, page = 1, limit = 5 } = req.query;
+    try {
+        const { item, low, date, page = 1, limit = 5 } = req.query;
+        const filter = {};
 
-    const filter = {};
-    if (item) filter.item = new RegExp(item, 'i');
-    if (low) filter.closing = { $lt: Number(low) };
+        // Add filter conditions for item and low stock
+        if (item) filter.item = new RegExp(item, 'i');
+        if (low) filter.closing = { $lt: Number(low) };
+        
+        let docs = [];
+        let total = 0;
 
-    let docs = [];
-    let total = 0;
-    
-    // First, try to find inventory for the exact date provided by the user.
-    if (date) {
-      const startDate = new Date(date + 'T00:00:00.000Z');
-      const endDate = new Date(date + 'T23:59:59.999Z');
-      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-          return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD.' });
-      }
+        // If a date is provided, filter by a date range
+        if (date) {
+            // Correctly parse the date to handle a full day
+            const startDate = new Date(date + 'T00:00:00.000Z');
+            const endDate = new Date(date + 'T23:59:59.999Z');
 
-      const exactDateFilter = { ...filter, date: { $gte: startDate, $lte: endDate } };
-      
-      const skip = (parseInt(page) - 1) * parseInt(limit);
-      total = await Inventory.countDocuments(exactDateFilter);
-      docs = await Inventory.find(exactDateFilter).skip(skip).limit(Number(limit));
+            if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+                return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD.' });
+            }
 
-      // --- MODIFIED LOGIC: Fallback to the previous day OR items without a date field ---
-      if (docs.length === 0) {
-        // Fallback 1: Find the most recent inventory document with a date field before the given date.
-        const fallbackDateFilter = { ...filter, date: { $lt: startDate, $exists: true, $type: 9 } };
-        const fallbackDocsWithDate = await Inventory.find(fallbackDateFilter).sort({ date: -1 }).limit(1);
+            // Combine the other filters with the date range filter
+            const dateFilter = { ...filter, date: { $gte: startDate, $lte: endDate } };
+            
+            const skip = (parseInt(page) - 1) * parseInt(limit);
+            total = await Inventory.countDocuments(dateFilter);
+            docs = await Inventory.find(dateFilter).skip(skip).limit(Number(limit));
 
-        if (fallbackDocsWithDate.length > 0) {
-          docs = fallbackDocsWithDate;
-          total = 1;
-        } else {
-          // Fallback 2: If no records with a date are found, find the most recent record that has NO date field.
-          // We sort by `_id` in descending order, as it's a good proxy for creation time.
-          const fallbackNoDateFilter = { ...filter, date: { $exists: false } };
-          const fallbackDocsNoDate = await Inventory.find(fallbackNoDateFilter).sort({ _id: -1 }).limit(1);
-          
-          if (fallbackDocsNoDate.length > 0) {
-            console.log('Found old records without a date field.');
-            docs = fallbackDocsNoDate;
-            total = 1;
-          } else {
-            console.log('No inventory records found for the specified date, or any previous records.');
-          }
-        }
-      }
-    } else {
-      // Original logic for when no date is provided.
-      const skip = (parseInt(page) - 1) * parseInt(limit);
-      total = await Inventory.countDocuments(filter);
-      docs = await Inventory.find(filter).skip(skip).limit(Number(limit));
-    }
-    // --- END MODIFIED LOGIC ---
+            // Fallback: If no records are found for the exact date,
+            // find the most recent inventory document with a date before the given date.
+            if (docs.length === 0) {
+                const fallbackFilter = { ...filter, date: { $lt: startDate, $exists: true } };
+                const fallbackDocs = await Inventory.find(fallbackFilter)
+                                                 .sort({ date: -1 })
+                                                 .limit(1);
+                
+                if (fallbackDocs.length > 0) {
+                    docs = fallbackDocs;
+                    total = 1;
+                } else {
+                    // No records at all for the specified date or before it.
+                    // This is the end of the line, no more fallbacks.
+                    console.log('No inventory records found for the specified date, or any previous records.');
+                    total = 0;
+                }
+            }
+        } else {
+            // Original logic for when no date is provided
+            const skip = (parseInt(page) - 1) * parseInt(limit);
+            total = await Inventory.countDocuments(filter);
+            docs = await Inventory.find(filter).skip(skip).limit(Number(limit));
+        }
 
-    res.json({
-      data: docs,
-      total,
-      page: Number(page),
-      pages: Math.ceil(total / limit)
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+        res.json({
+            data: docs,
+            total,
+            page: Number(page),
+            pages: Math.ceil(total / limit)
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 
