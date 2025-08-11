@@ -202,43 +202,43 @@ app.post('/inventory', auth, authorize(['Nachwera Richard','Nelson','Florence','
   }
 });
 
+app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson', 'Joshua', 'Martha']), async (req, res) => {
+  try {
+    const { item, low, date, page = 1, limit = 5 } = req.query;
 
-app.get('/inventory', auth, authorize(['Nachwera Richard','Florence','Nelson','Joshua','Martha']), async (req, res) => {
-  try {
-    const { item, low, date, page = 1, limit = 5 } = req.query;
+    const filter = {};
+    if (item) filter.item = new RegExp(item, 'i');
+    if (low) filter.closing = { $lt: Number(low) };
 
-    const filter = {};
-    if (item) filter.item = new RegExp(item, 'i');
-    if (low) filter.closing = { $lt: Number(low) };
-
-    // --- MODIFIED: Filtering by the new 'date' field ---
-    if (date) {
+    // Filter by the single provided date, creating a full-day range.
+    if (date) {
       const startDate = new Date(date + 'T00:00:00.000Z');
       const endDate = new Date(date + 'T23:59:59.999Z');
       if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
           return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD.' });
       }
       filter.date = {
-        $gte: startDate,
-        $lte: endDate,
-      };
-    }
-    // --- END: Robust Date Filter Logic ---
+        $gte: startDate,
+        $lte: endDate,
+      };
+    }
 
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-    const total = await Inventory.countDocuments(filter);
-    const docs = await Inventory.find(filter).skip(skip).limit(Number(limit));
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const total = await Inventory.countDocuments(filter);
+    const docs = await Inventory.find(filter).skip(skip).limit(Number(limit));
 
-    res.json({
-      data: docs,
-      total,
-      page: Number(page),
-      pages: Math.ceil(total / limit)
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+    res.json({
+      data: docs,
+      total,
+      page: Number(page),
+      pages: Math.ceil(total / limit)
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
+
+
 
 app.put('/inventory/:id', auth, authorize(['Nachwera Richard','Nelson','Florence']), async (req, res) => { // Joshua CANNOT edit inventory
   try {
