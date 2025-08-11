@@ -34,38 +34,7 @@ mongoose.connect(process.env.MONGO_URI, {
 }).then(() => {
   console.log('MongoDB connected');
   
-  // --- TEMPORARY DATA CLEANUP SCRIPT: RUN ONCE AND THEN REMOVE ---
-  // This block will fix any old inventory records with string dates.
-  async function cleanupDates() {
-    console.log('Starting one-time date cleanup...');
-    try {
-      const recordsToUpdate = await Inventory.find({ date: { $type: 'string' } });
-
-      if (recordsToUpdate.length === 0) {
-        console.log('No string-based date fields found. Your data is already clean!');
-        return;
-      }
-
-      console.log(`Found ${recordsToUpdate.length} records to update...`);
-      for (const record of recordsToUpdate) {
-        const newDate = new Date(record.date);
-        if (!isNaN(newDate.getTime())) {
-          record.date = newDate;
-          await record.save();
-          console.log(`Updated record with ID: ${record._id}`);
-        } else {
-          console.error(`Failed to convert date for record with ID: ${record._id}. Value was: ${record.date}`);
-        }
-      }
-      console.log('Date cleanup complete!');
-    } catch (error) {
-      console.error('Error during date cleanup:', error);
-    }
-  }
-
-  // Call the cleanup function immediately after connection
-  cleanupDates();
-  // --- END OF TEMPORARY DATA CLEANUP SCRIPT ---
+  // ---
 
 }).catch(err => console.error('MongoDB connection error:', err));
 
