@@ -104,6 +104,7 @@ const CashJournal = mongoose.model('CashJournal', new mongoose.Schema({
     date: { type: Date, default: Date.now }
 }));
 
+// --- MODIFIED: Inventory Schema to use explicit 'date' field ---
 const Inventory = mongoose.model('Inventory', new mongoose.Schema({
   item: String,
   opening: Number,
@@ -111,7 +112,8 @@ const Inventory = mongoose.model('Inventory', new mongoose.Schema({
   sales: Number,
   spoilage: Number,
   closing: Number,
-}, { timestamps: true })); 
+  date: { type: Date, default: Date.now } // Using explicit date field
+})); 
 
 const Sale = mongoose.model('Sale', new mongoose.Schema({
   item: String,
@@ -189,7 +191,7 @@ app.post('/inventory', auth, authorize(['Nachwera Richard','Nelson','Florence','
   try {
     const { item, opening, purchases, sales, spoilage } = req.body;
     const total = opening + purchases - sales - spoilage;
-    const doc = await Inventory.create({ item, opening, purchases, sales, spoilage, closing: total });
+    const doc = await Inventory.create({ item, opening, purchases, sales, spoilage, closing: total, date: new Date() }); // Add date to creation
     if (total < Number(process.env.LOW_STOCK_THRESHOLD)) {
       notifyLowStock(item, total);
     }
@@ -209,14 +211,14 @@ app.get('/inventory', auth, authorize(['Nachwera Richard','Florence','Nelson','J
     if (item) filter.item = new RegExp(item, 'i');
     if (low) filter.closing = { $lt: Number(low) };
 
-    // --- MODIFIED: Robust Date Filter Logic ---
+    // --- MODIFIED: Filtering by the new 'date' field ---
     if (date) {
       const startDate = new Date(date + 'T00:00:00.000Z');
       const endDate = new Date(date + 'T23:59:59.999Z');
       if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
           return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD.' });
       }
-      filter.createdAt = {
+      filter.date = {
         $gte: startDate,
         $lte: endDate,
       };
@@ -374,7 +376,7 @@ app.put('/sales/:id', auth, authorize(['Nachwera Richard','Nelson','Florence']),
   }
 });
 
-app.delete('/sales/:id', auth, authorize(['Nachwera Richard','Nelson','Florence']), async (req, res) => { // Nachwera Richard only for edit/delete
+app.delete('/sales/:id', auth, authorize(['Nachwera Richard','Nelson','Florence']), async (req, res) => {
   try {
     const deleted = await Sale.findByIdAndDelete(req.params.id);
     if (!deleted) return res.status(404).json({ error: 'Sale not found' });
