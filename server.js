@@ -36,7 +36,6 @@ mongoose.connect(process.env.MONGO_URI, {
   console.log('MongoDB connected');
   
   // --- ADDED: Call the one-time function here ---
-  updateExistingDocuments();
 
 }).catch(err => console.error('MongoDB connection error:', err));
 
