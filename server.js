@@ -210,7 +210,10 @@ app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson',
     if (item) filter.item = new RegExp(item, 'i');
     if (low) filter.closing = { $lt: Number(low) };
 
-    // Filter by the single provided date, creating a full-day range.
+    let docs = [];
+    let total = 0;
+    
+    // First, try to find inventory for the exact date provided by the user.
     if (date) {
       const startDate = new Date(date + 'T00:00:00.000Z');
       const endDate = new Date(date + 'T23:59:59.999Z');
@@ -221,11 +224,33 @@ app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson',
         $gte: startDate,
         $lte: endDate,
       };
-    }
 
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-    const total = await Inventory.countDocuments(filter);
-    const docs = await Inventory.find(filter).skip(skip).limit(Number(limit));
+      const skip = (parseInt(page) - 1) * parseInt(limit);
+      total = await Inventory.countDocuments(filter);
+      docs = await Inventory.find(filter).skip(skip).limit(Number(limit));
+
+      // --- NEW LOGIC: Fallback to the previous day if no results are found ---
+      // If the query for the specific date returned no documents, find the most recent one before it.
+      if (docs.length === 0) {
+        // Reset the date filter to find any documents before the start of the selected day.
+        filter.date = { $lt: startDate };
+
+        // Find the single most recent inventory document by sorting in descending order.
+        const fallbackDocs = await Inventory.find(filter).sort({ date: -1 }).limit(1);
+
+        // If a fallback document is found, we use it for the response.
+        if (fallbackDocs.length > 0) {
+          docs = fallbackDocs;
+          total = 1; // Since we are only returning one document, the total is 1.
+        }
+      }
+    } else {
+      // Original logic for when no date is provided.
+      const skip = (parseInt(page) - 1) * parseInt(limit);
+      total = await Inventory.countDocuments(filter);
+      docs = await Inventory.find(filter).skip(skip).limit(Number(limit));
+    }
+    // --- END NEW LOGIC ---
 
     res.json({
       data: docs,
