@@ -328,51 +328,64 @@ app.delete('/inventory/:id', auth, authorize(['Nachwera Richard','Nelson','Flore
 });
 
 // --- MODIFIED: Sales endpoints ---
-app.post('/sales', auth, authorize(['Nachwera Richard', 'Martha','Joshua','Nelson','Florence']), async (req, res) => {
-  try {
-    const { item, number, bp, sp } = req.body; 
-    const totalBuyingPrice = bp * number;
-    const totalSellingPrice = sp * number;
-    const profit = totalSellingPrice - totalBuyingPrice;
-    let percentageProfit = 0;
-    if (totalBuyingPrice !== 0) {
-        percentageProfit = (profit / totalBuyingPrice) * 100;
-    }
+app.post('/sales', auth, authorize(['Nachwera Richard', 'Martha', 'Joshua', 'Nelson', 'Florence']), async (req, res) => {
+  try {
+    const { item, number, bp, sp } = req.body;
+    const totalBuyingPrice = bp * number;
+    const totalSellingPrice = sp * number;
+    const profit = totalSellingPrice - totalBuyingPrice;
+    let percentageProfit = 0;
+    if (totalBuyingPrice !== 0) {
+      percentageProfit = (profit / totalBuyingPrice) * 100;
+    }
 
-    const sale = await Sale.create({
-      ...req.body,
-      profit: profit,
-      percentageprofit: percentageProfit,
-      date: new Date()
-    });
+    const sale = await Sale.create({
+      ...req.body,
+      profit: profit,
+      percentageprofit: percentageProfit,
+      date: new Date()
+    });
 
-    if (item && typeof number === 'number' && number > 0) {
-      try {
-        const updatedInventoryItem = await Inventory.findOneAndUpdate(
-          { item: item },
-          { $inc: { closing: -number, sales: number } },
-          { new: true }
-        );
+    if (item && typeof number === 'number' && number > 0) {
+      try {
+        // --- NEW LOGIC TO FIND AND UPDATE THE LATEST INVENTORY ENTRY ---
+        const latestInventoryItem = await Inventory.findOne({ item: item }).sort({ date: -1 });
 
-        if (updatedInventoryItem) {
-          console.log(`Inventory updated for "${item}". New closing stock: ${updatedInventoryItem.closing}.`);
-          if (updatedInventoryItem.closing < Number(process.env.LOW_STOCK_THRESHOLD)) {
-            notifyLowStock(updatedInventoryItem.item, updatedInventoryItem.closing);
-          }
-        } else {
-          console.warn(`Warning: Sold item "${item}" not found in Inventory. Inventory not updated.`);
-        }
-      } catch (inventoryError) {
-        console.error(`Error updating inventory for item "${item}":`, inventoryError);
-      }
-    } else {
-      console.warn("Warning: Sale request missing valid 'item' or 'number' for inventory deduction. Inventory not updated.");
-    }
-    await logAction('Sale Created', req.user.username, { saleId: sale._id, item: sale.item, number: sale.number, sp: sale.sp });
-    res.status(201).json(sale);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+        if (latestInventoryItem) {
+          // Calculate the new closing stock
+          const newClosing = latestInventoryItem.closing - number;
+
+          // Create a new inventory entry with the updated closing stock,
+          // rather than updating the old one directly
+          const newInventoryEntry = await Inventory.create({
+            item: item,
+            opening: latestInventoryItem.closing, // The old closing becomes the new opening
+            purchases: 0,
+            sales: number,
+            spoilage: 0,
+            closing: newClosing,
+            date: new Date()
+          });
+
+          console.log(`Inventory updated for "${item}". New closing stock: ${newInventoryEntry.closing}.`);
+          if (newClosing < Number(process.env.LOW_STOCK_THRESHOLD)) {
+            notifyLowStock(item, newClosing);
+          }
+        } else {
+          console.warn(`Warning: Sold item "${item}" not found in Inventory. Inventory not updated.`);
+        }
+        // --- END NEW LOGIC ---
+      } catch (inventoryError) {
+        console.error(`Error updating inventory for item "${item}":`, inventoryError);
+      }
+    } else {
+      console.warn("Warning: Sale request missing valid 'item' or 'number' for inventory deduction. Inventory not updated.");
+    }
+    await logAction('Sale Created', req.user.username, { saleId: sale._id, item: sale.item, number: sale.number, sp: sale.sp });
+    res.status(201).json(sale);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.get('/sales', auth, authorize(['Nachwera Richard', 'Martha','Joshua','Nelson','Florence']), async (req, res) => {
