@@ -186,15 +186,18 @@ app.post('/logout', auth, async (req, res) => {
 });
 
 // inventoryHelpers.js (or at top of your server file)
-async function getTodayInventory(itemName) {
+// inventoryHelpers.js
+async function getTodayInventory(itemName, initialOpening = 0) {
   const today = new Date();
-  today.setHours(0,0,0,0); // normalize to start of day
+  today.setHours(0, 0, 0, 0); // normalize to start of day
 
+  // Try to find today’s record
   let record = await Inventory.findOne({ item: itemName, date: today });
+  
   if (!record) {
-    // Get latest record for this item
+    // Get the latest record for this item (yesterday or earlier)
     const latest = await Inventory.findOne({ item: itemName }).sort({ date: -1 });
-    const opening = latest ? latest.closing : 0;
+    const opening = latest ? latest.closing : initialOpening; // use initialOpening if no previous record
 
     record = await Inventory.create({
       item: itemName,
@@ -206,6 +209,7 @@ async function getTodayInventory(itemName) {
       date: today
     });
   }
+
   return record;
 }
 
@@ -213,12 +217,14 @@ module.exports = { getTodayInventory };
 
 // --- MODIFIED: Inventory Endpoints ---
 
+const { getTodayInventory } = require('./inventoryHelpers');
+
 app.post('/inventory', auth, authorize(['Nachwera Richard','Nelson','Florence','Martha','Joshua']), async (req, res) => {
   try {
-    const { item, purchases = 0, sales = 0, spoilage = 0 } = req.body;
+    const { item, opening, purchases = 0, sales = 0, spoilage = 0 } = req.body;
 
-    // Ensure today’s record exists
-    const record = await getTodayInventory(item);
+    // Get today’s record; pass opening for new items
+    const record = await getTodayInventory(item, opening);
 
     // Update today’s record
     record.purchases += purchases;
@@ -240,6 +246,7 @@ app.post('/inventory', auth, authorize(['Nachwera Richard','Nelson','Florence','
     res.status(500).json({ error: err.message });
   }
 });
+
 
 app.put('/inventory/:id', auth, authorize(['Nachwera Richard','Nelson','Florence']), async (req, res) => {
   try {
