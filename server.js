@@ -212,7 +212,6 @@ async function getTodayInventory(itemName) {
 module.exports = { getTodayInventory };
 
 // --- MODIFIED: Inventory Endpoints ---
-const { getTodayInventory } = require('./inventoryHelpers');
 
 app.post('/inventory', auth, authorize(['Nachwera Richard','Nelson','Florence','Martha','Joshua']), async (req, res) => {
   try {
