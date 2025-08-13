@@ -185,133 +185,139 @@ app.post('/logout', auth, async (req, res) => {
     res.status(200).json({ message: 'Logged out successfully' });
 });
 
+// inventoryHelpers.js (or at top of your server file)
+async function getTodayInventory(itemName) {
+  const today = new Date();
+  today.setHours(0,0,0,0); // normalize to start of day
+
+  let record = await Inventory.findOne({ item: itemName, date: today });
+  if (!record) {
+    // Get latest record for this item
+    const latest = await Inventory.findOne({ item: itemName }).sort({ date: -1 });
+    const opening = latest ? latest.closing : 0;
+
+    record = await Inventory.create({
+      item: itemName,
+      opening,
+      purchases: 0,
+      sales: 0,
+      spoilage: 0,
+      closing: opening,
+      date: today
+    });
+  }
+  return record;
+}
+
+module.exports = { getTodayInventory };
 
 // --- MODIFIED: Inventory Endpoints ---
-app.post('/inventory', auth, authorize(['Nachwera Richard','Nelson','Florence','Martha', 'Joshua']), async (req, res) => { 
-  try {
-    const { item, opening, purchases, sales, spoilage } = req.body;
-    const total = opening + purchases - sales - spoilage;
-    const doc = await Inventory.create({ item, opening, purchases, sales, spoilage, closing: total, date: new Date() }); // Add date to creation
-    if (total < Number(process.env.LOW_STOCK_THRESHOLD)) {
-      notifyLowStock(item, total);
-    }
-    await logAction('Inventory Created', req.user.username, { item: doc.item, closing: doc.closing });
-    res.status(201).json(doc);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+const { getTodayInventory } = require('./inventoryHelpers');
 
-app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson', 'Joshua', 'Martha']), async (req, res) => {
-    try {
-        const { item, low, date, page = 1, limit = 5 } = req.query;
-        const filter = {};
-        
-        // Add item and low stock filters
-        if (item) filter.item = new RegExp(item, 'i');
-        if (low) filter.closing = { $lt: Number(low) };
+app.post('/inventory', auth, authorize(['Nachwera Richard','Nelson','Florence','Martha','Joshua']), async (req, res) => {
+  try {
+    const { item, purchases = 0, sales = 0, spoilage = 0 } = req.body;
 
-        // --- NEW LOGIC: Use a single date to get the most recent record for each item ---
-        let docs = [];
-        let total = 0;
-        
-        if (date) {
-            const selectedDate = new Date(date + 'T23:59:59.999Z');
-            if (isNaN(selectedDate.getTime())) {
-                return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD.' });
-            }
+    // Ensure today’s record exists
+    const record = await getTodayInventory(item);
 
-            // Find the most recent record for each unique item, on or before the selected date
-            const latestRecords = await Inventory.aggregate([
-                {
-                    // Step 1: Filter to only include records on or before the selected date
-                    $match: {
-                        date: { $lte: selectedDate },
-                        ...filter // Also apply item and low stock filters
-                    }
-                },
-                {
-                    // Step 2: Sort the records by item and then by date in descending order
-                    // This places the most recent record for each item at the top
-                    $sort: { item: 1, date: -1 }
-                },
-                {
-                    // Step 3: Group by item and take the first document in each group
-                    // This gives us the single latest record for each item
-                    $group: {
-                        _id: '$item',
-                        doc: { $first: '$$ROOT' }
-                    }
-                },
-                {
-                    // Step 4: Project the document back to the original format
-                    $replaceRoot: { newRoot: '$doc' }
-                }
-            ]);
+    // Update today’s record
+    record.purchases += purchases;
+    record.sales += sales;
+    record.spoilage += spoilage;
+    record.closing = record.opening + record.purchases - record.sales - record.spoilage;
 
-            // Now, we handle pagination on the aggregated results
-            total = latestRecords.length;
-            const skip = (parseInt(page) - 1) * parseInt(limit);
-            docs = latestRecords.slice(skip, skip + Number(limit));
+    await record.save();
 
-        } else {
-            // Original logic for when no date is provided
-            const skip = (parseInt(page) - 1) * parseInt(limit);
-            total = await Inventory.countDocuments(filter);
-            docs = await Inventory.find(filter).skip(skip).limit(Number(limit));
-        }
-        // --- END NEW LOGIC ---
-
-        // --- UPDATED LOGIC: Find and log ALL records without a date field ---
-        const recordsWithoutDate = await Inventory.find({ date: { $exists: false } });
-        if (recordsWithoutDate.length > 0) {
-            console.log('Found the following records without a date field:');
-            console.log(recordsWithoutDate);
-        }
-        // --- END UPDATED LOGIC ---
-
-        res.json({
-            data: docs,
-            total,
-            page: Number(page),
-            pages: Math.ceil(total / limit)
-        });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
+    if (record.closing < Number(process.env.LOW_STOCK_THRESHOLD)) {
+      notifyLowStock(record.item, record.closing);
     }
+
+    await logAction('Inventory Updated/Created', req.user.username, { item: record.item, closing: record.closing });
+
+    res.status(200).json(record);
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
+app.put('/inventory/:id', auth, authorize(['Nachwera Richard','Nelson','Florence']), async (req, res) => {
+  try {
+    const record = await Inventory.findById(req.params.id);
+    if (!record) return res.status(404).json({ error: 'Inventory item not found' });
 
-app.put('/inventory/:id', auth, authorize(['Nachwera Richard','Nelson','Florence']), async (req, res) => { // Joshua CANNOT edit inventory
-  try {
-    const existingDoc = await Inventory.findById(req.params.id);
-    if (!existingDoc) {
-      return res.status(404).json({ error: 'Inventory item not found' });
-    }
+    // Only allow editing today's record
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const recordDate = new Date(record.date);
+    recordDate.setHours(0,0,0,0);
 
-    const updatedValues = {
-      item: req.body.item !== undefined ? req.body.item : existingDoc.item,
-      opening: req.body.opening !== undefined ? req.body.opening : existingDoc.opening,
-      purchases: req.body.purchases !== undefined ? req.body.purchases : existingDoc.purchases,
-      sales: req.body.sales !== undefined ? req.body.sales : existingDoc.sales,
-      spoilage: req.body.spoilage !== undefined ? req.body.spoilage : existingDoc.spoilage,
-    };
-    const newClosing = updatedValues.opening + updatedValues.purchases - updatedValues.sales - updatedValues.spoilage;
+    if (recordDate.getTime() !== today.getTime()) {
+      return res.status(400).json({ error: 'Cannot edit past inventory records' });
+    }
 
-    const doc = await Inventory.findByIdAndUpdate(
-      req.params.id,
-      { ...updatedValues, closing: newClosing },
-      { new: true }
-    );
+    // Update fields if provided
+    record.item = req.body.item ?? record.item;
+    record.opening = req.body.opening ?? record.opening;
+    record.purchases = req.body.purchases ?? record.purchases;
+    record.sales = req.body.sales ?? record.sales;
+    record.spoilage = req.body.spoilage ?? record.spoilage;
+    record.closing = record.opening + record.purchases - record.sales - record.spoilage;
 
-    if (doc.closing < Number(process.env.LOW_STOCK_THRESHOLD)) {
-      notifyLowStock(doc.item, doc.closing);
-    }
-    await logAction('Inventory Updated', req.user.username, { itemId: doc._id, item: doc.item, newClosing: doc.closing });
-    res.json(doc);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+    await record.save();
+
+    if (record.closing < Number(process.env.LOW_STOCK_THRESHOLD)) {
+      notifyLowStock(record.item, record.closing);
+    }
+
+    await logAction('Inventory Updated', req.user.username, { itemId: record._id, item: record.item, newClosing: record.closing });
+
+    res.json(record);
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/inventory', auth, authorize(['Nachwera Richard','Florence','Nelson','Joshua','Martha']), async (req, res) => {
+  try {
+    const { item, low, date, page = 1, limit = 5 } = req.query;
+    const filter = {};
+
+    // Filter by item name (case-insensitive)
+    if (item) filter.item = new RegExp(item, 'i');
+
+    // Filter by low stock threshold
+    if (low) filter.closing = { $lt: Number(low) };
+
+    // Filter by specific date
+    if (date) {
+      const selectedDate = new Date(date);
+      selectedDate.setHours(0,0,0,0);
+      const nextDate = new Date(selectedDate);
+      nextDate.setDate(nextDate.getDate() + 1);
+
+      filter.date = { $gte: selectedDate, $lt: nextDate };
+    }
+
+    const skip = (parseInt(page) - 1) * Number(limit);
+
+    const [total, docs] = await Promise.all([
+      Inventory.countDocuments(filter),
+      Inventory.find(filter).skip(skip).limit(Number(limit)).sort({ item: 1 })
+    ]);
+
+    res.json({
+      data: docs,
+      total,
+      page: Number(page),
+      pages: Math.ceil(total / limit)
+    });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.delete('/inventory/:id', auth, authorize(['Nachwera Richard','Nelson','Florence']), async (req, res) => {
