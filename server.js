@@ -282,46 +282,57 @@ app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson',
         const { item, low, date, page = 1, limit = 50 } = req.query;
         let filter = {};
 
-        // Special case: If a date is provided, generate the full daily report.
         if (date) {
             const { utcStart, utcEnd, error } = getStartAndEndOfDayInUTC(date);
             if (error) {
                 return res.status(400).json({ error });
             }
 
-            // Find all unique items that have ever existed
             const allItems = await Inventory.distinct('item');
-
-            // Get all inventory records for the specific date, including opening stock
             const dailyRecords = await Inventory.find({
                 date: { $gte: utcStart, $lt: utcEnd }
-            }).select('item opening purchases sales spoilage closing');
+            });
 
-            // Create a map for quick lookup
             const recordsMap = new Map();
             dailyRecords.forEach(record => {
                 recordsMap.set(record.item, record);
             });
 
-            // Create the final report, including items with zero activity
-            const report = allItems.map(singleItem => {
+            const report = await Promise.all(allItems.map(async (singleItem) => {
                 const record = recordsMap.get(singleItem);
-                return {
-                    item: singleItem,
-                    opening: record ? record.opening : 0,
-                    purchases: record ? record.purchases : 0,
-                    sales: record ? record.sales : 0,
-                    spoilage: record ? record.spoilage : 0,
-                    closing: record ? record.closing : 0
-                };
-            });
 
-            // Return the complete daily report and stop further execution
+                if (record) {
+                    // Item had activity on this day, use its record
+                    return {
+                        item: singleItem,
+                        opening: record.opening,
+                        purchases: record.purchases,
+                        sales: record.sales,
+                        spoilage: record.spoilage,
+                        closing: record.closing
+                    };
+                } else {
+                    // Item had no activity. Find its most recent closing stock before this date.
+                    const latestBeforeDate = await Inventory.findOne({
+                        item: singleItem,
+                        date: { $lt: utcStart }
+                    }).sort({ date: -1 });
+
+                    return {
+                        item: singleItem,
+                        opening: latestBeforeDate ? latestBeforeDate.closing : 0,
+                        purchases: 0,
+                        sales: 0,
+                        spoilage: 0,
+                        closing: latestBeforeDate ? latestBeforeDate.closing : 0
+                    };
+                }
+            }));
+            
             return res.json({ date, report });
-        } // The extra '}' has been removed from here
+        }
 
         // --- Original `/inventory` logic continues below if no date is provided ---
-
         if (item) filter.item = new RegExp(item, 'i');
         if (low) filter.closing = { $lt: Number(low) };
         
