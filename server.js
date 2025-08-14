@@ -283,53 +283,47 @@ app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson',
         let filter = {};
 
         // Special case: If a date is provided, generate the full daily report.
-        // Special case: If a date is provided, generate the full daily report.
-if (date) {
-    const { utcStart, utcEnd, error } = getStartAndEndOfDayInUTC(date);
-    if (error) {
-        return res.status(400).json({ error });
-    }
+        if (date) {
+            const { utcStart, utcEnd, error } = getStartAndEndOfDayInUTC(date);
+            if (error) {
+                return res.status(400).json({ error });
+            }
 
-    // Find all unique items that have ever existed
-    const allItems = await Inventory.distinct('item');
+            // Find all unique items that have ever existed
+            const allItems = await Inventory.distinct('item');
 
-    // Get all inventory records for the specific date, including opening stock
-    const dailyRecords = await Inventory.find({
-        date: { $gte: utcStart, $lt: utcEnd }
-    }).select('item opening purchases sales spoilage closing'); // <-- MODIFIED HERE
+            // Get all inventory records for the specific date, including opening stock
+            const dailyRecords = await Inventory.find({
+                date: { $gte: utcStart, $lt: utcEnd }
+            }).select('item opening purchases sales spoilage closing');
 
-    // Create a map for quick lookup
-    const recordsMap = new Map();
-    dailyRecords.forEach(record => {
-        recordsMap.set(record.item, record);
-    });
+            // Create a map for quick lookup
+            const recordsMap = new Map();
+            dailyRecords.forEach(record => {
+                recordsMap.set(record.item, record);
+            });
 
-    // Create the final report, including items with zero activity
-    const report = allItems.map(singleItem => {
-        const record = recordsMap.get(singleItem);
-        return {
-            item: singleItem,
-            opening: record ? record.opening : 0, // <-- MODIFIED HERE
-            purchases: record ? record.purchases : 0,
-            sales: record ? record.sales : 0,
-            spoilage: record ? record.spoilage : 0,
-            closing: record ? record.closing : 0
-        };
-    });
+            // Create the final report, including items with zero activity
+            const report = allItems.map(singleItem => {
+                const record = recordsMap.get(singleItem);
+                return {
+                    item: singleItem,
+                    opening: record ? record.opening : 0,
+                    purchases: record ? record.purchases : 0,
+                    sales: record ? record.sales : 0,
+                    spoilage: record ? record.spoilage : 0,
+                    closing: record ? record.closing : 0
+                };
+            });
 
-    // Return the complete daily report and stop further execution
-    return res.json({ date, report });
-}
-            
-        }
+            // Return the complete daily report and stop further execution
+            return res.json({ date, report });
+        } // The extra '}' has been removed from here
 
         // --- Original `/inventory` logic continues below if no date is provided ---
 
         if (item) filter.item = new RegExp(item, 'i');
         if (low) filter.closing = { $lt: Number(low) };
-
-        // The date filter for the original logic is now unnecessary because the `if (date)` block handles it
-        // and returns early. The original code already handled this, but we've now made the 'date' query a special case.
         
         const skip = (parseInt(page) - 1) * Number(limit);
         const [total, docs] = await Promise.all([
@@ -348,6 +342,7 @@ if (date) {
         res.status(500).json({ error: err.message });
     }
 });
+
 
 app.delete('/inventory/:id', auth, authorize(['Nachwera Richard', 'Nelson', 'Florence']), async (req, res) => {
   try {
