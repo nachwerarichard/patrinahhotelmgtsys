@@ -9,7 +9,7 @@ app.use(express.json());
 
 // CORS config - allow your frontend origin
 app.use(cors({
-  origin: 'https://stirring-pony-fe2347.netlify.app', // Ensure this matches your frontend URL
+  origin: 'https://stirring-pony-fe2347.netlify.app',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
@@ -147,28 +147,33 @@ function authorize(roles = []) {
   };
 }
 
-// --- Date Helper Function ---
-// This function calculates the correct start of day in UTC for a given EAT date.
+// --- Date Helper Function (Corrected) ---
+// This function calculates the correct start and end of a day in UTC
+// for a given EAT date string ('YYYY-MM-DD').
 function getStartAndEndOfDayInUTC(dateString) {
   const selectedDate = new Date(dateString);
   if (isNaN(selectedDate.getTime())) {
     return { error: 'Invalid date format. Use YYYY-MM-DD.' };
   }
-  const utcStart = new Date(selectedDate.getTime() - (3 * 60 * 60 * 1000));
-  const utcEnd = new Date(utcStart.getTime() + (24 * 60 * 60 * 1000));
+  
+  // This calculates the UTC start of the day in EAT, which is UTC+3
+  const utcStart = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+  utcStart.setHours(utcStart.getHours() + 3);
+
+  // The end of the day is 24 hours later
+  const utcEnd = new Date(utcStart.getTime() + 24 * 60 * 60 * 1000);
+  
   return { utcStart, utcEnd };
 }
 
 
 // --- INVENTORY HELPERS (CORRECTED) ---
+// This helper function correctly finds or creates today's inventory record.
 async function getTodayInventory(itemName, initialOpening = 0) {
-  // Get the start of the day in EAT to filter on
-  const today = new Date();
-  const startOfTodayEAT = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
-  startOfTodayEAT.setHours(startOfTodayEAT.getHours() + 3); // Fix: Add 3 hours to get the correct UTC+3 start
+  const { utcStart, utcEnd } = getStartAndEndOfDayInUTC(new Date().toISOString().slice(0, 10));
   
-  // Find a record for today (in EAT)
-  let record = await Inventory.findOne({ item: itemName, date: { $gte: startOfTodayEAT, $lt: new Date(startOfTodayEAT.getTime() + 24 * 60 * 60 * 1000) } });
+  // Find a record for today within the correct EAT date range
+  let record = await Inventory.findOne({ item: itemName, date: { $gte: utcStart, $lt: utcEnd } });
 
   if (!record) {
     // If no record exists, get yesterday's closing
@@ -182,8 +187,8 @@ async function getTodayInventory(itemName, initialOpening = 0) {
       purchases: 0,
       sales: 0,
       spoilage: 0,
-      closing: opening, // Initial closing is the same as opening
-      date: new Date() // Use the current timestamp for precise tracking
+      closing: opening,
+      date: new Date()
     });
   }
 
@@ -245,12 +250,9 @@ app.put('/inventory/:id', auth, authorize(['Nachwera Richard', 'Nelson', 'Floren
     if (!record) return res.status(404).json({ error: 'Inventory item not found' });
     
     // Check if the record is from today to prevent editing past records
-    const now = new Date();
-    const recordDate = new Date(record.date);
-    const startOfTodayEAT = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
-    startOfTodayEAT.setHours(startOfTodayEAT.getHours() + 3);
+    const { utcStart } = getStartAndEndOfDayInUTC(new Date().toISOString().slice(0, 10));
     
-    if (recordDate < startOfTodayEAT) {
+    if (record.date < utcStart) {
         return res.status(400).json({ error: 'Cannot edit past inventory records' });
     }
 
