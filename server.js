@@ -279,7 +279,7 @@ app.put('/inventory/:id', auth, authorize(['Nachwera Richard', 'Nelson', 'Floren
 
 app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson', 'Joshua', 'Martha']), async (req, res) => {
   try {
-    const { item, low, date, page = 1, limit = 5 } = req.query;
+    const { item, low, date, page = 1, limit = 50 } = req.query;
     const filter = {};
 
     if (item) filter.item = new RegExp(item, 'i');
