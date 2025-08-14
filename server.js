@@ -113,14 +113,14 @@ const Inventory = mongoose.model('Inventory', new mongoose.Schema({
   spoilage: Number,
   closing: Number,
   date: { type: Date, default: Date.now } // Using explicit date field
-})); 
+})); 
 
 const Sale = mongoose.model('Sale', new mongoose.Schema({
   item: String,
   number: Number,
   bp: Number,
   sp: Number,
-  profit: Number, 
+  profit: Number, 
   percentageprofit: Number,
   date: Date
 }));
@@ -187,142 +187,150 @@ app.post('/logout', auth, async (req, res) => {
 
 // inventoryHelpers.js (or at top of your server file)
 // inventoryHelpers.js
+
+// inventoryHelpers.js
 async function getTodayInventory(itemName, initialOpening = 0) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0); // normalize to start of day
+  // --- MODIFIED: Use EAT-based date calculation ---
+  const today = new Date();
+  // Get the start of the day in EAT
+  const startOfTodayEAT = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
 
-  // Try to find today’s record
-  let record = await Inventory.findOne({ item: itemName, date: today });
-  
-  if (!record) {
-    // Get the latest record for this item (yesterday or earlier)
-    const latest = await Inventory.findOne({ item: itemName }).sort({ date: -1 });
-    const opening = latest ? latest.closing : initialOpening; // use initialOpening if no previous record
+  // Adjust for the EAT timezone offset (UTC+3)
+  startOfTodayEAT.setHours(startOfTodayEAT.getHours() - 3);
+  // --- END MODIFIED SECTION ---
 
-    record = await Inventory.create({
-      item: itemName,
-      opening,
-      purchases: 0,
-      sales: 0,
-      spoilage: 0,
-      closing: opening,
-      date: today
-    });
-  }
+  // Try to find today’s record using the EAT-adjusted timestamp
+  let record = await Inventory.findOne({ item: itemName, date: startOfTodayEAT });
+  
+  if (!record) {
+    // Get the latest record for this item (yesterday or earlier)
+    const latest = await Inventory.findOne({ item: itemName }).sort({ date: -1 });
+    const opening = latest ? latest.closing : initialOpening;
 
-  return record;
+    // Create the new record with the correct EAT-adjusted timestamp
+    record = await Inventory.create({
+      item: itemName,
+      opening,
+      purchases: 0,
+      sales: 0,
+      spoilage: 0,
+      closing: opening,
+      date: startOfTodayEAT 
+    });
+  }
+
+  return record;
 }
-
-module.exports = { getTodayInventory };
-
 // --- MODIFIED: Inventory Endpoints ---
 
 
 app.post('/inventory', auth, authorize(['Nachwera Richard','Nelson','Florence','Martha','Joshua']), async (req, res) => {
-  try {
-    const { item, opening, purchases = 0, sales = 0, spoilage = 0 } = req.body;
+  try {
+    const { item, opening, purchases = 0, sales = 0, spoilage = 0 } = req.body;
 
-    // Get today’s record; pass opening for new items
-    const record = await getTodayInventory(item, opening);
+    // Get today’s record; pass opening for new items
+    const record = await getTodayInventory(item, opening);
 
-    // Update today’s record
-    record.purchases += purchases;
-    record.sales += sales;
-    record.spoilage += spoilage;
-    record.closing = record.opening + record.purchases - record.sales - record.spoilage;
+    // Update today’s record
+    record.purchases += purchases;
+    record.sales += sales;
+    record.spoilage += spoilage;
+    record.closing = record.opening + record.purchases - record.sales - record.spoilage;
 
-    await record.save();
+    await record.save();
 
-    if (record.closing < Number(process.env.LOW_STOCK_THRESHOLD)) {
-      notifyLowStock(record.item, record.closing);
-    }
+    if (record.closing < Number(process.env.LOW_STOCK_THRESHOLD)) {
+      notifyLowStock(record.item, record.closing);
+    }
 
-    await logAction('Inventory Updated/Created', req.user.username, { item: record.item, closing: record.closing });
+    await logAction('Inventory Updated/Created', req.user.username, { item: record.item, closing: record.closing });
 
-    res.status(200).json(record);
+    res.status(200).json(record);
 
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 
 app.put('/inventory/:id', auth, authorize(['Nachwera Richard','Nelson','Florence']), async (req, res) => {
-  try {
-    const record = await Inventory.findById(req.params.id);
-    if (!record) return res.status(404).json({ error: 'Inventory item not found' });
+  try {
+    const record = await Inventory.findById(req.params.id);
+    if (!record) return res.status(404).json({ error: 'Inventory item not found' });
 
-    // Only allow editing today's record
-    const today = new Date();
-    today.setHours(0,0,0,0);
-    const recordDate = new Date(record.date);
-    recordDate.setHours(0,0,0,0);
+    // Only allow editing today's record
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const recordDate = new Date(record.date);
+    recordDate.setHours(0,0,0,0);
 
-    if (recordDate.getTime() !== today.getTime()) {
-      return res.status(400).json({ error: 'Cannot edit past inventory records' });
-    }
+    if (recordDate.getTime() !== today.getTime()) {
+      return res.status(400).json({ error: 'Cannot edit past inventory records' });
+    }
 
-    // Update fields if provided
-    record.item = req.body.item ?? record.item;
-    record.opening = req.body.opening ?? record.opening;
-    record.purchases = req.body.purchases ?? record.purchases;
-    record.sales = req.body.sales ?? record.sales;
-    record.spoilage = req.body.spoilage ?? record.spoilage;
-    record.closing = record.opening + record.purchases - record.sales - record.spoilage;
+    // Update fields if provided
+    record.item = req.body.item ?? record.item;
+    record.opening = req.body.opening ?? record.opening;
+    record.purchases = req.body.purchases ?? record.purchases;
+    record.sales = req.body.sales ?? record.sales;
+    record.spoilage = req.body.spoilage ?? record.spoilage;
+    record.closing = record.opening + record.purchases - record.sales - record.spoilage;
 
-    await record.save();
+    await record.save();
 
-    if (record.closing < Number(process.env.LOW_STOCK_THRESHOLD)) {
-      notifyLowStock(record.item, record.closing);
-    }
+    if (record.closing < Number(process.env.LOW_STOCK_THRESHOLD)) {
+      notifyLowStock(record.item, record.closing);
+    }
 
-    await logAction('Inventory Updated', req.user.username, { itemId: record._id, item: record.item, newClosing: record.closing });
+    await logAction('Inventory Updated', req.user.username, { itemId: record._id, item: record.item, newClosing: record.closing });
 
-    res.json(record);
+    res.json(record);
 
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.get('/inventory', auth, authorize(['Nachwera Richard','Florence','Nelson','Joshua','Martha']), async (req, res) => {
-  try {
-    const { item, low, date, page = 1, limit = 5 } = req.query;
-    const filter = {};
+  try {
+    const { item, low, date, page = 1, limit = 5 } = req.query;
+    const filter = {};
 
-    // Filter by item name (case-insensitive)
-    if (item) filter.item = new RegExp(item, 'i');
+    if (item) filter.item = new RegExp(item, 'i');
+    if (low) filter.closing = { $lt: Number(low) };
 
-    // Filter by low stock threshold
-    if (low) filter.closing = { $lt: Number(low) };
+    if (date) {
+      // Step 1: Create a date object from the user's input (e.g., '2025-08-14').
+      // This will be interpreted as midnight local time on that day.
+      const selectedDate = new Date(date);
 
-    // Filter by specific date
-    if (date) {
-      const selectedDate = new Date(date);
-      selectedDate.setHours(0,0,0,0);
-      const nextDate = new Date(selectedDate);
-      nextDate.setDate(nextDate.getDate() + 1);
+      // Step 2: Manually adjust for the UTC offset of EAT (+3 hours)
+      // to get the correct UTC start time for that EAT day.
+      const utcStart = new Date(selectedDate.getTime() - (3 * 60 * 60 * 1000));
 
-      filter.date = { $gte: selectedDate, $lt: nextDate };
-    }
+      // Step 3: Calculate the UTC end time for the same EAT day (24 hours after utcStart).
+      const utcEnd = new Date(utcStart.getTime() + (24 * 60 * 60 * 1000));
 
-    const skip = (parseInt(page) - 1) * Number(limit);
+      filter.date = { $gte: utcStart, $lt: utcEnd };
+    }
 
-    const [total, docs] = await Promise.all([
-      Inventory.countDocuments(filter),
-      Inventory.find(filter).skip(skip).limit(Number(limit)).sort({ item: 1 })
-    ]);
+    const skip = (parseInt(page) - 1) * Number(limit);
 
-    res.json({
-      data: docs,
-      total,
-      page: Number(page),
-      pages: Math.ceil(total / limit)
-    });
+    const [total, docs] = await Promise.all([
+      Inventory.countDocuments(filter),
+      Inventory.find(filter).skip(skip).limit(Number(limit)).sort({ item: 1 })
+    ]);
 
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+    res.json({
+      data: docs,
+      total,
+      page: Number(page),
+      pages: Math.ceil(total / limit)
+    });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.delete('/inventory/:id', auth, authorize(['Nachwera Richard','Nelson','Florence']), async (req, res) => {
@@ -340,63 +348,63 @@ app.delete('/inventory/:id', auth, authorize(['Nachwera Richard','Nelson','Flore
 
 // --- MODIFIED: Sales endpoints ---
 app.post('/sales', auth, authorize(['Nachwera Richard', 'Martha', 'Joshua', 'Nelson', 'Florence']), async (req, res) => {
-  try {
-    const { item, number, bp, sp } = req.body;
-    const totalBuyingPrice = bp * number;
-    const totalSellingPrice = sp * number;
-    const profit = totalSellingPrice - totalBuyingPrice;
-    let percentageProfit = 0;
-    if (totalBuyingPrice !== 0) {
-      percentageProfit = (profit / totalBuyingPrice) * 100;
-    }
+  try {
+    const { item, number, bp, sp } = req.body;
+    const totalBuyingPrice = bp * number;
+    const totalSellingPrice = sp * number;
+    const profit = totalSellingPrice - totalBuyingPrice;
+    let percentageProfit = 0;
+    if (totalBuyingPrice !== 0) {
+      percentageProfit = (profit / totalBuyingPrice) * 100;
+    }
 
-    const sale = await Sale.create({
-      ...req.body,
-      profit: profit,
-      percentageprofit: percentageProfit,
-      date: new Date()
-    });
+    const sale = await Sale.create({
+      ...req.body,
+      profit: profit,
+      percentageprofit: percentageProfit,
+      date: new Date()
+    });
 
-    if (item && typeof number === 'number' && number > 0) {
-      try {
-        // --- NEW LOGIC TO FIND AND UPDATE THE LATEST INVENTORY ENTRY ---
-        const latestInventoryItem = await Inventory.findOne({ item: item }).sort({ date: -1 });
+    if (item && typeof number === 'number' && number > 0) {
+      try {
+        // --- NEW LOGIC TO FIND AND UPDATE THE LATEST INVENTORY ENTRY ---
+        const latestInventoryItem = await Inventory.findOne({ item: item }).sort({ date: -1 });
 
-        if (latestInventoryItem) {
-          // Calculate the new closing stock
-          const newClosing = latestInventoryItem.closing - number;
+        if (latestInventoryItem) {
+          // Calculate the new closing stock
+          const newClosing = latestInventoryItem.closing - number;
 
-          // Create a new inventory entry with the updated closing stock,
-          // rather than updating the old one directly
-          const newInventoryEntry = await Inventory.create({
-            item: item,
-            opening: latestInventoryItem.closing, // The old closing becomes the new opening
-            purchases: 0,
-            sales: number,
-            spoilage: 0,
-            closing: newClosing,
-            date: new Date()
-          });
+          // Create a new inventory entry with the updated closing stock,
+          // rather than updating the old one directly
+          const newInventoryEntry = await Inventory.create({
+            item: item,
+            opening: latestInventoryItem.closing, // The old closing becomes the new opening
+            purchases: 0,
+            sales: number,
+            spoilage: 0,
+            closing: newClosing,
+            date: new Date()
+          });
 
-          console.log(`Inventory updated for "${item}". New closing stock: ${newInventoryEntry.closing}.`);
-          if (newClosing < Number(process.env.LOW_STOCK_THRESHOLD)) {
-            notifyLowStock(item, newClosing);
-          }
-        } else {
-          console.warn(`Warning: Sold item "${item}" not found in Inventory. Inventory not updated.`);
-        }
-        // --- END NEW LOGIC ---
-      } catch (inventoryError) {
-        console.error(`Error updating inventory for item "${item}":`, inventoryError);
-      }
-    } else {
-      console.warn("Warning: Sale request missing valid 'item' or 'number' for inventory deduction. Inventory not updated.");
-    }
-    await logAction('Sale Created', req.user.username, { saleId: sale._id, item: sale.item, number: sale.number, sp: sale.sp });
-    res.status(201).json(sale);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+          console.log(`Inventory updated for "${item}". New closing stock: ${newInventoryEntry.closing}.`);
+          if (newClosing < Number(process.env.LOW_STOCK_THRESHOLD)) {
+            notifyLowStock(item, newClosing);
+          }
+        } else {
+          console.warn(`Warning: Sold item "${item}" not found in Inventory. Inventory not updated.`);
+        }
+        // --- END NEW LOGIC ---
+      } catch (inventoryError) {
+        console.error(`Error updating inventory for item "${item}":`, inventoryError);
+      }
+    } else {
+      console.warn("Warning: Sale request missing valid 'item' or 'number' for inventory deduction. Inventory not updated.");
+    }
+    await logAction('Sale Created', req.user.username, { saleId: sale._id, item: sale.item, number: sale.number, sp: sale.sp });
+    res.status(201).json(sale);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.get('/sales', auth, authorize(['Nachwera Richard', 'Martha','Joshua','Nelson','Florence']), async (req, res) => {
@@ -406,12 +414,13 @@ app.get('/sales', auth, authorize(['Nachwera Richard', 'Martha','Joshua','Nelson
     let query = {};
     // --- MODIFIED: Robust Date Filter Logic ---
     if (date) {
-      const startDate = new Date(date + 'T00:00:00.000Z');
-      const endDate = new Date(date + 'T23:59:59.999Z');
-      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-          return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD.' });
-      }
-      query.date = { $gte: startDate, $lte: endDate };
+      const selectedDate = new Date(date);
+      const utcStart = new Date(selectedDate.getTime() - (3 * 60 * 60 * 1000));
+      const utcEnd = new Date(utcStart.getTime() + (24 * 60 * 60 * 1000));
+      if (isNaN(utcStart.getTime()) || isNaN(utcEnd.getTime())) {
+          return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD.' });
+      }
+      query.date = { $gte: utcStart, $lt: utcEnd };
     }
     // --- END: Robust Date Filter Logic ---
 
@@ -456,13 +465,13 @@ app.delete('/sales/:id', auth, authorize(['Nachwera Richard','Nelson','Florence'
 // --- MODIFIED: Expenses endpoints ---
 app.post('/expenses', auth, authorize(['Nachwera Richard', 'Martha','Joshua','Nelson','Florence']), async (req, res) => {
   try {
-    const { description, amount, receiptId, source } = req.body; 
+    const { description, amount, receiptId, source } = req.body; 
     const exp = await Expense.create({
       description,
       amount,
       receiptId,
       source,
-      recordedBy: req.user.username, 
+      recordedBy: req.user.username, 
       date: new Date()
     });
     await logAction('Expense Created', req.user.username, { expenseId: exp._id, description: exp.description, amount: exp.amount });
@@ -479,12 +488,13 @@ app.get('/expenses', auth, authorize(['Nachwera Richard', 'Martha','Joshua','Nel
     let query = {};
     // --- MODIFIED: Robust Date Filter Logic ---
     if (date) {
-      const startDate = new Date(date + 'T00:00:00.000Z');
-      const endDate = new Date(date + 'T23:59:59.999Z');
-      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-          return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD.' });
-      }
-      query.date = { $gte: startDate, $lte: endDate };
+      const selectedDate = new Date(date);
+      const utcStart = new Date(selectedDate.getTime() - (3 * 60 * 60 * 1000));
+      const utcEnd = new Date(utcStart.getTime() + (24 * 60 * 60 * 1000));
+      if (isNaN(utcStart.getTime()) || isNaN(utcEnd.getTime())) {
+          return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD.' });
+      }
+      query.date = { $gte: utcStart, $lt: utcEnd };
     }
     // --- END: Robust Date Filter Logic ---
 
@@ -523,7 +533,7 @@ app.post('/cash-journal', auth, authorize(['Nachwera Richard', 'Martha','Nelson'
             cashAtHand,
             cashBanked,
             bankReceiptId,
-            responsiblePerson: req.user.username, 
+            responsiblePerson: req.user.username, 
             date: date ? new Date(date) : new Date()
         });
         await logAction('Cash Entry Created', req.user.username, { entryId: newEntry._id, cashAtHand: newEntry.cashAtHand, cashBanked: newEntry.cashBanked });
@@ -533,18 +543,19 @@ app.post('/cash-journal', auth, authorize(['Nachwera Richard', 'Martha','Nelson'
     }
 });
 
-app.get('/cash-journal', auth, authorize(['Nachwera Richard', 'Martha','Nelson','Florence']), async (req, res) => { 
+app.get('/cash-journal', auth, authorize(['Nachwera Richard', 'Martha','Nelson','Florence']), async (req, res) => { 
     try {
         const { date, responsiblePerson } = req.query;
         const filter = {};
         // --- MODIFIED: Robust Date Filter Logic ---
         if (date) {
-            const startDate = new Date(date + 'T00:00:00.000Z');
-            const endDate = new Date(date + 'T23:59:59.999Z');
-            if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-                return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD.' });
-            }
-            filter.date = { $gte: startDate, $lte: endDate };
+          const selectedDate = new Date(date);
+          const utcStart = new Date(selectedDate.getTime() - (3 * 60 * 60 * 1000));
+          const utcEnd = new Date(utcStart.getTime() + (24 * 60 * 60 * 1000));
+          if (isNaN(utcStart.getTime()) || isNaN(utcEnd.getTime())) {
+              return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD.' });
+          }
+          filter.date = { $gte: utcStart, $lt: utcEnd };
         }
         // --- END: Robust Date Filter Logic ---
         if (responsiblePerson) {
@@ -557,12 +568,12 @@ app.get('/cash-journal', auth, authorize(['Nachwera Richard', 'Martha','Nelson',
     }
 });
 
-app.put('/cash-journal/:id', auth, authorize(['Nachwera Richard','Nelson','Florence']), async (req, res) => { 
+app.put('/cash-journal/:id', auth, authorize(['Nachwera Richard','Nelson','Florence']), async (req, res) => { 
     try {
-        const { cashAtHand, cashBanked, bankReceiptId, date } = req.body; 
+        const { cashAtHand, cashBanked, bankReceiptId, date } = req.body; 
         const updatedEntry = await CashJournal.findByIdAndUpdate(
             req.params.id,
-            { cashAtHand, cashBanked, bankReceiptId, responsiblePerson: req.user.username, date: date ? new Date(date) : undefined }, 
+            { cashAtHand, cashBanked, bankReceiptId, responsiblePerson: req.user.username, date: date ? new Date(date) : undefined }, 
             { new: true }
         );
         if (!updatedEntry) {
