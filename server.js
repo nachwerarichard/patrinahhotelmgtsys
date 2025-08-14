@@ -247,38 +247,47 @@ app.post('/inventory', auth, authorize(['Nachwera Richard', 'Nelson', 'Florence'
     res.status(500).json({ error: err.message });
   }
 });
-
 app.put('/inventory/:id', auth, authorize(['Nachwera Richard', 'Nelson', 'Florence']), async (req, res) => {
-  try {
-    const record = await Inventory.findById(req.params.id);
-    if (!record) return res.status(404).json({ error: 'Inventory item not found' });
-    
-    // Check if the record is from today to prevent editing past records
-    const { utcStart } = getStartAndEndOfDayInUTC(new Date().toISOString().slice(0, 10));
-    
-    if (record.date < utcStart) {
-        return res.status(400).json({ error: 'Cannot edit past inventory records' });
+    try {
+        const record = await Inventory.findById(req.params.id);
+        if (!record) {
+            return res.status(404).json({ error: 'Inventory item not found' });
+        }
+
+        // Get the start of today in UTC
+        const todayStart = new Date();
+        todayStart.setUTCHours(0, 0, 0, 0);
+
+        // Corrected check: Prevent editing if the record's date is before today's date
+        // Note: The `record.date` is a full timestamp, so we compare it against the start of the day.
+        if (record.date < todayStart) {
+            return res.status(400).json({ error: 'Cannot edit past inventory records.' });
+        }
+
+        // Update fields and recalculate closing stock
+        // Use a single line for updates for better readability and to ensure correct recalculation
+        const { item, opening, purchases, sales, spoilage } = req.body;
+        record.item = item ?? record.item;
+        record.opening = opening ?? record.opening;
+        record.purchases = purchases ?? record.purchases;
+        record.sales = sales ?? record.sales;
+        record.spoilage = spoilage ?? record.spoilage;
+        
+        // Recalculate closing stock based on the updated values
+        record.closing = record.opening + record.purchases - record.sales - record.spoilage;
+
+        await record.save();
+
+        if (record.closing < Number(process.env.LOW_STOCK_THRESHOLD)) {
+            notifyLowStock(record.item, record.closing);
+        }
+
+        await logAction('Inventory Updated', req.user.username, { itemId: record._id, item: record.item, newClosing: record.closing });
+        res.json(record);
+
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
-
-    // Update fields and recalculate closing stock
-    record.item = req.body.item ?? record.item;
-    record.opening = req.body.opening ?? record.opening;
-    record.purchases = req.body.purchases ?? record.purchases;
-    record.sales = req.body.sales ?? record.sales;
-    record.spoilage = req.body.spoilage ?? record.spoilage;
-    record.closing = record.opening + record.purchases - record.sales - record.spoilage;
-
-    await record.save();
-    
-    if (record.closing < Number(process.env.LOW_STOCK_THRESHOLD)) {
-      notifyLowStock(record.item, record.closing);
-    }
-
-    await logAction('Inventory Updated', req.user.username, { itemId: record._id, item: record.item, newClosing: record.closing });
-    res.json(record);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
 });
 
 app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson', 'Joshua', 'Martha']), async (req, res) => {
