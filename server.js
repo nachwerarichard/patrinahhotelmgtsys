@@ -150,22 +150,24 @@ function authorize(roles = []) {
 // --- Date Helper Function (Corrected) ---
 // This function calculates the correct start and end of a day in UTC
 // for a given EAT date string ('YYYY-MM-DD').
+
 function getStartAndEndOfDayInUTC(dateString) {
   const selectedDate = new Date(dateString);
   if (isNaN(selectedDate.getTime())) {
     return { error: 'Invalid date format. Use YYYY-MM-DD.' };
   }
-  
-  // This calculates the UTC start of the day in EAT, which is UTC+3
-  const utcStart = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
-  utcStart.setHours(utcStart.getHours() + 3);
 
-  // The end of the day is 24 hours later
-  const utcEnd = new Date(utcStart.getTime() + 24 * 60 * 60 * 1000);
+  // Create a new Date object representing the start of the day in EAT
+  const eatStart = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
   
+  // To get the UTC equivalent, we subtract the timezone offset (3 hours for EAT)
+  const utcStart = new Date(eatStart.getTime() - 3 * 60 * 60 * 1000);
+  
+  // The UTC end is simply 24 hours after the UTC start
+  const utcEnd = new Date(utcStart.getTime() + 24 * 60 * 60 * 1000);
+
   return { utcStart, utcEnd };
 }
-
 
 // --- INVENTORY HELPERS (CORRECTED) ---
 // This helper function correctly finds or creates today's inventory record.
