@@ -157,13 +157,17 @@ function getStartAndEndOfDayInUTC(dateString) {
     return { error: 'Invalid date format. Use YYYY-MM-DD.' };
   }
 
-  // Create a new Date object representing the start of the day in EAT
-  const eatStart = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
-  
-  // To get the UTC equivalent, we subtract the timezone offset (3 hours for EAT)
-  const utcStart = new Date(eatStart.getTime() - 3 * 60 * 60 * 1000);
-  
-  // The UTC end is simply 24 hours after the UTC start
+  // Create a date object for the selected day in EAT.
+  // We explicitly set the time zone to avoid local time misinterpretation.
+  const eatStart = new Date(Date.UTC(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), 0, 0, 0));
+
+  // EAT is UTC+3. To find the correct start of the day in UTC,
+  // we do not need to add or subtract anything if we use Date.UTC,
+  // as it's already at the beginning of the day in UTC.
+  // The original code's logic of subtracting 3 hours was the mistake.
+  const utcStart = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), 0, 0, 0);
+
+  // The UTC end is simply 24 hours after the UTC start.
   const utcEnd = new Date(utcStart.getTime() + 24 * 60 * 60 * 1000);
 
   return { utcStart, utcEnd };
