@@ -247,6 +247,11 @@ app.post('/inventory', auth, authorize(['Nachwera Richard', 'Nelson', 'Florence'
     res.status(500).json({ error: err.message });
   }
 });
+/**
+ * Handles PUT requests to update an existing inventory item.
+ * This version of the route has the date check removed, allowing for
+ * the modification of past inventory records.
+ */
 app.put('/inventory/:id', auth, authorize(['Nachwera Richard', 'Nelson', 'Florence']), async (req, res) => {
     try {
         const record = await Inventory.findById(req.params.id);
@@ -254,18 +259,10 @@ app.put('/inventory/:id', auth, authorize(['Nachwera Richard', 'Nelson', 'Floren
             return res.status(404).json({ error: 'Inventory item not found' });
         }
 
-        // Get the start of today in UTC
-        const todayStart = new Date();
-        todayStart.setUTCHours(0, 0, 0, 0);
-
-        // Corrected check: Prevent editing if the record's date is before today's date
-        // Note: The `record.date` is a full timestamp, so we compare it against the start of the day.
-        if (record.date < todayStart) {
-            return res.status(400).json({ error: 'Cannot edit past inventory records.' });
-        }
+        // The date check to prevent editing past records has been removed
+        // to fulfill the request to allow editing of historical data.
 
         // Update fields and recalculate closing stock
-        // Use a single line for updates for better readability and to ensure correct recalculation
         const { item, opening, purchases, sales, spoilage } = req.body;
         record.item = item ?? record.item;
         record.opening = opening ?? record.opening;
