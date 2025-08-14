@@ -156,11 +156,15 @@ function getStartAndEndOfDayInUTC(dateString) {
     return { error: 'Invalid date format. Use YYYY-MM-DD.' };
   }
   
-  // This calculates the UTC start of the day in EAT, which is UTC+3
-  const utcStart = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
-  utcStart.setHours(utcStart.getHours() + 3);
+  // Set the date to midnight UTC (00:00:00.000) to create a consistent reference point.
+  selectedDate.setUTCHours(0, 0, 0, 0);
 
-  // The end of the day is 24 hours later
+  // EAT is UTC+3. To find the start of the EAT day in UTC,
+  // we must subtract 3 hours from the UTC midnight time.
+  // For example, EAT 00:00 is UTC 21:00 of the previous day.
+  const utcStart = new Date(selectedDate.getTime() - 3 * 60 * 60 * 1000);
+
+  // The end of the EAT day is exactly 24 hours after its start.
   const utcEnd = new Date(utcStart.getTime() + 24 * 60 * 60 * 1000);
   
   return { utcStart, utcEnd };
