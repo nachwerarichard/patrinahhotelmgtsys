@@ -314,8 +314,8 @@ app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson',
                 if (record) {
                     // Item had activity on this day, use its record
                     return {
-                         _id: latestBeforeDate ? latestBeforeDate._id : null,   
-                         item: singleItem,
+                        _id: record._id, // Add the _id field here
+                        item: singleItem,
                         opening: record.opening,
                         purchases: record.purchases,
                         sales: record.sales,
@@ -330,6 +330,8 @@ app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson',
                     }).sort({ date: -1 });
 
                     return {
+                        // The id for this item comes from the latest record
+                        _id: latestBeforeDate ? latestBeforeDate._id : null,
                         item: singleItem,
                         opening: latestBeforeDate ? latestBeforeDate.closing : 0,
                         purchases: 0,
