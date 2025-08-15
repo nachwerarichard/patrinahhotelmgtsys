@@ -314,8 +314,8 @@ app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson',
                 if (record) {
                     // Item had activity on this day, use its record
                     return {
-                        _id: record._id,
-                        item: singleItem,
+                         _id: latestBeforeDate ? latestBeforeDate._id : null,   
+                         item: singleItem,
                         opening: record.opening,
                         purchases: record.purchases,
                         sales: record.sales,
