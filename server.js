@@ -18,11 +18,11 @@ app.use(cors({
 // Hardcoding users for demonstration purposes only.
 // DO NOT USE THIS IN PRODUCTION OR FOR ANY REAL APPLICATION.
 const HARDCODED_USERS = {
-    'Nachwera Richard': { password: '123', role: 'Nachwera Richard' },
-    'Nelson': { password: '123', role: 'Nelson' },
-    'Florence': { password: '123', role: 'Florence' },
-    'Martha': { password: '456', role: 'Martha' },
-    'Joshua': { password: '456', role: 'Joshua' }
+  'Nachwera Richard': { password: '123', role: 'Nachwera Richard' },
+  'Nelson': { password: '123', role: 'Nelson' },
+  'Florence': { password: '123', role: 'Florence' },
+  'Martha': { password: '456', role: 'Martha' },
+  'Joshua': { password: '456', role: 'Joshua' }
 };
 // --- !!! END OF WARNING !!! ---
 
@@ -237,7 +237,8 @@ app.post('/inventory', auth, authorize(['Nachwera Richard', 'Nelson', 'Florence'
 
     await record.save();
 
-    if (record.closing < Number(process.env.LOW_STOCK_THRESHOLD)) {
+    // Check if the item name starts with 'rest' before sending a notification
+    if (record.closing < Number(process.env.LOW_STOCK_THRESHOLD) && !record.item.toLowerCase().startsWith('rest')) {
       notifyLowStock(record.item, record.closing);
     }
     
@@ -275,7 +276,8 @@ app.put('/inventory/:id', auth, authorize(['Nachwera Richard', 'Nelson', 'Floren
 
         await record.save();
 
-        if (record.closing < Number(process.env.LOW_STOCK_THRESHOLD)) {
+        // Check if the item name starts with 'rest' before sending a notification
+        if (record.closing < Number(process.env.LOW_STOCK_THRESHOLD) && !record.item.toLowerCase().startsWith('rest')) {
             notifyLowStock(record.item, record.closing);
         }
 
@@ -405,7 +407,8 @@ app.post('/sales', auth, authorize(['Nachwera Richard', 'Martha', 'Joshua', 'Nel
         await todayInventory.save();
 
         console.log(`Inventory updated for "${item}". New closing stock: ${todayInventory.closing}.`);
-        if (todayInventory.closing < Number(process.env.LOW_STOCK_THRESHOLD)) {
+        // Check if the item name starts with 'rest' before sending a notification
+        if (todayInventory.closing < Number(process.env.LOW_STOCK_THRESHOLD) && !todayInventory.item.toLowerCase().startsWith('rest')) {
           notifyLowStock(item, todayInventory.closing);
         }
       } catch (inventoryError) {
@@ -619,3 +622,4 @@ app.get('/audit-logs', auth, authorize(['Nachwera Richard', 'Nelson', 'Florence'
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
