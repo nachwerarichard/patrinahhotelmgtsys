@@ -638,7 +638,7 @@ app.put('/cash-journal/:id', auth, authorize(['Nachwera Richard', 'Nelson', 'Flo
       { new: true }
     );
     if (!updatedEntry) {
-      return res.status(404).json({ error: 'Cash journal entry not found' };
+      return res.status(404).json({ error: 'Cash journal entry not found' });
     }
     await logAction('Cash Entry Updated', req.user.username, { entryId: updatedEntry._id, newCashAtHand: updatedEntry.cashAtHand });
     res.json(updatedEntry);
