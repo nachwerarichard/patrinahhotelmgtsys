@@ -226,41 +226,48 @@ app.post('/logout', auth, async (req, res) => {
 
 // --- Inventory Endpoints (Corrected) ---
 app.post('/inventory', auth, authorize(['Nachwera Richard', 'Nelson', 'Florence', 'Martha', 'Joshua']), async (req, res) => {
-  try {
-    const { item, opening, purchases = 0, sales = 0, spoilage = 0 } = req.body;
-    
-    // Validation to prevent negative values
-    if (opening < 0 || purchases < 0 || sales < 0 || spoilage < 0) {
-      return res.status(400).json({ error: 'Inventory values cannot be negative.' });
-    }
+  try {
+    const { item, opening, purchases = 0, sales = 0, spoilage = 0 } = req.body;
+    
+    // Validation to prevent negative values
+    if (opening < 0 || purchases < 0 || sales < 0 || spoilage < 0) {
+      return res.status(400).json({ error: 'Inventory values cannot be negative.' });
+    }
 
-    // Find today's inventory record or create a new one
-    let record = await getTodayInventory(item, opening);
-    
-    // Update the record with new values
-    const newClosing = record.opening + record.purchases + purchases - record.sales - sales - record.spoilage - spoilage;
+    // Find today's inventory record or create a new one
+    let record = await getTodayInventory(item, opening);
+    
+    // --- New Logic: Check against total available stock before updating ---
+    const currentAvailableStock = record.opening + record.purchases;
+    const totalSales = record.sales + sales;
+    if (totalSales > currentAvailableStock) {
+      return res.status(400).json({ error: `Sales quantity (${totalSales}) cannot be higher than the total available stock (${currentAvailableStock}).` });
+    }
 
-    if (newClosing < 0) {
-      return res.status(400).json({ error: 'Action would result in negative inventory.' });
-    }
-    
-    record.purchases += purchases;
-    record.sales += sales;
-    record.spoilage += spoilage;
-    record.closing = newClosing;
+    // Update the record with new values
+    const newClosing = currentAvailableStock - totalSales - record.spoilage - spoilage;
 
-    await record.save();
+    if (newClosing < 0) {
+      return res.status(400).json({ error: 'Action would result in negative inventory.' });
+    }
+    
+    record.purchases += purchases;
+    record.sales += sales;
+    record.spoilage += spoilage;
+    record.closing = newClosing;
 
-    // Check if the item name starts with 'rest' before sending a notification
-    if (record.closing < Number(process.env.LOW_STOCK_THRESHOLD) && !record.item.toLowerCase().startsWith('rest')) {
-      notifyLowStock(record.item, record.closing);
-    }
-    
-    await logAction('Inventory Updated/Created', req.user.username, { item: record.item, closing: record.closing });
-    res.status(200).json(record);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+    await record.save();
+
+    // Check if the item name starts with 'rest' before sending a notification
+    if (record.closing < Number(process.env.LOW_STOCK_THRESHOLD) && !record.item.toLowerCase().startsWith('rest')) {
+      notifyLowStock(record.item, record.closing);
+    }
+    
+    await logAction('Inventory Updated/Created', req.user.username, { item: record.item, closing: record.closing });
+    res.status(200).json(record);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 /**
  * Handles PUT requests to update an existing inventory item.
@@ -425,51 +432,55 @@ app.delete('/inventory/:id', auth, authorize(['Nachwera Richard', 'Nelson', 'Flo
 
 // --- Sales Endpoints (Corrected) ---
 app.post('/sales', auth, authorize(['Nachwera Richard', 'Martha', 'Joshua', 'Nelson', 'Florence']), async (req, res) => {
-  try {
-    const { item, number, bp, sp } = req.body;
-    
-    // Input validation
-    if (number < 0) {
-      return res.status(400).json({ error: 'Number of items in a sale cannot be negative.' });
-    }
-    
-    const totalBuyingPrice = bp * number;
-    const totalSellingPrice = sp * number;
-    const profit = totalSellingPrice - totalBuyingPrice;
-    const percentageProfit = totalBuyingPrice !== 0 ? (profit / totalBuyingPrice) * 100 : 0;
+  try {
+    const { item, number, bp, sp } = req.body;
+    
+    // Input validation
+    if (number < 0) {
+      return res.status(400).json({ error: 'Number of items in a sale cannot be negative.' });
+    }
+    
+    // Check if the sale would result in negative inventory before proceeding.
+    if (item && typeof number === 'number' && number > 0) {
+      const todayInventory = await getTodayInventory(item);
+      // --- Refined Logic: Check against opening + purchases ---
+      const currentAvailableStock = todayInventory.opening + todayInventory.purchases;
+      const newTotalSales = todayInventory.sales + number;
 
-    // Check if the sale would result in negative inventory before proceeding.
-    if (item && typeof number === 'number' && number > 0) {
-      const todayInventory = await getTodayInventory(item);
-      const newClosing = todayInventory.closing - number;
-      if (newClosing < 0) {
-        return res.status(400).json({ error: `Not enough stock for ${item}. Closing stock would be negative.` });
-      }
-      todayInventory.sales += number;
-      todayInventory.closing = newClosing;
-      await todayInventory.save();
+      if (newTotalSales > currentAvailableStock) {
+        return res.status(400).json({ error: `Not enough stock for ${item}. Total sales (${newTotalSales}) cannot exceed available stock (${currentAvailableStock}).` });
+      }
 
-      console.log(`Inventory updated for "${item}". New closing stock: ${todayInventory.closing}.`);
-      if (todayInventory.closing < Number(process.env.LOW_STOCK_THRESHOLD) && !todayInventory.item.toLowerCase().startsWith('rest')) {
-        notifyLowStock(item, todayInventory.closing);
-      }
-    } else {
-      console.warn("Warning: Sale request missing valid 'item' or 'number' for inventory deduction. Inventory not updated.");
-    }
-    
-    // Create the sale record after the inventory check
-    const sale = await Sale.create({
-      ...req.body,
-      profit,
-      percentageprofit: percentageProfit,
-      date: new Date()
-    });
+      todayInventory.sales = newTotalSales;
+      todayInventory.closing = currentAvailableStock - todayInventory.sales - todayInventory.spoilage;
+      await todayInventory.save();
 
-    await logAction('Sale Created', req.user.username, { saleId: sale._id, item: sale.item, number: sale.number, sp: sale.sp });
-    res.status(201).json(sale);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+      console.log(`Inventory updated for "${item}". New closing stock: ${todayInventory.closing}.`);
+      if (todayInventory.closing < Number(process.env.LOW_STOCK_THRESHOLD) && !todayInventory.item.toLowerCase().startsWith('rest')) {
+        notifyLowStock(item, todayInventory.closing);
+      }
+    } else {
+      console.warn("Warning: Sale request missing valid 'item' or 'number' for inventory deduction. Inventory not updated.");
+    }
+
+    const totalBuyingPrice = bp * number;
+    const totalSellingPrice = sp * number;
+    const profit = totalSellingPrice - totalBuyingPrice;
+    const percentageProfit = totalBuyingPrice !== 0 ? (profit / totalBuyingPrice) * 100 : 0;
+    
+    // Create the sale record after the inventory check
+    const sale = await Sale.create({
+      ...req.body,
+      profit,
+      percentageprofit: percentageProfit,
+      date: new Date()
+    });
+
+    await logAction('Sale Created', req.user.username, { saleId: sale._id, item: sale.item, number: sale.number, sp: sale.sp });
+    res.status(201).json(sale);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.get('/sales', auth, authorize(['Nachwera Richard', 'Martha', 'Joshua', 'Nelson', 'Florence']), async (req, res) => {
