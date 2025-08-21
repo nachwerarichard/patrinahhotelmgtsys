@@ -174,6 +174,9 @@ function getStartAndEndOfDayInUTC(dateString) {
 // --- INVENTORY HELPERS (CORRECTED) ---
 // This helper function correctly finds or creates today's inventory record.
 async function getTodayInventory(itemName, initialOpening = 0) {
+  // Ensure the initial opening value is not negative.
+  initialOpening = Math.max(0, initialOpening);
+  
   const { utcStart, utcEnd } = getStartAndEndOfDayInUTC(new Date().toISOString().slice(0, 10));
   
   // Find a record for today within the correct EAT date range
@@ -226,14 +229,25 @@ app.post('/inventory', auth, authorize(['Nachwera Richard', 'Nelson', 'Florence'
   try {
     const { item, opening, purchases = 0, sales = 0, spoilage = 0 } = req.body;
     
+    // Validation to prevent negative values
+    if (opening < 0 || purchases < 0 || sales < 0 || spoilage < 0) {
+      return res.status(400).json({ error: 'Inventory values cannot be negative.' });
+    }
+
     // Find today's inventory record or create a new one
     let record = await getTodayInventory(item, opening);
     
     // Update the record with new values
+    const newClosing = record.opening + record.purchases + purchases - record.sales - sales - record.spoilage - spoilage;
+
+    if (newClosing < 0) {
+      return res.status(400).json({ error: 'Action would result in negative inventory.' });
+    }
+    
     record.purchases += purchases;
     record.sales += sales;
     record.spoilage += spoilage;
-    record.closing = record.opening + record.purchases - record.sales - record.spoilage;
+    record.closing = newClosing;
 
     await record.save();
 
@@ -265,6 +279,17 @@ app.put('/inventory/:id', auth, authorize(['Nachwera Richard', 'Nelson', 'Floren
 
         // Update fields and recalculate closing stock
         const { item, opening, purchases, sales, spoilage } = req.body;
+        
+        // Validation to prevent negative values
+        if (
+            (opening !== undefined && opening < 0) || 
+            (purchases !== undefined && purchases < 0) || 
+            (sales !== undefined && sales < 0) || 
+            (spoilage !== undefined && spoilage < 0)
+        ) {
+            return res.status(400).json({ error: 'Inventory values cannot be negative.' });
+        }
+
         record.item = item ?? record.item;
         record.opening = opening ?? record.opening;
         record.purchases = purchases ?? record.purchases;
@@ -272,7 +297,13 @@ app.put('/inventory/:id', auth, authorize(['Nachwera Richard', 'Nelson', 'Floren
         record.spoilage = spoilage ?? record.spoilage;
         
         // Recalculate closing stock based on the updated values
-        record.closing = record.opening + record.purchases - record.sales - record.spoilage;
+        const newClosing = record.opening + record.purchases - record.sales - record.spoilage;
+        
+        if (newClosing < 0) {
+            return res.status(400).json({ error: 'Action would result in negative inventory.' });
+        }
+
+        record.closing = newClosing;
 
         await record.save();
 
@@ -293,6 +324,15 @@ app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson',
     try {
         const { item, low, date, page = 1, limit = 50 } = req.query;
         let filter = {};
+        
+        // Validate numeric parameters
+        const pageNum = parseInt(page);
+        const limitNum = parseInt(limit);
+        const lowNum = low !== undefined ? parseInt(low) : undefined;
+        
+        if (pageNum < 1 || limitNum < 1 || (lowNum !== undefined && lowNum < 0)) {
+            return res.status(400).json({ error: 'Numeric query parameters (page, limit, low) cannot be negative or zero.' });
+        }
 
         if (date) {
             const { utcStart, utcEnd, error } = getStartAndEndOfDayInUTC(date);
@@ -349,19 +389,19 @@ app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson',
 
         // --- Original `/inventory` logic continues below if no date is provided ---
         if (item) filter.item = new RegExp(item, 'i');
-        if (low) filter.closing = { $lt: Number(low) };
+        if (low) filter.closing = { $lt: lowNum };
         
-        const skip = (parseInt(page) - 1) * Number(limit);
+        const skip = (pageNum - 1) * limitNum;
         const [total, docs] = await Promise.all([
             Inventory.countDocuments(filter),
-            Inventory.find(filter).skip(skip).limit(Number(limit)).sort({ item: 1 })
+            Inventory.find(filter).skip(skip).limit(limitNum).sort({ item: 1 })
         ]);
 
         res.json({
             data: docs,
             total,
-            page: Number(page),
-            pages: Math.ceil(total / limit)
+            page: pageNum,
+            pages: Math.ceil(total / limitNum)
         });
 
     } catch (err) {
@@ -387,11 +427,37 @@ app.delete('/inventory/:id', auth, authorize(['Nachwera Richard', 'Nelson', 'Flo
 app.post('/sales', auth, authorize(['Nachwera Richard', 'Martha', 'Joshua', 'Nelson', 'Florence']), async (req, res) => {
   try {
     const { item, number, bp, sp } = req.body;
+    
+    // Input validation
+    if (number < 0) {
+      return res.status(400).json({ error: 'Number of items in a sale cannot be negative.' });
+    }
+    
     const totalBuyingPrice = bp * number;
     const totalSellingPrice = sp * number;
     const profit = totalSellingPrice - totalBuyingPrice;
     const percentageProfit = totalBuyingPrice !== 0 ? (profit / totalBuyingPrice) * 100 : 0;
 
+    // Check if the sale would result in negative inventory before proceeding.
+    if (item && typeof number === 'number' && number > 0) {
+      const todayInventory = await getTodayInventory(item);
+      const newClosing = todayInventory.closing - number;
+      if (newClosing < 0) {
+        return res.status(400).json({ error: `Not enough stock for ${item}. Closing stock would be negative.` });
+      }
+      todayInventory.sales += number;
+      todayInventory.closing = newClosing;
+      await todayInventory.save();
+
+      console.log(`Inventory updated for "${item}". New closing stock: ${todayInventory.closing}.`);
+      if (todayInventory.closing < Number(process.env.LOW_STOCK_THRESHOLD) && !todayInventory.item.toLowerCase().startsWith('rest')) {
+        notifyLowStock(item, todayInventory.closing);
+      }
+    } else {
+      console.warn("Warning: Sale request missing valid 'item' or 'number' for inventory deduction. Inventory not updated.");
+    }
+    
+    // Create the sale record after the inventory check
     const sale = await Sale.create({
       ...req.body,
       profit,
@@ -399,24 +465,6 @@ app.post('/sales', auth, authorize(['Nachwera Richard', 'Martha', 'Joshua', 'Nel
       date: new Date()
     });
 
-    if (item && typeof number === 'number' && number > 0) {
-      try {
-        const todayInventory = await getTodayInventory(item);
-        todayInventory.sales += number;
-        todayInventory.closing = todayInventory.opening + todayInventory.purchases - todayInventory.sales - todayInventory.spoilage;
-        await todayInventory.save();
-
-        console.log(`Inventory updated for "${item}". New closing stock: ${todayInventory.closing}.`);
-        // Check if the item name starts with 'rest' before sending a notification
-        if (todayInventory.closing < Number(process.env.LOW_STOCK_THRESHOLD) && !todayInventory.item.toLowerCase().startsWith('rest')) {
-          notifyLowStock(item, todayInventory.closing);
-        }
-      } catch (inventoryError) {
-        console.error(`Error updating inventory for item "${item}":`, inventoryError);
-      }
-    } else {
-      console.warn("Warning: Sale request missing valid 'item' or 'number' for inventory deduction. Inventory not updated.");
-    }
     await logAction('Sale Created', req.user.username, { saleId: sale._id, item: sale.item, number: sale.number, sp: sale.sp });
     res.status(201).json(sale);
   } catch (err) {
@@ -427,6 +475,14 @@ app.post('/sales', auth, authorize(['Nachwera Richard', 'Martha', 'Joshua', 'Nel
 app.get('/sales', auth, authorize(['Nachwera Richard', 'Martha', 'Joshua', 'Nelson', 'Florence']), async (req, res) => {
   try {
     const { date, page = 1, limit = 5 } = req.query;
+
+    // Validate numeric parameters
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    if (pageNum < 1 || limitNum < 1) {
+      return res.status(400).json({ error: 'Page and limit must be positive numbers.' });
+    }
+    
     let query = {};
 
     if (date) {
@@ -435,15 +491,15 @@ app.get('/sales', auth, authorize(['Nachwera Richard', 'Martha', 'Joshua', 'Nels
       query.date = { $gte: utcStart, $lt: utcEnd };
     }
 
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const skip = (pageNum - 1) * limitNum;
     const total = await Sale.countDocuments(query);
-    const sales = await Sale.find(query).sort({ date: -1 }).skip(skip).limit(Number(limit));
+    const sales = await Sale.find(query).sort({ date: -1 }).skip(skip).limit(limitNum);
 
     res.json({
       data: sales,
       total,
-      page: Number(page),
-      pages: Math.ceil(total / limit)
+      page: pageNum,
+      pages: Math.ceil(total / limitNum)
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -494,6 +550,14 @@ app.post('/expenses', auth, authorize(['Nachwera Richard', 'Martha', 'Joshua', '
 app.get('/expenses', auth, authorize(['Nachwera Richard', 'Martha', 'Joshua', 'Nelson', 'Florence']), async (req, res) => {
   try {
     const { date, page = 1, limit = 5 } = req.query;
+    
+    // Validate numeric parameters
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    if (pageNum < 1 || limitNum < 1) {
+      return res.status(400).json({ error: 'Page and limit must be positive numbers.' });
+    }
+
     let query = {};
 
     if (date) {
@@ -502,15 +566,15 @@ app.get('/expenses', auth, authorize(['Nachwera Richard', 'Martha', 'Joshua', 'N
       query.date = { $gte: utcStart, $lt: utcEnd };
     }
 
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const skip = (pageNum - 1) * limitNum;
     const total = await Expense.countDocuments(query);
-    const expenses = await Expense.find(query).sort({ date: -1 }).skip(skip).limit(Number(limit));
+    const expenses = await Expense.find(query).sort({ date: -1 }).skip(skip).limit(limitNum);
 
     res.json({
       data: expenses,
       total,
-      page: Number(page),
-      pages: Math.ceil(total / limit)
+      page: pageNum,
+      pages: Math.ceil(total / limitNum)
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -574,7 +638,7 @@ app.put('/cash-journal/:id', auth, authorize(['Nachwera Richard', 'Nelson', 'Flo
       { new: true }
     );
     if (!updatedEntry) {
-      return res.status(404).json({ error: 'Cash journal entry not found' });
+      return res.status(404).json({ error: 'Cash journal entry not found' };
     }
     await logAction('Cash Entry Updated', req.user.username, { entryId: updatedEntry._id, newCashAtHand: updatedEntry.cashAtHand });
     res.json(updatedEntry);
@@ -587,7 +651,15 @@ app.put('/cash-journal/:id', auth, authorize(['Nachwera Richard', 'Nelson', 'Flo
 app.get('/audit-logs', auth, authorize(['Nachwera Richard', 'Nelson', 'Florence']), async (req, res) => {
   try {
     const { page = 1, limit = 20, search } = req.query;
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    
+    // Validate numeric parameters
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    if (pageNum < 1 || limitNum < 1) {
+      return res.status(400).json({ error: 'Page and limit must be positive numbers.' });
+    }
+
+    const skip = (pageNum - 1) * limitNum;
     let query = {};
     if (search) {
       const searchRegex = new RegExp(search, 'i');
@@ -604,13 +676,13 @@ app.get('/audit-logs', auth, authorize(['Nachwera Richard', 'Nelson', 'Florence'
     const logs = await AuditLog.find(query)
       .sort({ timestamp: -1 })
       .skip(skip)
-      .limit(Number(limit));
+      .limit(limitNum);
 
     res.json({
       data: logs,
       total,
-      page: Number(page),
-      pages: Math.ceil(total / limit)
+      page: pageNum,
+      pages: Math.ceil(total / limitNum)
     });
   } catch (err) {
     console.error('Error fetching audit logs on server:', err);
@@ -622,4 +694,3 @@ app.get('/audit-logs', auth, authorize(['Nachwera Richard', 'Nelson', 'Florence'
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-
