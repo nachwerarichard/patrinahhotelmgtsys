@@ -432,56 +432,61 @@ app.delete('/inventory/:id', auth, authorize(['Nachwera Richard', 'Nelson', 'Flo
 
 // --- Sales Endpoints (Corrected) ---
 app.post('/sales', auth, authorize(['Nachwera Richard', 'Martha', 'Joshua', 'Nelson', 'Florence']), async (req, res) => {
-  try {
-    const { item, number, bp, sp } = req.body;
-    
-    // Input validation
-    if (number < 0) {
-      return res.status(400).json({ error: 'Number of items in a sale cannot be negative.' });
-    }
-    
-    // Check if the sale would result in negative inventory before proceeding.
-    if (item && typeof number === 'number' && number > 0) {
-      const todayInventory = await getTodayInventory(item);
-      // --- Refined Logic: Check against opening + purchases ---
-      const currentAvailableStock = todayInventory.opening + todayInventory.purchases;
-      const newTotalSales = todayInventory.sales + number;
+  try {
+    const { item, number, bp, sp } = req.body;
+    
+    // Input validation
+    if (number < 0) {
+      return res.status(400).json({ error: 'Number of items in a sale cannot be negative.' });
+    }
+    
+    // Check if the sale would result in negative inventory before proceeding.
+    if (item && typeof number === 'number' && number > 0) {
+      const todayInventory = await getTodayInventory(item);
+      // --- Refined Logic: Check against opening + purchases ---
+      const currentAvailableStock = todayInventory.opening + todayInventory.purchases;
+      const newTotalSales = todayInventory.sales + number;
 
-      if (newTotalSales > currentAvailableStock) {
-        return res.status(400).json({ error: `Not enough stock for ${item}. Total sales (${newTotalSales}) cannot exceed available stock (${currentAvailableStock}).` });
-      }
+      // MODIFICATION: Check stock level ONLY if the item name does not start with 'rest'.
+      // This allows 'rest' items to be sold even if the total sales exceed available stock.
+      if (newTotalSales > currentAvailableStock && !item.toLowerCase().startsWith('rest')) {
+        return res.status(400).json({ error: `Not enough stock for ${item}. Total sales (${newTotalSales}) cannot exceed available stock (${currentAvailableStock}).` });
+      }
 
-      todayInventory.sales = newTotalSales;
-      todayInventory.closing = currentAvailableStock - todayInventory.sales - todayInventory.spoilage;
-      await todayInventory.save();
+      todayInventory.sales = newTotalSales;
+      todayInventory.closing = currentAvailableStock - todayInventory.sales - todayInventory.spoilage;
+      await todayInventory.save();
 
-      console.log(`Inventory updated for "${item}". New closing stock: ${todayInventory.closing}.`);
-      if (todayInventory.closing < Number(process.env.LOW_STOCK_THRESHOLD) && !todayInventory.item.toLowerCase().startsWith('rest')) {
-        notifyLowStock(item, todayInventory.closing);
-      }
-    } else {
-      console.warn("Warning: Sale request missing valid 'item' or 'number' for inventory deduction. Inventory not updated.");
-    }
+      console.log(`Inventory updated for "${item}". New closing stock: ${todayInventory.closing}.`);
+      if (todayInventory.closing < Number(process.env.LOW_STOCK_THRESHOLD) && !todayInventory.item.toLowerCase().startsWith('rest')) {
+        notifyLowStock(item, todayInventory.closing);
+      }
+    } else {
+      console.warn("Warning: Sale request missing valid 'item' or 'number' for inventory deduction. Inventory not updated.");
+    }
 
-    const totalBuyingPrice = bp * number;
-    const totalSellingPrice = sp * number;
-    const profit = totalSellingPrice - totalBuyingPrice;
-    const percentageProfit = totalBuyingPrice !== 0 ? (profit / totalBuyingPrice) * 100 : 0;
-    
-    // Create the sale record after the inventory check
-    const sale = await Sale.create({
-      ...req.body,
-      profit,
-      percentageprofit: percentageProfit,
-      date: new Date()
-    });
+    const totalBuyingPrice = bp * number;
+    const totalSellingPrice = sp * number;
+    const profit = totalSellingPrice - totalBuyingPrice;
+    const percentageProfit = totalBuyingPrice !== 0 ? (profit / totalBuyingPrice) * 100 : 0;
+    
+    // Create the sale record after the inventory check
+    const sale = await Sale.create({
+      ...req.body,
+      profit,
+      percentageprofit: percentageProfit,
+      date: new Date()
+    });
 
-    await logAction('Sale Created', req.user.username, { saleId: sale._id, item: sale.item, number: sale.number, sp: sale.sp });
-    res.status(201).json(sale);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+    await logAction('Sale Created', req.user.username, { saleId: sale._id, item: sale.item, number: sale.number, sp: sale.sp });
+    res.status(201).json(sale);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
+
+
+
 
 app.get('/sales', auth, authorize(['Nachwera Richard', 'Martha', 'Joshua', 'Nelson', 'Florence']), async (req, res) => {
   try {
