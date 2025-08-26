@@ -237,12 +237,7 @@ app.post('/inventory', auth, authorize(['Nachwera Richard', 'Nelson', 'Florence'
     // Find today's inventory record or create a new one
     let record = await getTodayInventory(item, opening);
     
-    // --- New Logic: Check against total available stock before updating ---
-    const currentAvailableStock = record.opening + record.purchases;
-    const totalSales = record.sales + sales;
-    if (totalSales > currentAvailableStock) {
-      return res.status(400).json({ error: `Sales quantity (${totalSales}) cannot be higher than the total available stock (${currentAvailableStock}).` });
-    }
+    
 
     // Update the record with new values
     const newClosing = currentAvailableStock - totalSales - record.spoilage - spoilage;
