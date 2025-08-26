@@ -225,45 +225,45 @@ app.post('/logout', auth, async (req, res) => {
 });
 
 // --- Inventory Endpoints (Corrected) ---
+
 app.post('/inventory', auth, authorize(['Nachwera Richard', 'Nelson', 'Florence', 'Martha', 'Joshua']), async (req, res) => {
-  try {
-    const { item, opening, purchases = 0, sales = 0, spoilage = 0 } = req.body;
-    
-    // Validation to prevent negative values
-    if (opening < 0 || purchases < 0 || sales < 0 || spoilage < 0) {
-      return res.status(400).json({ error: 'Inventory values cannot be negative.' });
-    }
+  try {
+    const { item, opening, purchases = 0, sales = 0, spoilage = 0 } = req.body;
+    
+    // Validation to prevent negative values
+    if (opening < 0 || purchases < 0 || sales < 0 || spoilage < 0) {
+      return res.status(400).json({ error: 'Inventory values cannot be negative.' });
+    }
 
-    // Find today's inventory record or create a new one
-    let record = await getTodayInventory(item, opening);
-    
-    
+    // Find today's inventory record or create a new one
+    let record = await getTodayInventory(item, opening);
+    
+    // Update the record with new values
+    const newClosing = record.opening + record.purchases + purchases - record.sales - sales - record.spoilage - spoilage;
 
-    // Update the record with new values
-    const newClosing = currentAvailableStock - totalSales - record.spoilage - spoilage;
+    if (newClosing < 0) {
+      return res.status(400).json({ error: 'Action would result in negative inventory.' });
+    }
+    
+    record.purchases += purchases;
+    record.sales += sales;
+    record.spoilage += spoilage;
+    record.closing = newClosing;
 
-    if (newClosing < 0) {
-      return res.status(400).json({ error: 'Action would result in negative inventory.' });
-    }
-    
-    record.purchases += purchases;
-    record.sales += sales;
-    record.spoilage += spoilage;
-    record.closing = newClosing;
+    await record.save();
 
-    await record.save();
-
-    // Check if the item name starts with 'rest' before sending a notification
-    if (record.closing < Number(process.env.LOW_STOCK_THRESHOLD) && !record.item.toLowerCase().startsWith('rest')) {
-      notifyLowStock(record.item, record.closing);
-    }
-    
-    await logAction('Inventory Updated/Created', req.user.username, { item: record.item, closing: record.closing });
-    res.status(200).json(record);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+    // Check if the item name starts with 'rest' before sending a notification
+    if (record.closing < Number(process.env.LOW_STOCK_THRESHOLD) && !record.item.toLowerCase().startsWith('rest')) {
+      notifyLowStock(record.item, record.closing);
+    }
+    
+    await logAction('Inventory Updated/Created', req.user.username, { item: record.item, closing: record.closing });
+    res.status(200).json(record);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
+
 /**
  * Handles PUT requests to update an existing inventory item.
  * This version of the route has the date check removed, allowing for
