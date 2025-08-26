@@ -21,7 +21,7 @@ const HARDCODED_USERS = {
   'Nachwera Richard': { password: '123', role: 'Nachwera Richard' },
   'Nelson': { password: '123', role: 'Nelson' },
   'Florence': { password: '123', role: 'Florence' },
-  'Mercy': { password: '456', role: 'Mercy' },
+  'Martha': { password: '456', role: 'Martha' },
   'Joshua': { password: '456', role: 'Joshua' }
 };
 // --- !!! END OF WARNING !!! ---
@@ -226,7 +226,7 @@ app.post('/logout', auth, async (req, res) => {
 
 // --- Inventory Endpoints (Corrected) ---
 
-app.post('/inventory', auth, authorize(['Nachwera Richard', 'Nelson', 'Florence', 'Mercy', 'Joshua']), async (req, res) => {
+app.post('/inventory', auth, authorize(['Nachwera Richard', 'Nelson', 'Florence', 'Martha', 'Joshua']), async (req, res) => {
   try {
     const { item, opening, purchases = 0, sales = 0, spoilage = 0 } = req.body;
     
@@ -322,7 +322,7 @@ app.put('/inventory/:id', auth, authorize(['Nachwera Richard', 'Nelson', 'Floren
     }
 });
 
-app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson', 'Joshua', 'Mercy']), async (req, res) => {
+app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson', 'Joshua', 'Martha']), async (req, res) => {
     try {
         const { item, low, date, page = 1, limit = 50 } = req.query;
         let filter = {};
@@ -426,7 +426,7 @@ app.delete('/inventory/:id', auth, authorize(['Nachwera Richard', 'Nelson', 'Flo
 });
 
 // --- Sales Endpoints (Corrected) ---
-app.post('/sales', auth, authorize(['Nachwera Richard', 'Mercy', 'Joshua', 'Nelson', 'Florence']), async (req, res) => {
+app.post('/sales', auth, authorize(['Nachwera Richard', 'Martha', 'Joshua', 'Nelson', 'Florence']), async (req, res) => {
   try {
     const { item, number, bp, sp } = req.body;
     
@@ -483,7 +483,7 @@ app.post('/sales', auth, authorize(['Nachwera Richard', 'Mercy', 'Joshua', 'Nels
 
 
 
-app.get('/sales', auth, authorize(['Nachwera Richard', 'Mercy', 'Joshua', 'Nelson', 'Florence']), async (req, res) => {
+app.get('/sales', auth, authorize(['Nachwera Richard', 'Martha', 'Joshua', 'Nelson', 'Florence']), async (req, res) => {
   try {
     const { date, page = 1, limit = 5 } = req.query;
 
@@ -540,7 +540,7 @@ app.delete('/sales/:id', auth, authorize(['Nachwera Richard', 'Nelson', 'Florenc
 });
 
 // --- Expenses Endpoints ---
-app.post('/expenses', auth, authorize(['Nachwera Richard', 'Mercy', 'Joshua', 'Nelson', 'Florence']), async (req, res) => {
+app.post('/expenses', auth, authorize(['Nachwera Richard', 'Martha', 'Joshua', 'Nelson', 'Florence']), async (req, res) => {
   try {
     const { description, amount, receiptId, source } = req.body;
     const exp = await Expense.create({
@@ -558,7 +558,7 @@ app.post('/expenses', auth, authorize(['Nachwera Richard', 'Mercy', 'Joshua', 'N
   }
 });
 
-app.get('/expenses', auth, authorize(['Nachwera Richard', 'Mercy', 'Joshua', 'Nelson', 'Florence']), async (req, res) => {
+app.get('/expenses', auth, authorize(['Nachwera Richard', 'Martha', 'Joshua', 'Nelson', 'Florence']), async (req, res) => {
   try {
     const { date, page = 1, limit = 5 } = req.query;
     
@@ -604,7 +604,7 @@ app.put('/expenses/:id', auth, authorize(['Nachwera Richard', 'Nelson', 'Florenc
 });
 
 // --- Cash Management Endpoints ---
-app.post('/cash-journal', auth, authorize(['Nachwera Richard', 'Mercy', 'Nelson', 'Florence']), async (req, res) => {
+app.post('/cash-journal', auth, authorize(['Nachwera Richard', 'Martha', 'Nelson', 'Florence']), async (req, res) => {
   try {
     const { cashAtHand, cashBanked, bankReceiptId, date } = req.body;
     const newEntry = await CashJournal.create({
@@ -621,7 +621,7 @@ app.post('/cash-journal', auth, authorize(['Nachwera Richard', 'Mercy', 'Nelson'
   }
 });
 
-app.get('/cash-journal', auth, authorize(['Nachwera Richard', 'Mercy', 'Nelson', 'Florence']), async (req, res) => {
+app.get('/cash-journal', auth, authorize(['Nachwera Richard', 'Martha', 'Nelson', 'Florence']), async (req, res) => {
   try {
     const { date, responsiblePerson } = req.query;
     const filter = {};
