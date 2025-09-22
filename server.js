@@ -327,7 +327,7 @@ app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson',
     try {
         const { item, low, date, page = 1, limit = 50 } = req.query;
         let filter = {};
-        
+
         // Validate numeric parameters
         const pageNum = parseInt(page);
         const limitNum = parseInt(limit);
@@ -338,6 +338,7 @@ app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson',
         }
 
         if (date) {
+            // Your existing daily report logic, which is already correct and prevents duplicates
             const { utcStart, utcEnd, error } = getStartAndEndOfDayInUTC(date);
             if (error) {
                 return res.status(400).json({ error });
@@ -357,9 +358,8 @@ app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson',
                 const record = recordsMap.get(singleItem);
 
                 if (record) {
-                    // Item had activity on this day, use its record
                     return {
-                        _id: record._id, // Add the _id field here
+                        _id: record._id,
                         item: singleItem,
                         opening: record.opening,
                         purchases: record.purchases,
@@ -368,14 +368,12 @@ app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson',
                         closing: record.closing
                     };
                 } else {
-                    // Item had no activity. Find its most recent closing stock before this date.
                     const latestBeforeDate = await Inventory.findOne({
                         item: singleItem,
                         date: { $lt: utcStart }
                     }).sort({ date: -1 });
 
                     return {
-                        // The id for this item comes from the latest record
                         _id: latestBeforeDate ? latestBeforeDate._id : null,
                         item: singleItem,
                         opening: latestBeforeDate ? latestBeforeDate.closing : 0,
@@ -390,28 +388,68 @@ app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson',
             return res.json({ date, report });
         }
 
-        // --- Original `/inventory` logic continues below if no date is provided ---
-        if (item) filter.item = new RegExp(item, 'i');
-        if (low) filter.closing = { $lt: lowNum };
-        
-        const skip = (pageNum - 1) * limitNum;
-        const [total, docs] = await Promise.all([
-            Inventory.countDocuments(filter),
-            Inventory.find(filter).skip(skip).limit(limitNum).sort({ item: 1 })
+        // --- MODIFIED PAGINATION LOGIC ---
+        // Create the initial match filter
+        let matchFilter = {};
+        if (item) matchFilter.item = new RegExp(item, 'i');
+        // We will apply the low filter after the aggregation to work on the final closing stock
+
+        // Aggregation pipeline to group and paginate
+        const pipeline = [
+            // 1. Match documents based on user search criteria
+            { $match: matchFilter },
+            // 2. Sort to get the latest record first for each item
+            { $sort: { date: -1 } },
+            // 3. Group by item to get the latest unique record for each item
+            {
+                $group: {
+                    _id: '$item',
+                    latestRecord: { $first: '$$ROOT' }
+                }
+            },
+            // 4. Project the fields from the latest record
+            {
+                $replaceRoot: { newRoot: '$latestRecord' }
+            }
+        ];
+
+        // If the 'low' filter is present, add it as a final stage
+        if (low) {
+            pipeline.push({
+                $match: { closing: { $lt: lowNum } }
+            });
+        }
+
+        // Calculate total number of unique documents before pagination
+        const totalDocs = await Inventory.aggregate([
+            ...pipeline,
+            { $count: 'total' }
         ]);
+
+        const total = totalDocs.length > 0 ? totalDocs[0].total : 0;
+        const pages = Math.ceil(total / limitNum);
+        const skip = (pageNum - 1) * limitNum;
+
+        // Add pagination stages to the pipeline
+        pipeline.push(
+            { $skip: skip },
+            { $limit: limitNum }
+        );
+
+        // Execute the final pipeline
+        const docs = await Inventory.aggregate(pipeline);
 
         res.json({
             data: docs,
             total,
             page: pageNum,
-            pages: Math.ceil(total / limitNum)
+            pages
         });
 
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
-
 
 app.delete('/inventory/:id', auth, authorize(['Nachwera Richard', 'Nelson', 'Florence']), async (req, res) => {
   try {
