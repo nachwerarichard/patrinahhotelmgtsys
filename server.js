@@ -322,7 +322,6 @@ app.put('/inventory/:id', auth, authorize(['Nachwera Richard', 'Nelson', 'Floren
         res.status(500).json({ error: err.message });
     }
 });
-
 app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson', 'Joshua','Mercy', 'Martha']), async (req, res) => {
     try {
         const { item, low, date, page = 1, limit = 50 } = req.query;
@@ -344,8 +343,9 @@ app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson',
             if (error) {
                 return res.status(400).json({ error });
             }
-
-            const allItems = await Inventory.distinct('item');
+            
+            // Fetch all unique item names and ensure they are truly unique using a Set
+            const allItems = [...new Set(await Inventory.distinct('item'))];
             const dailyRecords = await Inventory.find({
                 date: { $gte: utcStart, $lt: utcEnd }
             });
@@ -453,8 +453,6 @@ app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson',
         res.status(500).json({ error: err.message });
     }
 });
-
-
 
 
 
