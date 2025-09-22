@@ -148,6 +148,84 @@ function authorize(roles = []) {
   };
 }
 
+
+
+// --- INVENTORY HELPERS (CORRECTED) ---
+
+// Renamed to be more descriptive. This function finds or creates today's record.
+async function findOrCreateTodayInventory(itemName, initialOpening = 0) {
+  initialOpening = Math.max(0, initialOpening);
+  
+  const { utcStart, utcEnd } = getStartAndEndOfDayInUTC(new Date().toISOString().slice(0, 10));
+  
+  // Find today's record
+  let record = await Inventory.findOne({ item: itemName, date: { $gte: utcStart, $lt: utcEnd } });
+
+  if (!record) {
+    // If no record exists, get yesterday's closing
+    const latest = await Inventory.findOne({ item: itemName, date: { $lt: utcStart } }).sort({ date: -1 });
+    const opening = latest ? latest.closing : initialOpening;
+    
+    // Create the new record for today
+    record = await Inventory.create({
+      item: itemName,
+      opening,
+      purchases: 0,
+      sales: 0,
+      spoilage: 0,
+      closing: opening,
+      date: new Date()
+    });
+  }
+
+  return record;
+}
+
+// NEW: Read-only helper for generating daily reports without creating new documents.
+async function getInventoryReportForDate(dateString) {
+  const { utcStart, error } = getStartAndEndOfDayInUTC(dateString);
+  if (error) {
+    throw new Error(error);
+  }
+
+  const allItems = [...new Set(await Inventory.distinct('item'))];
+  const report = await Promise.all(allItems.map(async (singleItem) => {
+    // Find the record for the specific date
+    const recordOnDate = await Inventory.findOne({
+      item: singleItem,
+      date: { $gte: utcStart, $lt: new Date(utcStart.getTime() + 24 * 60 * 60 * 1000) }
+    });
+
+    if (recordOnDate) {
+      // Use the actual record if it exists
+      return recordOnDate;
+    } else {
+      // Find the last known record before the report date
+      const latestBeforeDate = await Inventory.findOne({
+        item: singleItem,
+        date: { $lt: utcStart }
+      }).sort({ date: -1 });
+
+      // Return a "virtual" record for the report
+      return {
+        _id: latestBeforeDate ? latestBeforeDate._id : null,
+        item: singleItem,
+        opening: latestBeforeDate ? latestBeforeDate.closing : 0,
+        purchases: 0,
+        sales: 0,
+        spoilage: 0,
+        closing: latestBeforeDate ? latestBeforeDate.closing : 0,
+        date: new Date(dateString) // Use the requested date
+      };
+    }
+  }));
+
+  return report;
+}
+
+
+
+
 // --- Date Helper Function (Corrected) ---
 // This function calculates the correct start and end of a day in UTC
 // for a given EAT date string ('YYYY-MM-DD').
@@ -322,12 +400,11 @@ app.put('/inventory/:id', auth, authorize(['Nachwera Richard', 'Nelson', 'Floren
         res.status(500).json({ error: err.message });
     }
 });
+// --- INVENTORY ENDPOINTS (Corrected) ---
 app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson', 'Joshua','Mercy', 'Martha']), async (req, res) => {
     try {
         const { item, low, date, page = 1, limit = 50 } = req.query;
-        let filter = {};
 
-        // Validate numeric parameters
         const pageNum = parseInt(page);
         const limitNum = parseInt(limit);
         const lowNum = low !== undefined ? parseInt(low) : undefined;
@@ -337,93 +414,35 @@ app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson',
         }
 
         if (date) {
-            // --- MODIFIED DAILY REPORT LOGIC ---
-            // This new logic will return all items, populating non-active ones from the last known record.
-            const { utcStart, utcEnd, error } = getStartAndEndOfDayInUTC(date);
-            if (error) {
-                return res.status(400).json({ error });
-            }
-            
-            // Fetch all unique item names and ensure they are truly unique using a Set
-            const allItems = [...new Set(await Inventory.distinct('item'))];
-            const dailyRecords = await Inventory.find({
-                date: { $gte: utcStart, $lt: utcEnd }
-            });
-
-            const recordsMap = new Map();
-            dailyRecords.forEach(record => {
-                recordsMap.set(record.item, record);
-            });
-
-            const report = await Promise.all(allItems.map(async (singleItem) => {
-                const record = recordsMap.get(singleItem);
-
-                if (record) {
-                    // Item had activity on this day, use its record
-                    return {
-                        _id: record._id,
-                        item: singleItem,
-                        opening: record.opening,
-                        purchases: record.purchases,
-                        sales: record.sales,
-                        spoilage: record.spoilage,
-                        closing: record.closing
-                    };
-                } else {
-                    // Item had no activity. Find its most recent closing stock before this date.
-                    const latestBeforeDate = await Inventory.findOne({
-                        item: singleItem,
-                        date: { $lt: utcStart }
-                    }).sort({ date: -1 });
-
-                    return {
-                        _id: latestBeforeDate ? latestBeforeDate._id : null,
-                        item: singleItem,
-                        opening: latestBeforeDate ? latestBeforeDate.closing : 0,
-                        purchases: 0,
-                        sales: 0,
-                        spoilage: 0,
-                        closing: latestBeforeDate ? latestBeforeDate.closing : 0
-                    };
-                }
-            }));
-            
+            // New logic: Call the read-only report function
+            const report = await getInventoryReportForDate(date);
             return res.json({ date, report });
         }
 
-        // --- MODIFIED PAGINATION LOGIC ---
-        // Create the initial match filter
+        // --- Existing PAGINATION LOGIC (NO CHANGE) ---
         let matchFilter = {};
         if (item) matchFilter.item = new RegExp(item, 'i');
-        // We will apply the low filter after the aggregation to work on the final closing stock
-
-        // Aggregation pipeline to group and paginate
+        
         const pipeline = [
-            // 1. Match documents based on user search criteria
             { $match: matchFilter },
-            // 2. Sort to get the latest record first for each item
             { $sort: { date: -1 } },
-            // 3. Group by item to get the latest unique record for each item
             {
                 $group: {
                     _id: '$item',
                     latestRecord: { $first: '$$ROOT' }
                 }
             },
-            // 4. Project the fields from the latest record
             {
                 $replaceRoot: { newRoot: '$latestRecord' }
             }
         ];
 
-        // If the 'low' filter is present, add it as a final stage
         if (low) {
             pipeline.push({
                 $match: { closing: { $lt: lowNum } }
             });
         }
 
-        // Calculate total number of unique documents before pagination
         const totalDocs = await Inventory.aggregate([
             ...pipeline,
             { $count: 'total' }
@@ -433,13 +452,11 @@ app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson',
         const pages = Math.ceil(total / limitNum);
         const skip = (pageNum - 1) * limitNum;
 
-        // Add pagination stages to the pipeline
         pipeline.push(
             { $skip: skip },
             { $limit: limitNum }
         );
 
-        // Execute the final pipeline
         const docs = await Inventory.aggregate(pipeline);
 
         res.json({
