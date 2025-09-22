@@ -401,6 +401,7 @@ app.put('/inventory/:id', auth, authorize(['Nachwera Richard', 'Nelson', 'Floren
     }
 });
 // --- INVENTORY ENDPOINTS (Corrected) ---
+
 app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson', 'Joshua','Mercy', 'Martha']), async (req, res) => {
     try {
         const { item, low, date, page = 1, limit = 50 } = req.query;
@@ -437,6 +438,9 @@ app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson',
             }
         ];
 
+        // This low-stock filter must happen *after* we get the latest record
+        // to ensure the closing value is available for filtering.
+        // We will then modify the closing value after this aggregation.
         if (low) {
             pipeline.push({
                 $match: { closing: { $lt: lowNum } }
@@ -459,6 +463,17 @@ app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson',
 
         const docs = await Inventory.aggregate(pipeline);
 
+        // --- NEW LOGIC: Hide closing stock for the current date ---
+        const today = new Date().toISOString().slice(0, 10);
+        
+        docs.forEach(doc => {
+            // Check if the document's date is today's date
+            if (doc.date === today) {
+                // If it is, set the closing stock to null so the frontend knows not to display it.
+                doc.closing = null;
+            }
+        });
+
         res.json({
             data: docs,
             total,
@@ -470,8 +485,6 @@ app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson',
         res.status(500).json({ error: err.message });
     }
 });
-
-
 
 app.delete('/inventory/:id', auth, authorize(['Nachwera Richard', 'Nelson', 'Florence']), async (req, res) => {
   try {
