@@ -338,7 +338,8 @@ app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson',
         }
 
         if (date) {
-            // Your existing daily report logic, which is already correct and prevents duplicates
+            // --- MODIFIED DAILY REPORT LOGIC ---
+            // This new logic will return all items, populating non-active ones from the last known record.
             const { utcStart, utcEnd, error } = getStartAndEndOfDayInUTC(date);
             if (error) {
                 return res.status(400).json({ error });
@@ -358,6 +359,7 @@ app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson',
                 const record = recordsMap.get(singleItem);
 
                 if (record) {
+                    // Item had activity on this day, use its record
                     return {
                         _id: record._id,
                         item: singleItem,
@@ -368,6 +370,7 @@ app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson',
                         closing: record.closing
                     };
                 } else {
+                    // Item had no activity. Find its most recent closing stock before this date.
                     const latestBeforeDate = await Inventory.findOne({
                         item: singleItem,
                         date: { $lt: utcStart }
@@ -450,6 +453,10 @@ app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson',
         res.status(500).json({ error: err.message });
     }
 });
+
+
+
+
 
 app.delete('/inventory/:id', auth, authorize(['Nachwera Richard', 'Nelson', 'Florence']), async (req, res) => {
   try {
