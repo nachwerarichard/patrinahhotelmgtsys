@@ -148,84 +148,6 @@ function authorize(roles = []) {
   };
 }
 
-
-
-// --- INVENTORY HELPERS (CORRECTED) ---
-
-// Renamed to be more descriptive. This function finds or creates today's record.
-async function findOrCreateTodayInventory(itemName, initialOpening = 0) {
-  initialOpening = Math.max(0, initialOpening);
-  
-  const { utcStart, utcEnd } = getStartAndEndOfDayInUTC(new Date().toISOString().slice(0, 10));
-  
-  // Find today's record
-  let record = await Inventory.findOne({ item: itemName, date: { $gte: utcStart, $lt: utcEnd } });
-
-  if (!record) {
-    // If no record exists, get yesterday's closing
-    const latest = await Inventory.findOne({ item: itemName, date: { $lt: utcStart } }).sort({ date: -1 });
-    const opening = latest ? latest.closing : initialOpening;
-    
-    // Create the new record for today
-    record = await Inventory.create({
-      item: itemName,
-      opening,
-      purchases: 0,
-      sales: 0,
-      spoilage: 0,
-      closing: opening,
-      date: new Date()
-    });
-  }
-
-  return record;
-}
-
-// NEW: Read-only helper for generating daily reports without creating new documents.
-async function getInventoryReportForDate(dateString) {
-  const { utcStart, error } = getStartAndEndOfDayInUTC(dateString);
-  if (error) {
-    throw new Error(error);
-  }
-
-  const allItems = [...new Set(await Inventory.distinct('item'))];
-  const report = await Promise.all(allItems.map(async (singleItem) => {
-    // Find the record for the specific date
-    const recordOnDate = await Inventory.findOne({
-      item: singleItem,
-      date: { $gte: utcStart, $lt: new Date(utcStart.getTime() + 24 * 60 * 60 * 1000) }
-    });
-
-    if (recordOnDate) {
-      // Use the actual record if it exists
-      return recordOnDate;
-    } else {
-      // Find the last known record before the report date
-      const latestBeforeDate = await Inventory.findOne({
-        item: singleItem,
-        date: { $lt: utcStart }
-      }).sort({ date: -1 });
-
-      // Return a "virtual" record for the report
-      return {
-        _id: latestBeforeDate ? latestBeforeDate._id : null,
-        item: singleItem,
-        opening: latestBeforeDate ? latestBeforeDate.closing : 0,
-        purchases: 0,
-        sales: 0,
-        spoilage: 0,
-        closing: latestBeforeDate ? latestBeforeDate.closing : 0,
-        date: new Date(dateString) // Use the requested date
-      };
-    }
-  }));
-
-  return report;
-}
-
-
-
-
 // --- Date Helper Function (Corrected) ---
 // This function calculates the correct start and end of a day in UTC
 // for a given EAT date string ('YYYY-MM-DD').
@@ -400,12 +322,13 @@ app.put('/inventory/:id', auth, authorize(['Nachwera Richard', 'Nelson', 'Floren
         res.status(500).json({ error: err.message });
     }
 });
-// --- INVENTORY ENDPOINTS (Corrected) ---
 
 app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson', 'Joshua','Mercy', 'Martha']), async (req, res) => {
     try {
         const { item, low, date, page = 1, limit = 50 } = req.query;
-
+        let filter = {};
+        
+        // Validate numeric parameters
         const pageNum = parseInt(page);
         const limitNum = parseInt(limit);
         const lowNum = low !== undefined ? parseInt(low) : undefined;
@@ -415,76 +338,80 @@ app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson',
         }
 
         if (date) {
-            // New logic: Call the read-only report function
-            const report = await getInventoryReportForDate(date);
+            const { utcStart, utcEnd, error } = getStartAndEndOfDayInUTC(date);
+            if (error) {
+                return res.status(400).json({ error });
+            }
+
+            const allItems = await Inventory.distinct('item');
+            const dailyRecords = await Inventory.find({
+                date: { $gte: utcStart, $lt: utcEnd }
+            });
+
+            const recordsMap = new Map();
+            dailyRecords.forEach(record => {
+                recordsMap.set(record.item, record);
+            });
+
+            const report = await Promise.all(allItems.map(async (singleItem) => {
+                const record = recordsMap.get(singleItem);
+
+                if (record) {
+                    // Item had activity on this day, use its record
+                    return {
+                        _id: record._id, // Add the _id field here
+                        item: singleItem,
+                        opening: record.opening,
+                        purchases: record.purchases,
+                        sales: record.sales,
+                        spoilage: record.spoilage,
+                        closing: record.closing
+                    };
+                } else {
+                    // Item had no activity. Find its most recent closing stock before this date.
+                    const latestBeforeDate = await Inventory.findOne({
+                        item: singleItem,
+                        date: { $lt: utcStart }
+                    }).sort({ date: -1 });
+
+                    return {
+                        // The id for this item comes from the latest record
+                        _id: latestBeforeDate ? latestBeforeDate._id : null,
+                        item: singleItem,
+                        opening: latestBeforeDate ? latestBeforeDate.closing : 0,
+                        purchases: 0,
+                        sales: 0,
+                        spoilage: 0,
+                        closing: latestBeforeDate ? latestBeforeDate.closing : 0
+                    };
+                }
+            }));
+            
             return res.json({ date, report });
         }
 
-        // --- Existing PAGINATION LOGIC (NO CHANGE) ---
-        let matchFilter = {};
-        if (item) matchFilter.item = new RegExp(item, 'i');
+        // --- Original `/inventory` logic continues below if no date is provided ---
+        if (item) filter.item = new RegExp(item, 'i');
+        if (low) filter.closing = { $lt: lowNum };
         
-        const pipeline = [
-            { $match: matchFilter },
-            { $sort: { date: -1 } },
-            {
-                $group: {
-                    _id: '$item',
-                    latestRecord: { $first: '$$ROOT' }
-                }
-            },
-            {
-                $replaceRoot: { newRoot: '$latestRecord' }
-            }
-        ];
-
-        // This low-stock filter must happen *after* we get the latest record
-        // to ensure the closing value is available for filtering.
-        // We will then modify the closing value after this aggregation.
-        if (low) {
-            pipeline.push({
-                $match: { closing: { $lt: lowNum } }
-            });
-        }
-
-        const totalDocs = await Inventory.aggregate([
-            ...pipeline,
-            { $count: 'total' }
-        ]);
-
-        const total = totalDocs.length > 0 ? totalDocs[0].total : 0;
-        const pages = Math.ceil(total / limitNum);
         const skip = (pageNum - 1) * limitNum;
-
-        pipeline.push(
-            { $skip: skip },
-            { $limit: limitNum }
-        );
-
-        const docs = await Inventory.aggregate(pipeline);
-
-        // --- NEW LOGIC: Hide closing stock for the current date ---
-        const today = new Date().toISOString().slice(0, 10);
-        
-        docs.forEach(doc => {
-            // Check if the document's date is today's date
-            if (doc.date === today) {
-                // If it is, set the closing stock to null so the frontend knows not to display it.
-                doc.closing = null;
-            }
-        });
+        const [total, docs] = await Promise.all([
+            Inventory.countDocuments(filter),
+            Inventory.find(filter).skip(skip).limit(limitNum).sort({ item: 1 })
+        ]);
 
         res.json({
             data: docs,
             total,
             page: pageNum,
-            pages
+            pages: Math.ceil(total / limitNum)
         });
 
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
+
 
 app.delete('/inventory/:id', auth, authorize(['Nachwera Richard', 'Nelson', 'Florence']), async (req, res) => {
   try {
