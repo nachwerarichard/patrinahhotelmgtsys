@@ -20,8 +20,6 @@ app.use(cors({
 const HARDCODED_USERS = {
   'Nachwera Richard': { password: '123', role: 'Nachwera Richard' },
   'Nelson': { password: '123', role: 'Nelson' },
-  'Florence': { password: '123', role: 'Florence' },
-  'Martha': { password: '456', role: 'Martha' },
   'Mercy': { password: '456', role: 'Mercy' },
   'Joshua': { password: '456', role: 'Joshua' }
 };
