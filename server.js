@@ -213,11 +213,20 @@ app.post('/login', async (req, res) => {
     return res.status(401).json({ error: 'Invalid username or password' });
   }
 
+  // --- FIX APPLIED HERE ---
+  // 1. Generate the Base64-encoded token (username:password)
+  const authToken = Buffer.from(`${username}:${password}`).toString('base64');
+
   console.log(`Login successful for username: ${username}, role: ${user.role}`);
   await logAction('Login Successful', username);
-  res.status(200).json({ username: user.username, role: user.role });
+  
+  // 2. Send the generated authToken back to the client
+  res.status(200).json({ 
+    token: authToken, // <--- NEW: The token the client must store
+    username: user.username, 
+    role: user.role 
+  });
 });
-
 app.post('/logout', auth, async (req, res) => {
   await logAction('Logout', req.user.username);
   res.status(200).json({ message: 'Logged out successfully' });
