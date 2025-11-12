@@ -526,16 +526,24 @@ app.get('/sales', auth, authorize(['Nachwera Richard', 'Martha','Mercy', 'Joshua
 });
 
 app.put('/sales/:id', auth, authorize(['Nachwera Richard', 'Nelson', 'Florence']), async (req, res) => {
-  try {
-    const updated = await Sale.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    if (!updated) return res.status(404).json({ error: 'Sale not found' });
-    await logAction('Sale Updated', req.user.username, { saleId: updated._id, item: updated.item, newNumber: updated.number });
-    res.json(updated);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+  try {
+    // REPLACE THE ORIGINAL LINE HERE:
+    const updated = await Sale.findByIdAndUpdate(
+        req.params.id, 
+        req.body, 
+        { 
+            new: true, 
+            runValidators: true // <--- ADDED THIS OPTION
+        }
+    );
 
+    if (!updated) return res.status(404).json({ error: 'Sale not found' });
+    await logAction('Sale Updated', req.user.username, { saleId: updated._id, item: updated.item, newNumber: updated.number });
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 app.delete('/sales/:id', auth, authorize(['Nachwera Richard', 'Nelson', 'Florence']), async (req, res) => {
   try {
     const deleted = await Sale.findByIdAndDelete(req.params.id);
