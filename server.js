@@ -332,7 +332,7 @@ app.put('/inventory/:id', auth, authorize(['Nachwera Richard', 'Nelson', 'Floren
 
 app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson', 'Joshua','Mercy', 'Martha']), async (req, res) => {
     try {
-        const { item, low, date, page = 1, limit = 50 } = req.query;
+        const { item, low, date, page = 1, limit = 10 } = req.query;
         let filter = {};
         
         // Validate numeric parameters
