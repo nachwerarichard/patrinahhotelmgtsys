@@ -737,16 +737,61 @@ function getReportStartDate(daysAgo) {
     return start;
 }
 
-app.get('/reports/financial-summary', auth, authorize(['Nachwera Richard', 'Nelson', 'Florence', 'Mercy', 'Joshua']), async (req, res) => {
+pp.get('/reports/financial-summary', auth, authorize(['Nachwera Richard', 'Nelson', 'Florence', 'Mercy', 'Joshua']), async (req, res) => {
     try {
-        const periodDays = parseInt(req.query.days) || 7; // Default to last 7 days
-        const startDate = getReportStartDate(periodDays);
+        let startDate, endDate;
+        // Get today's EAT date string (e.g., '2024-11-29')
+        const todayEATString = new Date().toISOString().slice(0, 10);
+        let periodDescription = "Last 7 Days";
+
+        if (req.query.start && req.query.end) {
+            // --- Custom Range Logic (YYYY-MM-DD to YYYY-MM-DD inclusive) ---
+            const startResult = getStartAndEndOfDayInUTC(req.query.start);
+            const endResult = getStartAndEndOfDayInUTC(req.query.end);
+
+            if (startResult.error || endResult.error) {
+                return res.status(400).json({ error: startResult.error || endResult.error });
+            }
+
+            // Start of the start day (UTC boundary)
+            startDate = startResult.utcStart; 
+            // End of the end day (UTC boundary - exclusive for the query: $lt)
+            endDate = endResult.utcEnd; 
+            
+            periodDescription = `${req.query.start} to ${req.query.end}`;
+
+        } else {
+            // --- Default (Last N Days) Logic ---
+            const periodDays = parseInt(req.query.days) || 7;
+
+            // Calculate the exclusive end date (end of today in EAT, converted to UTC)
+            const { utcEnd: todayUtcEnd } = getStartAndEndOfDayInUTC(todayEATString);
+            endDate = todayUtcEnd;
+
+            // Calculate the inclusive start date (EAT) for the default period (N-1 days ago)
+            const startEAT = new Date();
+            startEAT.setDate(startEAT.getDate() - periodDays + 1); 
+            const startEATString = startEAT.toISOString().slice(0, 10);
+            
+            // Convert the calculated EAT start date to its UTC boundary
+            const { utcStart: startUtcStart } = getStartAndEndOfDayInUTC(startEATString);
+            
+            startDate = startUtcStart;
+            periodDescription = `Last ${periodDays} Days`;
+        }
+        
+        // Final check to ensure the range is valid
+        if (startDate >= endDate) {
+            return res.status(400).json({ error: "Start date must be before end date." });
+        }
+
 
         // 1. Aggregate Sales Data
         const salesData = await Sale.aggregate([
-            { $match: { date: { $gte: startDate } } },
+            // Filter using the calculated UTC range ($gte inclusive, $lt exclusive)
+            { $match: { date: { $gte: startDate, $lt: endDate } } }, 
             { $group: {
-                _id: { $dateToString: { format: "%Y-%m-%d", date: "$date", timezone: "+03" } }, // Group by EAT date
+                _id: { $dateToString: { format: "%Y-%m-%d", date: "$date", timezone: "+03" } }, // Group by EAT date for display
                 totalRevenue: { $sum: { $multiply: ["$number", "$sp"] } },
                 totalProfit: { $sum: "$profit" },
                 totalItemsSold: { $sum: "$number" }
@@ -756,9 +801,10 @@ app.get('/reports/financial-summary', auth, authorize(['Nachwera Richard', 'Nels
 
         // 2. Aggregate Expense Data
         const expenseData = await Expense.aggregate([
-            { $match: { date: { $gte: startDate } } },
+            // Filter using the calculated UTC range ($gte inclusive, $lt exclusive)
+            { $match: { date: { $gte: startDate, $lt: endDate } } }, 
             { $group: {
-                _id: { $dateToString: { format: "%Y-%m-%d", date: "$date", timezone: "+03" } }, // Group by EAT date
+                _id: { $dateToString: { format: "%Y-%m-%d", date: "$date", timezone: "+03" } }, // Group by EAT date for display
                 totalExpenses: { $sum: "$amount" }
             }},
             { $sort: { _id: 1 } }
@@ -780,16 +826,24 @@ app.get('/reports/financial-summary', auth, authorize(['Nachwera Richard', 'Nels
             if (dailySummary[day._id]) {
                 dailySummary[day._id].totalExpenses = day.totalExpenses;
             } else {
-                dailySummary[day._id] = { _id: day._id, totalRevenue: 0, totalProfit: 0, totalItemsSold: 0, totalExpenses: day.totalExpenses };
+                // If a day only has expenses and no sales
+                dailySummary[day._id] = { 
+                    _id: day._id, 
+                    totalRevenue: 0, 
+                    totalProfit: 0, 
+                    totalItemsSold: 0, 
+                    totalExpenses: day.totalExpenses 
+                };
             }
             totalExpenses += day.totalExpenses;
         });
 
+        // Convert summary object to an array and sort by date for charting
         const chartData = Object.values(dailySummary).sort((a, b) => a._id.localeCompare(b._id));
         const netProfit = totalProfit - totalExpenses;
 
         res.json({
-            periodDays,
+            periodDescription,
             totalRevenue: parseFloat(totalRevenue.toFixed(2)),
             totalProfit: parseFloat(totalProfit.toFixed(2)),
             totalExpenses: parseFloat(totalExpenses.toFixed(2)),
@@ -802,7 +856,6 @@ app.get('/reports/financial-summary', auth, authorize(['Nachwera Richard', 'Nels
         res.status(500).json({ error: 'Failed to fetch financial summary: ' + err.message });
     }
 });
-
 
 app.get('/reports/low-stock-items', auth, authorize(['Nachwera Richard', 'Nelson', 'Florence', 'Mercy', 'Joshua']), async (req, res) => {
     try {
