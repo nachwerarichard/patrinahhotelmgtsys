@@ -737,7 +737,7 @@ function getReportStartDate(daysAgo) {
     return start;
 }
 
-pp.get('/reports/financial-summary', auth, authorize(['Nachwera Richard', 'Nelson', 'Florence', 'Mercy', 'Joshua']), async (req, res) => {
+app.get('/reports/financial-summary', auth, authorize(['Nachwera Richard', 'Nelson', 'Florence', 'Mercy', 'Joshua']), async (req, res) => {
     try {
         let startDate, endDate;
         // Get today's EAT date string (e.g., '2024-11-29')
