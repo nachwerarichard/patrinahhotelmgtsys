@@ -330,7 +330,7 @@ app.put('/inventory/:id', auth, authorize(['Nachwera Richard', 'Nelson', 'Floren
     }
 });
 
-app.get('/inventory', auth, authorize(['Nachwera Richard', 'Florence', 'Nelson', 'Joshua','Mercy', 'Martha']), async (req, res) => {
+app.get('/inventory',  async (req, res) => {
     try {
         const { item, low, date, page = 1, limit = 10 } = req.query;
         let filter = {};
@@ -491,7 +491,7 @@ app.post('/sales', auth, authorize(['Nachwera Richard', 'Martha','Mercy', 'Joshu
 
 
 
-app.get('/sales', auth, authorize(['Nachwera Richard', 'Martha','Mercy', 'Joshua', 'Nelson', 'Florence']), async (req, res) => {
+app.get('/sales',  async (req, res) => {
   try {
     const { date, page = 1, limit = 5 } = req.query;
 
@@ -574,7 +574,7 @@ app.post('/expenses', auth, authorize(['Nachwera Richard', 'Martha','Mercy', 'Jo
   }
 });
 
-app.get('/expenses', auth, authorize(['Nachwera Richard', 'Martha','Mercy', 'Joshua', 'Nelson', 'Florence']), async (req, res) => {
+app.get('/expenses',  async (req, res) => {
   try {
     const { date, page = 1, limit = 5 } = req.query;
     
