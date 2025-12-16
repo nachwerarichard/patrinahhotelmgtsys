@@ -9,9 +9,12 @@ app.use(express.json());
 
 // CORS config - allow your frontend origin
 app.use(cors({
-  origin: 'https://stirring-pony-fe2347.netlify.app',
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  origin: [
+    'https://stirring-pony-fe2347.netlify.app',
+    'https://elegant-pasca-cea136.netlify.app' // Added the new link here
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
 // --- !!! WARNING: SERIOUS SECURITY VULNERABILITY !!! ---
