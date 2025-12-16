@@ -203,12 +203,7 @@ async function getTodayInventory(itemName, initialOpening = 0) {
 
 // --- 1. Hardcoded User Data (Kept as provided) ---
 
-const HARDCODED_USERS = {
-    'Nachwera Richard': { username: 'Nachwera Richard', password: '123', role: 'System A - High-Level Access' },
-    'Nelson': { username: 'Nelson', password: '123', role: 'System A - High-Level Access' },
-    'Mercy': { username: 'Mercy', password: '456', role: 'System A - Mid-Level Access' },
-    'Joshua': { username: 'Joshua', password: '456', role: 'System A - Mid-Level Access' }
-};
+
 
 const users = [
     { username: 'user', password: 'password', role: 'System B - Admin' },
