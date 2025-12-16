@@ -201,7 +201,114 @@ async function getTodayInventory(itemName, initialOpening = 0) {
   return record;
 }
 
+// --- 1. Hardcoded User Data (Kept as provided) ---
 
+const HARDCODED_USERS = {
+    'Nachwera Richard': { username: 'Nachwera Richard', password: '123', role: 'System A - High-Level Access' },
+    'Nelson': { username: 'Nelson', password: '123', role: 'System A - High-Level Access' },
+    'Mercy': { username: 'Mercy', password: '456', role: 'System A - Mid-Level Access' },
+    'Joshua': { username: 'Joshua', password: '456', role: 'System A - Mid-Level Access' }
+};
+
+const users = [
+    { username: 'user', password: 'password', role: 'System B - Admin' },
+    { username: 'bar', password: '789', role: 'System B - Bar Staff' },
+    { username: 'hk', password: 'hkpass', role: 'System B - Housekeeper' }
+];
+
+// --- 2. Mock logAction Function (Needed to prevent errors) ---
+// Replace this with your actual implementation if it logs to a database/file.
+async function logAction(action, user, details = {}) {
+    // console.log(`[AUDIT LOG] Action: ${action}, User: ${user}, Details:`, details);
+    return Promise.resolve();
+}
+
+// --- 3. THE MODIFIED /login ROUTE ---
+
+// Assuming 'app' is your Express instance
+// app.post('/login', ...)
+app.post('/login', async (req, res) => {
+    const { username, password } = req.body;
+
+    // 1. Perform Authentication Checks on Both Systems
+    
+    // Check System A (HARDCODED_USERS)
+    const userA = HARDCODED_USERS[username];
+    const authA = userA && userA.password === password;
+    
+    // Check System B (users array)
+    const userB = users.find(u => u.username === username && u.password === password);
+    const authB = !!userB;
+
+    // Generate a consistent token for the user if they are authenticated in either system
+    let authToken = null;
+    if (authA || authB) {
+        authToken = Buffer.from(`${username}:${password}`).toString('base64');
+    }
+    
+    // --- SCENARIO 1: DUAL ACCESS ---
+    if (authA && authB) {
+        console.log(`Login successful, user in BOTH systems: ${username}`);
+        await logAction('Login Successful (Dual Access)', username);
+
+        // This response structure is crucial for the frontend selection logic
+        return res.status(200).json({
+            token: authToken,
+            username: username,
+            dualAccess: true, // Key flag for the frontend
+            
+            systemA: { 
+                role: userA.role, 
+                label: 'System A: Nachwera/Nelson Group Access' 
+            }, 
+            systemB: { 
+                role: userB.role, 
+                label: 'System B: Admin/Bar/HK Access' 
+            }
+        });
+        
+    } 
+    
+    // --- SCENARIO 2: SINGLE ACCESS (System A Only) ---
+    else if (authA) {
+        console.log(`Login successful (System A) for username: ${username}, role: ${userA.role}`);
+        await logAction('Login Successful (System A)', username);
+        
+        return res.status(200).json({
+            token: authToken,
+            username: userA.username,
+            role: userA.role,
+            system: 'System A',
+            dualAccess: false
+        });
+        
+    } 
+    
+    // --- SCENARIO 3: SINGLE ACCESS (System B Only) ---
+    else if (authB) {
+        // System B doesn't explicitly store 'username' inside the user object 
+        // in your array, so we use the input `username`
+        console.log(`Login successful (System B) for username: ${username}, role: ${userB.role}`);
+        await logAction('Login Successful (System B)', username);
+
+        return res.status(200).json({
+            token: authToken,
+            username: userB.username,
+            role: userB.role,
+            system: 'System B',
+            dualAccess: false
+        });
+        
+    } 
+    
+    // --- SCENARIO 4: LOGIN FAILED ---
+    else {
+        console.warn(`Login failed for username: ${username}. Invalid credentials.`);
+        await logAction('Login Attempt Failed', username, { reason: 'Invalid credentials provided.' });
+        
+        return res.status(401).json({ error: 'Invalid username or password' });
+    }
+});
 // --- ROUTES ---
 app.post('/login', async (req, res) => {
   const { username, password } = req.body;
