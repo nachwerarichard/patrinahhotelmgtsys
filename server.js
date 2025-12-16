@@ -339,7 +339,7 @@ app.post('/logout', auth, async (req, res) => {
 
 // --- Inventory Endpoints (Corrected) ---
 
-app.post('/inventory', auth, authorize(['Nachwera Richard', 'Nelson', 'Florence', 'Martha','Mercy', 'Joshua']), async (req, res) => {
+app.post('/inventory', auth,  async (req, res) => {
   try {
     const { item, opening, purchases = 0, sales = 0, spoilage = 0 } = req.body;
     
@@ -382,7 +382,7 @@ app.post('/inventory', auth, authorize(['Nachwera Richard', 'Nelson', 'Florence'
  * This version of the route has the date check removed, allowing for
  * the modification of past inventory records.
  */
-app.put('/inventory/:id', auth, authorize(['Nachwera Richard', 'Nelson', 'Florence']), async (req, res) => {
+app.put('/inventory/:id', auth, async (req, res) => {
     try {
         const record = await Inventory.findById(req.params.id);
         if (!record) {
