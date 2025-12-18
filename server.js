@@ -21,8 +21,8 @@ app.use(cors({
 // Hardcoding users for demonstration purposes only.
 // DO NOT USE THIS IN PRODUCTION OR FOR ANY REAL APPLICATION.
 const HARDCODED_USERS = {
-  'Nachwera Richard': { password: '123', role: 'admin' },
-  'Nelson': { password: '123', role: 'admin' },
+  'Nachwera Richard': { password: '123', role: 'Nachwera Richard' },
+  'Nelson': { password: '123', role: 'Nelson' },
   'Mercy': { password: '456', role: 'Mercy' },
   'Joshua': { password: '456', role: 'Joshua' }
 };
