@@ -170,27 +170,35 @@ async function notifyLowStock(item, current) {
 
 // --- Middleware ---
 async function auth(req, res, next) {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) return res.status(401).json({ error: 'No authorization header' });
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return res.status(401).json({ error: 'No authorization header' });
 
-  const token = authHeader.split(' ')[1];
-  if (!token) return res.status(401).json({ error: 'Malformed authorization header' });
+    const token = authHeader.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'Malformed authorization header' });
 
-  try {
-    const credentials = Buffer.from(token, 'base64').toString('ascii');
-    const [username, password] = credentials.split(':');
-    const user = HARDCODED_USERS[username];
+    try {
+        // Decode the Base64 token (username:password)
+        const credentials = Buffer.from(token, 'base64').toString('ascii');
+        const [username, password] = credentials.split(':');
 
-    if (!user || user.password !== password) {
-      return res.status(401).json({ error: 'Invalid username or password' });
-    }
+        // --- LOOKUP IN DATABASE INSTEAD OF HARDCODED_USERS ---
+        const user = await User.findOne({ username: username });
 
-    req.user = { username: username, role: user.role, id: username };
-    next();
-  } catch (err) {
-    console.error('Authentication error:', err);
-    res.status(500).json({ error: 'Authentication failed' });
-  }
+        if (!user || user.password !== password) {
+            return res.status(401).json({ error: 'Invalid username or password' });
+        }
+
+        // Attach the real database user info to the request
+        req.user = { 
+            username: user.username, 
+            role: user.role, 
+            id: user._id 
+        };
+        next();
+    } catch (err) {
+        console.error('Authentication error:', err);
+        res.status(500).json({ error: 'Authentication failed' });
+    }
 }
 
 function authorize(roles = []) {
@@ -279,29 +287,41 @@ async function logAction(action, user, details = {}) {
 
 // --- ROUTES ---
 app.post('/login', async (req, res) => {
-  const { username, password } = req.body;
-  const user = HARDCODED_USERS[username];
+    const { username, password } = req.body;
 
-  if (!user || user.password !== password) {
-    console.warn(`Login failed for username: ${username}. Invalid credentials.`);
-    await logAction('Login Attempt Failed', username, { reason: 'Invalid credentials provided.' });
-    return res.status(401).json({ error: 'Invalid username or password' });
-  }
+    try {
+        // --- LOOKUP IN DATABASE INSTEAD OF HARDCODED_USERS ---
+        const user = await User.findOne({ username });
 
-  // --- FIX APPLIED HERE ---
-  // 1. Generate the Base64-encoded token (username:password)
-  const authToken = Buffer.from(`${username}:${password}`).toString('base64');
+        if (!user || user.password !== password) {
+            console.warn(`Login failed for username: ${username}. Invalid credentials.`);
+            if (typeof logAction === 'function') {
+                await logAction('Login Attempt Failed', username, { reason: 'Invalid credentials provided.' });
+            }
+            return res.status(401).json({ error: 'Invalid username or password' });
+        }
 
-  console.log(`Login successful for username: ${username}, role: ${user.role}`);
-  await logAction('Login Successful', username);
-  
-  // 2. Send the generated authToken back to the client
-  res.status(200).json({ 
-    token: authToken, // <--- NEW: The token the client must store
-    username: user.username, 
-    role: user.role 
-  });
+        // Generate the Base64-encoded token (username:password)
+        const authToken = Buffer.from(`${username}:${password}`).toString('base64');
+
+        console.log(`Login successful for username: ${username}, role: ${user.role}`);
+        
+        if (typeof logAction === 'function') {
+            await logAction('Login Successful', username);
+        }
+
+        // Send the generated authToken back to the client
+        res.status(200).json({ 
+            token: authToken, 
+            username: user.username, 
+            role: user.role 
+        });
+    } catch (err) {
+        console.error("Login Error:", err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
 });
+
 app.post('/logout', auth, async (req, res) => {
   await logAction('Logout', req.user.username);
   res.status(200).json({ message: 'Logged out successfully' });
