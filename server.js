@@ -20,12 +20,69 @@ app.use(cors({
 // --- !!! WARNING: SERIOUS SECURITY VULNERABILITY !!! ---
 // Hardcoding users for demonstration purposes only.
 // DO NOT USE THIS IN PRODUCTION OR FOR ANY REAL APPLICATION.
-const HARDCODED_USERS = {
-  'Nachwera Richard': { password: '123', role: 'Nachwera Richard' },
-  'Nelson': { password: '123', role: 'Nelson' },
-  'Mercy': { password: '456', role: 'Mercy' },
-  'Joshua': { password: '456', role: 'Joshua' }
-};
+// --- DATABASE AUTH MIDDLEWARE ---
+async function auth(req, res, next) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return res.status(401).json({ error: 'No authorization header' });
+
+    const token = authHeader.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'Malformed authorization header' });
+
+    try {
+        // Decode Base64 token (username:password)
+        const credentials = Buffer.from(token, 'base64').toString('ascii');
+        const [username, password] = credentials.split(':');
+
+        // LOOKUP IN MONGODB instead of hardcoded object
+        const user = await User.findOne({ username: username });
+
+        if (!user || user.password !== password) {
+            return res.status(401).json({ error: 'Invalid username or password' });
+        }
+
+        // Attach user info to request
+        req.user = { username: user.username, role: user.role, id: user._id };
+        next();
+    } catch (err) {
+        console.error('Authentication error:', err);
+        res.status(500).json({ error: 'Authentication failed' });
+    }
+}
+
+// --- DATABASE LOGIN ROUTE ---
+app.post('/login', async (req, res) => {
+    const { username, password } = req.body;
+
+    try {
+        // Search MongoDB for the user
+        const user = await User.findOne({ username });
+
+        if (!user || user.password !== password) {
+            console.warn(`Login failed for username: ${username}. Invalid credentials.`);
+            if (typeof logAction === 'function') {
+                await logAction('Login Attempt Failed', username, { reason: 'Invalid credentials provided.' });
+            }
+            return res.status(401).json({ error: 'Invalid username or password' });
+        }
+
+        // Generate the Base64-encoded token (username:password)
+        const authToken = Buffer.from(`${username}:${password}`).toString('base64');
+
+        console.log(`Login successful for username: ${username}, role: ${user.role}`);
+        if (typeof logAction === 'function') {
+            await logAction('Login Successful', username);
+        }
+        
+        // Send the token and user details back
+        res.status(200).json({ 
+            token: authToken, 
+            username: user.username, 
+            role: user.role 
+        });
+    } catch (err) {
+        res.status(500).json({ error: 'Internal server error during login' });
+    }
+});
 // --- !!! END OF WARNING !!! ---
 
 
