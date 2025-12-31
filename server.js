@@ -88,11 +88,29 @@ app.post('/login', async (req, res) => {
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log('MongoDB connected');
-  })
-  .catch(err => console.error('MongoDB connection error:', err));
+  .then(async () => {
+    console.log('MongoDB connected');
 
+    try {
+      // Check if the primary admin already exists in the database
+      const adminExists = await User.findOne({ username: 'admin' });
+
+      if (!adminExists) {
+        // Create the first user if the collection is empty
+        await User.create({ 
+          username: 'admin', 
+          password: '123', 
+          role: 'admin' 
+        });
+        console.log('✅ Success: First admin user created (admin/123)');
+      } else {
+        console.log('ℹ️ Admin user already exists. No seeding required.');
+      }
+    } catch (error) {
+      console.error('❌ Error seeding the first user:', error);
+    }
+  })
+  .catch(err => console.error('MongoDB connection error:', err));
 // Schemas
 const AuditLog = mongoose.model('AuditLog', new mongoose.Schema({
   action: { type: String, required: true },
