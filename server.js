@@ -85,6 +85,14 @@ app.post('/login', async (req, res) => {
 });
 // --- !!! END OF WARNING !!! ---
 
+const userSchema = new mongoose.Schema({
+    username: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+    role: { type: String, required: true }
+});
+
+// This line defines "User" so the rest of the code can see it
+const User = mongoose.model('User', userSchema);
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI)
