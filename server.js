@@ -541,7 +541,7 @@ app.get('/inventory',  async (req, res) => {
 });
 
 
-app.delete('/inventory/:id', auth, authorize(['Nachwera Richard', 'Nelson', 'Florence']), async (req, res) => {
+app.delete('/inventory/:id', auth, authorize(), async (req, res) => {
   try {
     const deletedDoc = await Inventory.findByIdAndDelete(req.params.id);
     if (!deletedDoc) {
@@ -555,7 +555,7 @@ app.delete('/inventory/:id', auth, authorize(['Nachwera Richard', 'Nelson', 'Flo
 });
 
 // --- Sales Endpoints (Corrected) ---
-app.post('/sales', auth, authorize(['Nachwera Richard', 'Martha','Mercy', 'Joshua', 'Nelson', 'Florence']), async (req, res) => {
+app.post('/sales', auth, authorize(), async (req, res) => {
   try {
     const { item, number, bp, sp } = req.body;
     
@@ -646,7 +646,7 @@ app.get('/sales',  async (req, res) => {
   }
 });
 
-app.put('/sales/:id', auth, authorize(['Nachwera Richard', 'Nelson', 'Florence']), async (req, res) => {
+app.put('/sales/:id', auth, authorize(), async (req, res) => {
   try {
     // REPLACE THE ORIGINAL LINE HERE:
     const updated = await Sale.findByIdAndUpdate(
@@ -665,7 +665,7 @@ app.put('/sales/:id', auth, authorize(['Nachwera Richard', 'Nelson', 'Florence']
     res.status(500).json({ error: err.message });
   }
 });
-app.delete('/sales/:id', auth, authorize(['Nachwera Richard', 'Nelson', 'Florence']), async (req, res) => {
+app.delete('/sales/:id', auth, authorize(), async (req, res) => {
   try {
     const deleted = await Sale.findByIdAndDelete(req.params.id);
     if (!deleted) return res.status(404).json({ error: 'Sale not found' });
@@ -677,7 +677,7 @@ app.delete('/sales/:id', auth, authorize(['Nachwera Richard', 'Nelson', 'Florenc
 });
 
 // --- Expenses Endpoints ---
-app.post('/expenses', auth, authorize(['Nachwera Richard', 'Martha','Mercy', 'Joshua', 'Nelson', 'Florence']), async (req, res) => {
+app.post('/expenses', auth, authorize(), async (req, res) => {
   try {
     const { description, amount, receiptId, source } = req.body;
     const exp = await Expense.create({
@@ -729,7 +729,7 @@ app.get('/expenses',  async (req, res) => {
   }
 });
 
-app.put('/expenses/:id', auth, authorize(['Nachwera Richard', 'Nelson', 'Florence']), async (req, res) => {
+app.put('/expenses/:id', auth, authorize(), async (req, res) => {
   try {
     const updated = await Expense.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!updated) return res.status(404).json({ error: 'Expense not found' });
@@ -741,7 +741,7 @@ app.put('/expenses/:id', auth, authorize(['Nachwera Richard', 'Nelson', 'Florenc
 });
 
 // --- Cash Management Endpoints ---
-app.post('/cash-journal', auth, authorize(['Nachwera Richard', 'Martha', 'Mercy', 'Nelson', 'Florence']), async (req, res) => {
+app.post('/cash-journal', auth, authorize(), async (req, res) => {
   try {
     const { cashAtHand, cashBanked, bankReceiptId, date } = req.body;
     const newEntry = await CashJournal.create({
@@ -758,7 +758,7 @@ app.post('/cash-journal', auth, authorize(['Nachwera Richard', 'Martha', 'Mercy'
   }
 });
 
-app.get('/cash-journal', auth, authorize(['Nachwera Richard', 'Martha','Mercy', 'Nelson', 'Florence']), async (req, res) => {
+app.get('/cash-journal', auth, authorize(), async (req, res) => {
   try {
     const { date, responsiblePerson } = req.query;
     const filter = {};
@@ -777,7 +777,7 @@ app.get('/cash-journal', auth, authorize(['Nachwera Richard', 'Martha','Mercy', 
   }
 });
 
-app.put('/cash-journal/:id', auth, authorize(['Nachwera Richard', 'Nelson', 'Florence']), async (req, res) => {
+app.put('/cash-journal/:id', auth, authorize(), async (req, res) => {
   try {
     const { cashAtHand, cashBanked, bankReceiptId, date } = req.body;
     const updatedEntry = await CashJournal.findByIdAndUpdate(
@@ -796,7 +796,7 @@ app.put('/cash-journal/:id', auth, authorize(['Nachwera Richard', 'Nelson', 'Flo
 });
 
 // --- Audit Log Endpoints ---
-app.get('/audit-logs', auth, authorize(['Nachwera Richard', 'Nelson', 'Florence']), async (req, res) => {
+app.get('/audit-logs', auth, authorize(), async (req, res) => {
   try {
     const { page = 1, limit = 20, search } = req.query;
     
@@ -858,7 +858,7 @@ function getReportStartDate(daysAgo) {
     return start;
 }
 
-app.get('/reports/financial-summary', auth, authorize(['Nachwera Richard', 'Nelson', 'Florence', 'Mercy', 'Joshua']), async (req, res) => {
+app.get('/reports/financial-summary', auth, authorize(), async (req, res) => {
     try {
         let startDate, endDate;
         // Get today's EAT date string (e.g., '2024-11-29')
@@ -978,7 +978,7 @@ app.get('/reports/financial-summary', auth, authorize(['Nachwera Richard', 'Nels
     }
 });
 
-app.get('/reports/low-stock-items', auth, authorize(['Nachwera Richard', 'Nelson', 'Florence', 'Mercy', 'Joshua']), async (req, res) => {
+app.get('/reports/low-stock-items', auth, authorize(), async (req, res) => {
     try {
         const LOW_STOCK_THRESHOLD = Number(process.env.LOW_STOCK_THRESHOLD) || 10;
         
