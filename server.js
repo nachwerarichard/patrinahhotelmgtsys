@@ -100,26 +100,26 @@ mongoose.connect(process.env.MONGO_URI)
     console.log('MongoDB connected');
 
     try {
-      // Check if the primary admin already exists in the database
-      const adminExists = await User.findOne({ username: 'admin' });
+      // 1. Delete all existing users
+      await User.deleteMany({});
+      console.log('🗑️ All existing users deleted.');
 
-      if (!adminExists) {
-        // Create the first user if the collection is empty
-        await User.create({ 
-          username: 'admin', 
-          password: '123', 
-          role: 'admin' 
-        });
-        console.log('✅ Success: First admin user created (admin/123)');
-      } else {
-        console.log('ℹ️ Admin user already exists. No seeding required.');
-      }
+      // 2. Create the fresh admin user
+      await User.create({ 
+        username: 'admin', 
+        password: '123', // Reminder: Hash this in production!
+        role: 'admin' 
+      });
+      
+      console.log('✅ Success: Database reset and admin user created (admin/123)');
+      
     } catch (error) {
-      console.error('❌ Error seeding the first user:', error);
+      console.error('❌ Error during database seeding:', error);
     }
   })
   .catch(err => console.error('MongoDB connection error:', err));
-// Schemas
+
+
 const AuditLog = mongoose.model('AuditLog', new mongoose.Schema({
   action: { type: String, required: true },
   user: { type: String, required: true },
