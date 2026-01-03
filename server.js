@@ -100,10 +100,7 @@ mongoose.connect(process.env.MONGO_URI)
     console.log('MongoDB connected');
 
     try {
-      // 1. Delete all existing users
-      await User.deleteMany({});
-      console.log('🗑️ All existing users deleted.');
-
+     
       // 2. Create the fresh admin user
       await User.create({ 
         username: 'admin', 
