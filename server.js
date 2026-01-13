@@ -1,12 +1,15 @@
 require('dotenv').config();
 const nodemailer = require('nodemailer');
 
-// MongoDB Connection
+
 const express = require('express');
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
 const cors = require('cors');
+const bcrypt = require('bcryptjs');
+
 const app = express();
+
+// Middleware
 app.use(express.json());
 app.use(cors({
   origin: [
@@ -18,53 +21,100 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 // MongoDB Connection
-mongoose.connect('mongodb+srv://nachwerarichy:parcelsys@hotelbarsys.mjsul7b.mongodb.net/?appName=hotelbarsys');
 
-// User Schema
+// 1. Database Connection
+// Replace the URI below with your actual MongoDB Connection String
+const MONGO_URI = "mongodb+srv://nachwerarichy:parcelsys@hotelbarsys.mjsul7b.mongodb.net/?appName=hotelbarsys";
+
+mongoose.connect(MONGO_URI)
+    .then(() => console.log("✅ Connected to MongoDB"))
+    .catch(err => console.error("❌ DB Connection Error:", err));
+
+// 2. User Schema & Model
 const userSchema = new mongoose.Schema({
     full_name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
-    role: { type: String, enum: ['admin', 'clerk', 'supervisor'], default: 'clerk' },
-    phone: String,
     password: { type: String, required: true },
-    station: { type: String, enum: ['Mbale', 'Kampala'], required: true },
-    created_at: { type: Date, default: Date.now }
+    role: { type: String, enum: ['admin', 'supervisor', 'clerk'], default: 'clerk' },
+    station: { type: String, required: true },
+    createdAt: { type: Date, default: Date.now }
 });
 
 const User = mongoose.model('User', userSchema);
 
-// --- API ROUTES ---
+// 3. ROUTES
 
-// 1. Create User (Register)
-app.post('/api/users', async (req, res) => {
+// --- User Registration (Admin Only) ---
+app.post('/register', async (req, res) => {
     try {
-        const hashedPassword = await bcrypt.hash(req.body.password, 10);
-        const newUser = new User({ ...req.body, password: hashedPassword });
-        await newUser.save();
-        res.status(201).send({ message: "User created" });
-    } catch (err) { res.status(400).send(err.message); }
-});
+        const { full_name, email, password, role, station } = req.body;
 
-// 2. Login
-app.post('/api/login', async (req, res) => {
-    const user = await User.findOne({ email: req.body.email });
-    if (user && await bcrypt.compare(req.body.password, user.password)) {
-        res.send({ id: user._id, name: user.full_name, role: user.role, station: user.station });
-    } else {
-        res.status(401).send("Invalid credentials");
+        // Check if user exists
+        const existingUser = await User.findOne({ email });
+        if (existingUser) return res.status(400).json({ message: "Email already registered" });
+
+        // Hash Password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        const newUser = new User({
+            full_name,
+            email,
+            password: hashedPassword,
+            role,
+            station
+        });
+
+        await newUser.save();
+        res.status(201).json({ message: "Staff member registered successfully" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 
-// 3. Get All Users (Read)
-app.get('/api/users', async (req, res) => {
-    const users = await User.find({}, '-password');
-    res.send(users);
+// --- Login Logic ---
+app.post('/login', async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        // Find user
+        const user = await User.findOne({ email });
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        // Verify Password
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
+
+        // Return user data (excluding password)
+        const { password: _, ...userData } = user._doc;
+        res.json(userData);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-// 4. Delete User
-app.delete('/api/users/:id', async (req, res) => {
-    await User.findByIdAndDelete(req.params.id);
-    res.send({ message: "Deleted" });
+// --- Get All Users ---
+app.get('/users', async (req, res) => {
+    try {
+        const users = await User.find().select('-password').sort({ createdAt: -1 });
+        res.json(users);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-app.listen(5000, () => console.log('Server running on port 5000'));
+// --- Delete User ---
+app.delete('/users/:id', async (req, res) => {
+    try {
+        await User.findByIdAndDelete(req.params.id);
+        res.json({ message: "User deleted" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 4. Start Server
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+});
