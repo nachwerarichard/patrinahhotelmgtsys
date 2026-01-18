@@ -42,6 +42,62 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.model('User', userSchema);
 
+// Parcel Schema & Model
+const parcelSchema = new mongoose.Schema({
+    tracking_number: { type: String, unique: true },
+    client_id: Number,
+    receiver_name: String,
+    origin: { type: String, enum: ['Mbale', 'Kampala'] },
+    destination: { type: String, enum: ['Mbale', 'Kampala'] },
+    description: String,
+    quantity: Number,
+    weight: Number,
+    volume: Number,
+    price: Number,
+    status: { 
+        type: String, 
+        enum: ['At Dispatch', 'In Transit', 'Ready for Pickup', 'Delivered'],
+        default: 'At Dispatch'
+    },
+    created_at: { type: Date, default: Date.now }
+});
+
+const Parcel = mongoose.model('Parcel', parcelSchema);
+
+// --- CRUD ENDPOINTS ---
+
+// GET: Fetch all parcels
+app.get('/api/parcels', async (req, res) => {
+    try {
+        const parcels = await Parcel.find().sort({ created_at: -1 });
+        res.json(parcels);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// POST: Create a new parcel
+app.post('/api/parcels', async (req, res) => {
+    try {
+        const trackingNum = "TRK-" + Math.random().toString(36).substr(2, 7).toUpperCase();
+        const parcelData = { ...req.body, tracking_number: trackingNum };
+        const newParcel = new Parcel(parcelData);
+        await newParcel.save();
+        res.status(201).json(newParcel);
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
+// DELETE: Remove a parcel
+app.delete('/api/parcels/:id', async (req, res) => {
+    try {
+        await Parcel.findByIdAndDelete(req.params.id);
+        res.json({ message: "Parcel deleted successfully" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 // 3. ROUTES
 
 // --- User Registration (Admin Only) ---
