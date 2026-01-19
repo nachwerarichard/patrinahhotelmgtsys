@@ -29,6 +29,16 @@ mongoose.connect(MONGO_URI)
     .then(() => console.log("✅ Connected to MongoDB"))
     .catch(err => console.error("❌ DB Connection Error:", err));
 
+
+const senderSchema = new mongoose.Schema({
+    full_name: { type: String, required: true },
+    phone: { type: String, required: true },
+    id_number: { type: String }, // Optional
+    station: { type: String, enum: ['Kampala', 'Mbale'], required: true },
+    created_at: { type: Date, default: Date.now }
+});
+
+module.exports = mongoose.model('Sender', senderSchema);
 // 2. User Schema & Model
 const userSchema = new mongoose.Schema({
     full_name: { type: String, required: true },
@@ -62,6 +72,42 @@ const parcelSchema = new mongoose.Schema({
 });
 
 const Parcel = mongoose.model('Parcel', parcelSchema);
+
+app.post('/api/senders', async (req, res) => {
+    try {
+        const newSender = new Sender({
+            full_name: req.body.full_name,
+            phone: req.body.phone,
+            id_number: req.body.id_number,
+            station: req.body.station
+        });
+
+        await newSender.save();
+        res.status(201).json(newSender);
+    } catch (err) {
+        console.error("Error saving sender:", err);
+        res.status(400).json({ error: err.message });
+    }
+});
+// GET: Fetch all senders
+app.get('/api/senders', async (req, res) => {
+    try {
+        const senders = await Sender.find().sort({ created_at: -1 });
+        res.json(senders);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// DELETE: Remove a sender
+app.delete('/api/senders/:id', async (req, res) => {
+    try {
+        await Sender.findByIdAndDelete(req.params.id);
+        res.json({ message: "Sender deleted successfully" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 app.patch('/api/parcels/:id/status', async (req, res) => {
     try {
         const { status } = req.body;
