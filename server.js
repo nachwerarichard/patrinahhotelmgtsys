@@ -30,16 +30,7 @@ mongoose.connect(MONGO_URI)
     .catch(err => console.error("❌ DB Connection Error:", err));
 
 
-const senderSchema = new mongoose.Schema({
-    full_name: { type: String, required: true },
-    phone: { type: String, required: true },
-    id_number: { type: String }, // Optional
-    station: { type: String, enum: ['Kampala', 'Mbale'], required: true },
-    created_at: { type: Date, default: Date.now }
-});
 
-module.exports = mongoose.model('Sender', senderSchema);
-// 2. User Schema & Model
 const userSchema = new mongoose.Schema({
     full_name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
@@ -72,23 +63,32 @@ const parcelSchema = new mongoose.Schema({
 });
 
 const Parcel = mongoose.model('Parcel', parcelSchema);
+// 1. THE SCHEMA & MODEL
+const senderSchema = new mongoose.Schema({
+    full_name: { type: String, required: true },
+    phone: { type: String, required: true },
+    id_number: { type: String }, 
+    station: { type: String, enum: ['Kampala', 'Mbale'], required: true },
+    created_at: { type: Date, default: Date.now }
+});
 
+// We check if the model exists already to prevent errors during hot-reloading
+const Sender = mongoose.models.Sender || mongoose.model('Sender', senderSchema);
+
+// 2. THE ROUTES
+
+// POST: Create a new sender
 app.post('/api/senders', async (req, res) => {
     try {
-        const newSender = new Sender({
-            full_name: req.body.full_name,
-            phone: req.body.phone,
-            id_number: req.body.id_number,
-            station: req.body.station
-        });
-
+        const { full_name, phone, id_number, station } = req.body;
+        const newSender = new Sender({ full_name, phone, id_number, station });
         await newSender.save();
         res.status(201).json(newSender);
     } catch (err) {
-        console.error("Error saving sender:", err);
         res.status(400).json({ error: err.message });
     }
 });
+
 // GET: Fetch all senders
 app.get('/api/senders', async (req, res) => {
     try {
@@ -103,11 +103,13 @@ app.get('/api/senders', async (req, res) => {
 app.delete('/api/senders/:id', async (req, res) => {
     try {
         await Sender.findByIdAndDelete(req.params.id);
-        res.json({ message: "Sender deleted successfully" });
+        res.json({ message: "Sender deleted" });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
+
+
 app.patch('/api/parcels/:id/status', async (req, res) => {
     try {
         const { status } = req.body;
