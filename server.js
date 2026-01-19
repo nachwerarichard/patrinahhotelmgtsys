@@ -16,7 +16,7 @@ app.use(cors({
     
     'https://hilarious-nasturtium-0d34d9.netlify.app'// Added the new link here
   ],
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], // Added PATCH here
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 // MongoDB Connection
