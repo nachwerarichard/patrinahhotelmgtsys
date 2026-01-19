@@ -63,7 +63,27 @@ const parcelSchema = new mongoose.Schema({
 });
 
 const Parcel = mongoose.model('Parcel', parcelSchema);
+app.patch('/api/parcels/:id/status', async (req, res) => {
+    try {
+        const { status } = req.body;
+        // Validate that the status is one of your allowed enum values
+        const allowedStatuses = ['At Dispatch', 'In Transit', 'Ready for Pickup', 'Delivered'];
+        
+        if (!allowedStatuses.includes(status)) {
+            return res.status(400).json({ error: "Invalid status" });
+        }
 
+        const updatedParcel = await Parcel.findByIdAndUpdate(
+            req.params.id, 
+            { status: status }, 
+            { new: true } // returns the updated document
+        );
+
+        res.json(updatedParcel);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 // --- CRUD ENDPOINTS ---
 
 // GET: Fetch all parcels
