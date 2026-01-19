@@ -13,8 +13,7 @@ const app = express();
 app.use(express.json());
 app.use(cors({
   origin: [
-    'https://stirring-pony-fe2347.netlify.app',
-    'https://elegant-pasca-cea136.netlify.app',
+    
     'https://hilarious-nasturtium-0d34d9.netlify.app'// Added the new link here
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
