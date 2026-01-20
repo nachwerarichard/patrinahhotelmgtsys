@@ -45,32 +45,37 @@ const User = mongoose.model('User', userSchema);
 // Parcel Schema & Model
 const parcelSchema = new mongoose.Schema({
     tracking_number: { type: String, unique: true },
-    client_id: { type: String }, // Backend generated (e.g., UUID or custom string)
+    client_id: { type: String }, 
     sender_name: String,
     sender_phone: String,
     receiver_name: String,
+    receiver_phone: String, // Added this to match your frontend
     origin: { type: String, enum: ['Mbale', 'Kampala'] },
     destination: { type: String, enum: ['Mbale', 'Kampala'] },
-    description: String,
-    quantity: Number,
-    weight: Number,
-    volume: Number,
-    price: Number,
     
-    // --- New Payment Fields ---
+    // --- New Array for Multiple Items ---
+    items: [{
+        description: String,
+        quantity: { type: Number, default: 1 },
+        weight: { type: Number, default: 0 },
+        rate: { type: Number, default: 0 },
+        subtotal: { type: Number, default: 0 }
+    }],
+
+    // --- Financial Summary ---
+    total_amount: { type: Number, default: 0 },
+    amount_paid: { type: Number, default: 0 },
+    balance: { type: Number, default: 0 },
     payment_status: { 
         type: String, 
         enum: ['Unpaid', 'Paid', 'Partial'], 
         default: 'Unpaid' 
     },
-      paymentType: { 
+    payment_method: { 
         type: String, 
         enum: ['Cash', 'Mobile Money', 'Bank'], 
-        default: 'Unpaid' 
+        default: 'Cash' 
     },
-    total_amount: { type: Number, default: 0 },
-    amount_paid: { type: Number, default: 0 },
-    // --------------------------
 
     status: { 
         type: String, 
