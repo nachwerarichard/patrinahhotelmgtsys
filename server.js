@@ -45,7 +45,9 @@ const User = mongoose.model('User', userSchema);
 // Parcel Schema & Model
 const parcelSchema = new mongoose.Schema({
     tracking_number: { type: String, unique: true },
-    client_id: Number,
+    client_id: { type: String }, // Backend generated (e.g., UUID or custom string)
+    sender_name: String,
+    sender_phone: String,
     receiver_name: String,
     origin: { type: String, enum: ['Mbale', 'Kampala'] },
     destination: { type: String, enum: ['Mbale', 'Kampala'] },
@@ -54,6 +56,17 @@ const parcelSchema = new mongoose.Schema({
     weight: Number,
     volume: Number,
     price: Number,
+    
+    // --- New Payment Fields ---
+    payment_status: { 
+        type: String, 
+        enum: ['Unpaid', 'Paid', 'Partial'], 
+        default: 'Unpaid' 
+    },
+    total_amount: { type: Number, default: 0 },
+    amount_paid: { type: Number, default: 0 },
+    // --------------------------
+
     status: { 
         type: String, 
         enum: ['At Dispatch', 'In Transit', 'Ready for Pickup', 'Delivered'],
