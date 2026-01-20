@@ -108,6 +108,50 @@ const Receiver = mongoose.models.Receiver || mongoose.model('Receiver', receiver
 });
 
 const Customer = mongoose.models.Customer || mongoose.model('Customer', customerSchema);
+
+// --- GET: Fetch all customers for the table ---
+app.get('/api/customers', async (req, res) => {
+    try {
+        // We sort by name so the table looks organized
+        const customers = await Customer.find().sort({ full_name: 1 });
+        res.json(customers);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- DELETE: Remove a customer by ID ---
+app.delete('/api/customers/:id', async (req, res) => {
+    try {
+        await Customer.findByIdAndDelete(req.params.id);
+        res.json({ message: "Customer deleted successfully" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- PUT: Update customer details ---
+app.put('/api/customers/:id', async (req, res) => {
+    try {
+        const updatedCustomer = await Customer.findByIdAndUpdate(
+            req.params.id, 
+            req.body, 
+            { new: true } // Returns the modified document
+        );
+        res.json(updatedCustomer);
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+// GET: Fetch a single customer by ID
+app.get('/api/customers/:id', async (req, res) => {
+    try {
+        const customer = await Customer.findById(req.params.id);
+        res.json(customer);
+    } catch (err) {
+        res.status(404).json({ error: "Customer not found" });
+    }
+});
 // --- RECEIVER ROUTES ---
 
 // POST: Add new receiver
