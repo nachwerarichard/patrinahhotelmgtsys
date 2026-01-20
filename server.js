@@ -77,27 +77,7 @@ const parcelSchema = new mongoose.Schema({
 
 const Parcel = mongoose.model('Parcel', parcelSchema);
 // 1. THE SCHEMA & MODEL
-const senderSchema = new mongoose.Schema({
-    full_name: { type: String, required: true },
-    phone: { type: String, required: true },
-    id_number: { type: String }, 
-    station: { type: String, enum: ['Kampala', 'Mbale'], required: true },
-    created_at: { type: Date, default: Date.now }
-});
 
-// We check if the model exists already to prevent errors during hot-reloading
-const Sender = mongoose.models.Sender || mongoose.model('Sender', senderSchema);
-
-// --- RECEIVER MODEL ---
-const receiverSchema = new mongoose.Schema({
-    full_name: { type: String, required: true },
-    phone: { type: String, required: true },
-    id_number: { type: String }, 
-    station: { type: String, enum: ['Kampala', 'Mbale'], required: true },
-    created_at: { type: Date, default: Date.now }
-});
-
-const Receiver = mongoose.models.Receiver || mongoose.model('Receiver', receiverSchema);
 
                  const customerSchema = new mongoose.Schema({
     full_name: { type: String, required: true, unique: true },
@@ -164,69 +144,7 @@ app.get('/api/customers/:id', async (req, res) => {
 });
 // --- RECEIVER ROUTES ---
 
-// POST: Add new receiver
-app.post('/api/receivers', async (req, res) => {
-    try {
-        const newReceiver = new Receiver(req.body);
-        await newReceiver.save();
-        res.status(201).json(newReceiver);
-    } catch (err) {
-        res.status(400).json({ error: err.message });
-    }
-});
 
-// GET: Fetch all receivers
-app.get('/api/receivers', async (req, res) => {
-    try {
-        const receivers = await Receiver.find().sort({ created_at: -1 });
-        res.json(receivers);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// DELETE: Remove a receiver
-app.delete('/api/receivers/:id', async (req, res) => {
-    try {
-        await Receiver.findByIdAndDelete(req.params.id);
-        res.json({ message: "Receiver deleted" });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-// 2. THE ROUTES
-
-// POST: Create a new sender
-app.post('/api/senders', async (req, res) => {
-    try {
-        const { full_name, phone, id_number, station } = req.body;
-        const newSender = new Sender({ full_name, phone, id_number, station });
-        await newSender.save();
-        res.status(201).json(newSender);
-    } catch (err) {
-        res.status(400).json({ error: err.message });
-    }
-});
-
-// GET: Fetch all senders
-app.get('/api/senders', async (req, res) => {
-    try {
-        const senders = await Sender.find().sort({ created_at: -1 });
-        res.json(senders);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// DELETE: Remove a sender
-app.delete('/api/senders/:id', async (req, res) => {
-    try {
-        await Sender.findByIdAndDelete(req.params.id);
-        res.json({ message: "Sender deleted" });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
 
 
 app.patch('/api/parcels/:id/status', async (req, res) => {
