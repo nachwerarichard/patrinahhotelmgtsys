@@ -109,10 +109,20 @@ const Receiver = mongoose.models.Receiver || mongoose.model('Receiver', receiver
 
 const Customer = mongoose.models.Customer || mongoose.model('Customer', customerSchema);
 
-// --- GET: Fetch all customers for the table ---
+// Check your server.js for these exact paths
+app.post('/api/customers', async (req, res) => {
+    try {
+        const newCustomer = new Customer(req.body);
+        await newCustomer.save();
+        res.status(201).json(newCustomer);
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
+// Also ensure your GET route is plural
 app.get('/api/customers', async (req, res) => {
     try {
-        // We sort by name so the table looks organized
         const customers = await Customer.find().sort({ full_name: 1 });
         res.json(customers);
     } catch (err) {
