@@ -99,6 +99,61 @@ const Parcel = mongoose.model('Parcel', parcelSchema);
 
 const Customer = mongoose.models.Customer || mongoose.model('Customer', customerSchema);
 
+// 1. ADD ITEM TO EXISTING WAYBILL
+app.post('/api/parcels/:id/add-item', async (req, res) => {
+    try {
+        const parcel = await Parcel.findById(req.params.id);
+        if (!parcel) return res.status(404).json({ error: "Waybill not found" });
+
+        const newItem = req.body; // Expects {description, quantity, rate, subtotal}
+        
+        // Add item to array
+        parcel.items.push(newItem);
+
+        // Recalculate Total and Balance
+        parcel.total_amount += newItem.subtotal;
+        parcel.balance = parcel.total_amount - parcel.amount_paid;
+
+        // Update Payment Status automatically
+        if (parcel.amount_paid <= 0) parcel.payment_status = 'Unpaid';
+        else if (parcel.amount_paid < parcel.total_amount) parcel.payment_status = 'Partial';
+        else parcel.payment_status = 'Paid';
+
+        await parcel.save();
+        res.json(parcel);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 2. ADD PAYMENT TO EXISTING WAYBILL
+app.post('/api/parcels/:id/add-payment', async (req, res) => {
+    try {
+        const parcel = await Parcel.findById(req.params.id);
+        if (!parcel) return res.status(404).json({ error: "Waybill not found" });
+
+        const { amount_paid, payment_method } = req.body;
+
+        // Add new payment to existing total paid
+        parcel.amount_paid += Number(amount_paid);
+        parcel.payment_method = payment_method;
+        
+        // Recalculate Balance
+        parcel.balance = parcel.total_amount - parcel.amount_paid;
+
+        // Update Payment Status
+        if (parcel.amount_paid >= parcel.total_amount) {
+            parcel.payment_status = 'Paid';
+        } else if (parcel.amount_paid > 0) {
+            parcel.payment_status = 'Partial';
+        }
+
+        await parcel.save();
+        res.json(parcel);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 // Check your server.js for these exact paths
 app.post('/api/customers', async (req, res) => {
     try {
