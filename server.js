@@ -101,6 +101,9 @@ const Customer = mongoose.models.Customer || mongoose.model('Customer', customer
 
 // 1. ADD ITEM TO EXISTING WAYBILL
 app.post('/api/parcels/:id/add-item', async (req, res) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+        return res.status(400).json({ error: "Invalid ID format. Please use the Database ID." });
+    }
     try {
         const parcel = await Parcel.findById(req.params.id);
         if (!parcel) return res.status(404).json({ error: "Waybill not found" });
@@ -128,6 +131,9 @@ app.post('/api/parcels/:id/add-item', async (req, res) => {
 
 // 2. ADD PAYMENT TO EXISTING WAYBILL
 app.post('/api/parcels/:id/add-payment', async (req, res) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+        return res.status(400).json({ error: "Invalid ID format. Please use the Database ID." });
+    }
     try {
         const parcel = await Parcel.findById(req.params.id);
         if (!parcel) return res.status(404).json({ error: "Waybill not found" });
