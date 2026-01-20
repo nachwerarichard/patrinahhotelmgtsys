@@ -99,6 +99,15 @@ const receiverSchema = new mongoose.Schema({
 
 const Receiver = mongoose.models.Receiver || mongoose.model('Receiver', receiverSchema);
 
+                 const customerSchema = new mongoose.Schema({
+    full_name: { type: String, required: true, unique: true },
+    phone: { type: String, required: true },
+    id_number: { type: String }, 
+    station: { type: String, enum: ['Kampala', 'Mbale'], required: true },
+    created_at: { type: Date, default: Date.now }
+});
+
+const Customer = mongoose.models.Customer || mongoose.model('Customer', customerSchema);
 // --- RECEIVER ROUTES ---
 
 // POST: Add new receiver
