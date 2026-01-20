@@ -63,6 +63,11 @@ const parcelSchema = new mongoose.Schema({
         enum: ['Unpaid', 'Paid', 'Partial'], 
         default: 'Unpaid' 
     },
+      paymentType: { 
+        type: String, 
+        enum: ['Cash', 'Mobile Money', 'Bank'], 
+        default: 'Unpaid' 
+    },
     total_amount: { type: Number, default: 0 },
     amount_paid: { type: Number, default: 0 },
     // --------------------------
