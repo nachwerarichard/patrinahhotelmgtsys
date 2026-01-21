@@ -382,6 +382,17 @@ app.delete('/users/:id', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+// DEACTIVATE
+app.patch('/users/:id/deactivate', async (req, res) => {
+    await User.findByIdAndUpdate(req.params.id, { isActive: false, status: 'Deactivated' });
+    res.json({ message: "Deactivated" });
+});
+
+// REACTIVATE
+app.patch('/users/:id/reactivate', async (req, res) => {
+    await User.findByIdAndUpdate(req.params.id, { isActive: true, status: 'Active' });
+    res.json({ message: "Reactivated" });
+});
 
 // 4. Start Server
 const PORT = process.env.PORT || 5000;
