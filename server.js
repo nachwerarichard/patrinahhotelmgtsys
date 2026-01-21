@@ -79,7 +79,7 @@ const parcelSchema = new mongoose.Schema({
 
     status: { 
         type: String, 
-        enum: ['At Dispatch', 'In Transit', 'Ready for Pickup', 'Delivered','Partially received],
+        enum: ['At Dispatch', 'In Transit', 'Ready for Pickup', 'Delivered','Partially received'],
         default: 'At Dispatch'
     },
     created_at: { type: Date, default: Date.now }
