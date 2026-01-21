@@ -85,6 +85,7 @@ const parcelSchema = new mongoose.Schema({
         enum: ['At Dispatch', 'In Transit', 'Ready for Pickup', 'Delivered','Partially received'],
         default: 'At Dispatch'
     },
+    recorded_by: { type: String, default: 'System' }, // Add this line
     created_at: { type: Date, default: Date.now }
 });
 
