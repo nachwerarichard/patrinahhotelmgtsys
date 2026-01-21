@@ -57,6 +57,7 @@ const parcelSchema = new mongoose.Schema({
     receiver_phone: String, // Added this to match your frontend
     origin: { type: String, enum: ['Mbale', 'Kampala'] },
     destination: { type: String, enum: ['Mbale', 'Kampala'] },
+  
     
     // --- New Array for Multiple Items ---
     items: [{
