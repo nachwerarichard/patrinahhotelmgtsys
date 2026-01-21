@@ -279,6 +279,30 @@ app.post('/api/parcels', async (req, res) => {
     }
 });
 
+// PUT: Update an existing parcel (The Edit Endpoint)
+app.put('/api/parcels/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        // findByIdAndUpdate takes the ID, the new data, 
+        // and {new: true} returns the updated document instead of the old one
+        const updatedParcel = await Parcel.findByIdAndUpdate(
+            id, 
+            req.body, 
+            { new: true, runValidators: true }
+        );
+
+        if (!updatedParcel) {
+            return res.status(404).json({ error: "Parcel not found" });
+        }
+
+        res.json(updatedParcel);
+    } catch (err) {
+        console.error("Update Error:", err);
+        res.status(400).json({ error: err.message });
+    }
+}); 
+
 // DELETE: Remove a parcel
 app.delete('/api/parcels/:id', async (req, res) => {
     try {
