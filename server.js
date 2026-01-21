@@ -37,11 +37,14 @@ const userSchema = new mongoose.Schema({
     password: { type: String, required: true },
     role: { type: String, enum: ['admin', 'supervisor', 'clerk'], default: 'clerk' },
     station: { type: String, required: true },
+    // --- ADD THESE TWO FIELDS ---
+    isActive: { type: Boolean, default: true },
+    status: { type: String, enum: ['Active', 'Deactivated'], default: 'Active' },
+    // ----------------------------
     createdAt: { type: Date, default: Date.now }
 });
 
 const User = mongoose.model('User', userSchema);
-
 // Parcel Schema & Model
 const parcelSchema = new mongoose.Schema({
     tracking_number: { type: String, unique: true },
