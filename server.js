@@ -397,7 +397,28 @@ app.patch('/users/:id/reactivate', async (req, res) => {
     await User.findByIdAndUpdate(req.params.id, { isActive: true, status: 'Active' });
     res.json({ message: "Reactivated" });
 });
+app.get('/api/stats/financial', async (req, res) => {
+    try {
+        const stats = await Parcel.aggregate([
+            {
+                $group: {
+                    _id: null,
+                    totalRevenue: { $sum: "$amount_paid" },
+                    totalBalance: { $sum: "$balance" },
+                    countPaid: { $sum: { $cond: [{ $eq: ["$payment_status", "Paid"] }, 1, 0] } },
+                    countPartial: { $sum: { $cond: [{ $eq: ["$payment_status", "Partial"] }, 1, 0] } },
+                    countUnpaid: { $sum: { $cond: [{ $eq: ["$payment_status", "Unpaid"] }, 1, 0] } },
+                    totalCount: { $sum: 1 }
+                }
+            }
+        ]);
 
+        const result = stats[0] || { totalRevenue: 0, totalBalance: 0, countPaid: 0, countPartial: 0, countUnpaid: 0, totalCount: 0 };
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 // 4. Start Server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
