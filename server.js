@@ -47,6 +47,8 @@ const userSchema = new mongoose.Schema({
 const User = mongoose.model('User', userSchema);
 // Parcel Schema & Model
 const parcelSchema = new mongoose.Schema({
+  sender_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' },
+    receiver_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' },
     tracking_number: { type: String, unique: true },
     client_id: { type: String }, 
     sender_name: String,
@@ -180,17 +182,27 @@ app.get('/api/parcels/:id', async (req, res) => {
     }
 });
 // Check your server.js for these exact paths
+// Route to handle auto-saving/updating customers
 app.post('/api/customers', async (req, res) => {
     try {
-        const newCustomer = new Customer(req.body);
-        await newCustomer.save();
-        res.status(201).json(newCustomer);
+        const { full_name, phone, station } = req.body;
+
+        // findOneAndUpdate with 'upsert' means:
+        // If phone exists, update the name/station. 
+        // If phone doesn't exist, create a new record.
+        const customer = await Customer.findOneAndUpdate(
+            { phone: phone }, 
+            { full_name, phone, station }, 
+            { upsert: true, new: true, runValidators: true }
+        );
+
+        res.json(customer);
     } catch (err) {
-        res.status(400).json({ error: err.message });
+        res.status(500).json({ error: err.message });
     }
 });
 
-// Also ensure your GET route is plural
+// Route to get all customers for your search datalists
 app.get('/api/customers', async (req, res) => {
     try {
         const customers = await Customer.find().sort({ full_name: 1 });
