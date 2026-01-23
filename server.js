@@ -79,7 +79,7 @@ const parcelSchema = new mongoose.Schema({
     },
     payment_method: { 
         type: String, 
-        enum: ['Cash', 'Mobile Money', 'Bank'], 
+        enum: ['Cash', 'MTN Momo','Airtel Pay', 'Bank'], 
         default: 'Cash' 
     },
 
