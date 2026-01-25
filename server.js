@@ -14,7 +14,7 @@ app.use(express.json());
 app.use(cors({
   origin: [
     
-    //'https://hilarious-nasturtium-0d34d9.netlify.app',//
+    'https://hilarious-nasturtium-0d34d9.netlify.app',
     'https://courier-system-c7ed.onrender.com'// Added the new link here
   ],
 methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], // Added PATCH here
