@@ -65,13 +65,12 @@ const parcelSchema = new mongoose.Schema({
         subtotal: { type: Number, default: 0 }
     }],
 
-    financials: {
         total_amount: { type: Number, default: 0 },
         amount_paid: { type: Number, default: 0 },
         balance: { type: Number, default: 0 },
         payment_status: { type: String, enum: ['Unpaid', 'Paid', 'Partial'], default: 'Unpaid' },
-        payment_method: { type: String, enum: ['Cash', 'MTN Momo','Airtel Pay', 'Bank'], default: 'Cash' }
-    },
+        payment_method: { type: String, enum: ['Cash', 'MTN Momo','Airtel Pay', 'Bank'], default: 'Cash' },
+    
 
     // --- TRACKING STATUS ---
     status: { 
