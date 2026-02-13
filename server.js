@@ -231,6 +231,19 @@ app.post('/api/parcels/:id/add-payment', async (req, res) => {
 });
 
 // GET SINGLE PARCEL BY ID
+app.get('/api/parcels/:id', async (req, res) => {
+    try {
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return res.status(400).json({ error: "Invalid ID format" });
+        }
+        const parcel = await Parcel.findById(req.params.id);
+        if (!parcel) return res.status(404).json({ error: "Waybill not found" });
+        
+        res.json(parcel);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 // PUT: Update an existing parcel
 app.put('/api/parcels/:id', async (req, res) => {
     try {
