@@ -96,6 +96,7 @@ const parcelSchema = new mongoose.Schema({
     created_at: { type: Date, default: Date.now }
 });
 // 1. THE SCHEMA & MODEL
+const Parcel = mongoose.model('Parcel', parcelSchema);
 
 
                  const customerSchema = new mongoose.Schema({
