@@ -231,17 +231,48 @@ app.post('/api/parcels/:id/add-payment', async (req, res) => {
 });
 
 // GET SINGLE PARCEL BY ID
-app.get('/api/parcels/:id', async (req, res) => {
+// PUT: Update an existing parcel
+app.put('/api/parcels/:id', async (req, res) => {
     try {
-        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-            return res.status(400).json({ error: "Invalid ID format" });
+        const { id } = req.params;
+        const updateData = req.body;
+
+        // If financials are being updated, we need to recalculate balance
+        if (updateData["financials.amount_paid"] !== undefined) {
+            const currentParcel = await Parcel.findById(id);
+            const total = currentParcel.financials.total_amount;
+            const paid = updateData["financials.amount_paid"];
+            updateData["financials.balance"] = total - paid;
+            
+            // Set payment status
+            if (updateData["financials.balance"] <= 0) {
+                updateData["financials.payment_status"] = 'Paid';
+            } else if (paid > 0) {
+                updateData["financials.payment_status"] = 'Partial';
+            }
         }
-        const parcel = await Parcel.findById(req.params.id);
-        if (!parcel) return res.status(404).json({ error: "Waybill not found" });
-        
-        res.json(parcel);
+
+        // Add to history log automatically if status changed
+        const updatedParcel = await Parcel.findByIdAndUpdate(
+            id,
+            { 
+                $set: updateData,
+                $push: { 
+                    status_history: {
+                        status: updateData.status,
+                        station: updateData.last_station,
+                        updated_by: updateData.recorded_by,
+                        timestamp: new Date()
+                    }
+                }
+            },
+            { new: true, runValidators: true }
+        );
+
+        if (!updatedParcel) return res.status(404).json({ error: "Parcel not found" });
+        res.json(updatedParcel);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(400).json({ error: err.message });
     }
 });
 // Check your server.js for these exact paths
