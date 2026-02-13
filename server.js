@@ -108,6 +108,36 @@ const parcelSchema = new mongoose.Schema({
 
 const Customer = mongoose.models.Customer || mongoose.model('Customer', customerSchema);
 
+// EDIT USER (General details)
+app.put('/api/users/:id', async (req, res) => {
+    try {
+        const { full_name, email, station, role } = req.body;
+        const updatedUser = await User.findByIdAndUpdate(
+            req.params.id, 
+            { full_name, email, station, role },
+            { new: true }
+        );
+        res.status(200).json(updatedUser);
+    } catch (err) {
+        res.status(500).json({ error: "Failed to update user" });
+    }
+});
+
+// TRANSFER USER (Specific to Station)
+app.patch('/api/users/:id/transfer', async (req, res) => {
+    try {
+        const { station } = req.body;
+        const updatedUser = await User.findByIdAndUpdate(
+            req.params.id, 
+            { station },
+            { new: true }
+        );
+        res.status(200).json(updatedUser);
+    } catch (err) {
+        res.status(500).json({ error: "Transfer failed" });
+    }
+});
+
 // PUT: Update a parcel by ID
 app.put('/api/parcels/:id', async (req, res) => {
     try {
