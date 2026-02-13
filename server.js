@@ -104,6 +104,35 @@ const Parcel = mongoose.model('Parcel', parcelSchema);
 
 const Customer = mongoose.models.Customer || mongoose.model('Customer', customerSchema);
 
+// PUT: Update a parcel by ID
+app.put('/api/parcels/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        // Ensure the ID is valid
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({ error: "Invalid ID format" });
+        }
+
+        // We find the parcel and update it with the body content
+        // { new: true } returns the updated document instead of the old one
+        const updatedParcel = await Parcel.findByIdAndUpdate(
+            id, 
+            req.body, 
+            { new: true, runValidators: true }
+        );
+
+        if (!updatedParcel) {
+            return res.status(404).json({ error: "Parcel not found" });
+        }
+
+        res.json({ message: "Update successful", data: updatedParcel });
+    } catch (err) {
+        console.error("Update Error:", err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // 1. ADD ITEM TO EXISTING WAYBILL
 app.post('/api/parcels/:id/add-item', async (req, res) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
