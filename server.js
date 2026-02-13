@@ -45,19 +45,18 @@ const userSchema = new mongoose.Schema({
 const User = mongoose.model('User', userSchema);
 // Parcel Schema & Model
 const parcelSchema = new mongoose.Schema({
-  sender_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' },
+    // ... (Your existing fields: sender_id, receiver_id, tracking_number, etc.)
+    sender_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' },
     receiver_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' },
     tracking_number: { type: String, unique: true },
     client_id: { type: String }, 
     sender_name: String,
     sender_phone: String,
     receiver_name: String,
-    receiver_phone: String, // Added this to match your frontend
+    receiver_phone: String,
     origin: { type: String, enum: ['Mbale', 'Kampala'] },
     destination: { type: String, enum: ['Mbale', 'Kampala'] },
-  
     
-    // --- New Array for Multiple Items ---
     items: [{
         description: String,
         quantity: { type: Number, default: 1 },
@@ -66,31 +65,36 @@ const parcelSchema = new mongoose.Schema({
         subtotal: { type: Number, default: 0 }
     }],
 
-    // --- Financial Summary ---
-    total_amount: { type: Number, default: 0 },
-    amount_paid: { type: Number, default: 0 },
-    balance: { type: Number, default: 0 },
-    payment_status: { 
-        type: String, 
-        enum: ['Unpaid', 'Paid', 'Partial'], 
-        default: 'Unpaid' 
-    },
-    payment_method: { 
-        type: String, 
-        enum: ['Cash', 'MTN Momo','Airtel Pay', 'Bank'], 
-        default: 'Cash' 
+    financials: {
+        total_amount: { type: Number, default: 0 },
+        amount_paid: { type: Number, default: 0 },
+        balance: { type: Number, default: 0 },
+        payment_status: { type: String, enum: ['Unpaid', 'Paid', 'Partial'], default: 'Unpaid' },
+        payment_method: { type: String, enum: ['Cash', 'MTN Momo','Airtel Pay', 'Bank'], default: 'Cash' }
     },
 
+    // --- TRACKING STATUS ---
     status: { 
         type: String, 
         enum: ['At Dispatch', 'In Transit', 'Ready for Pickup', 'Delivered','Partially received'],
         default: 'At Dispatch'
     },
-    recorded_by: { type: String, default: 'System' }, // Add this line
+
+    // 1. SIMPLE TRACKING: Last station and last update time
+    last_updated_at: { type: Date, default: Date.now },
+    last_station: { type: String, enum: ['Kampala', 'Mbale'] },
+
+    // 2. DETAILED TRACKING: A history log of every move
+    status_history: [{
+        status: String,
+        station: String,
+        updated_by: String, // Name of the clerk/courier
+        timestamp: { type: Date, default: Date.now }
+    }],
+
+    recorded_by: { type: String, default: 'System' },
     created_at: { type: Date, default: Date.now }
 });
-
-const Parcel = mongoose.model('Parcel', parcelSchema);
 // 1. THE SCHEMA & MODEL
 
 
