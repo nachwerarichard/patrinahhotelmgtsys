@@ -55,7 +55,7 @@ const parcelSchema = new mongoose.Schema({
     receiver_name: String,
     receiver_phone: String,
     origin: { type: String, enum: ['Mbale', 'Kampala'] },
-    destination: { type: String, enum: ['Mbale', 'Kampala'] },
+    destination: { type: String, enum: ['Mbale - Bishop Wasikye Rd', 'Mbale - DTB','Kampala - Aponye', 'Kampala - Taxi Park'] },
     
     items: [{
         description: String,
@@ -81,7 +81,7 @@ const parcelSchema = new mongoose.Schema({
 
     // 1. SIMPLE TRACKING: Last station and last update time
     last_updated_at: { type: Date, default: Date.now },
-    last_station: { type: String, enum: ['Kampala', 'Mbale'] },
+    last_station: { type: String, enum: ['Kampala - Taxi Park', 'Mbale - Bishop Wasikye Rd',' Kampala - Aponye' ,'Mbale- -DTB'] },
 
     // 2. DETAILED TRACKING: A history log of every move
     status_history: [{
