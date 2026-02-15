@@ -102,7 +102,7 @@ const Parcel = mongoose.model('Parcel', parcelSchema);
     full_name: { type: String, required: true, unique: true },
     phone: { type: String, required: true },
     id_number: { type: String }, 
-    station: { type: String, enum: ['Kampala', 'Mbale'], required: true },
+    station: { type: String, enum: ['Kampala', 'Mbale','Kampala - Taxi Park', 'Mbale - Bishop Wasikye Rd',' Kampala - Aponye' ,'Mbale- -DTB'], required: true },
     created_at: { type: Date, default: Date.now }
 });
 
