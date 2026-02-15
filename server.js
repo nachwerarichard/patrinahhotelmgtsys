@@ -34,7 +34,7 @@ const userSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     role: { type: String, enum: ['admin', 'supervisor', 'clerk'], default: 'clerk' },
-    station: { type: String, required: true },
+    station: { type: String, enum: ['Kampala - Taxi Park', 'Mbale - Bishop Wasikye Rd',' Kampala - Aponye' ,'Mbale- -DTB'] },
     // --- ADD THESE TWO FIELDS ---
     isActive: { type: Boolean, default: true },
     status: { type: String, enum: ['Active', 'Deactivated'], default: 'Active' },
@@ -55,7 +55,7 @@ const parcelSchema = new mongoose.Schema({
     receiver_name: String,
     receiver_phone: String,
     origin: { type: String, enum: ['Mbale', 'Kampala'] },
-    destination: { type: String, enum: ['Mbale - Bishop Wasikye Rd', 'Mbale - DTB','Kampala - Aponye', 'Kampala - Taxi Park'] },
+    destination: { type: String, enum: ['Mbale', 'Kampala'] },
     
     items: [{
         description: String,
@@ -102,7 +102,7 @@ const Parcel = mongoose.model('Parcel', parcelSchema);
     full_name: { type: String, required: true, unique: true },
     phone: { type: String, required: true },
     id_number: { type: String }, 
-    station: { type: String, enum: ['Kampala', 'Mbale','Kampala - Taxi Park', 'Mbale - Bishop Wasikye Rd',' Kampala - Aponye' ,'Mbale- -DTB'], required: true },
+    station: { type: String, enum: ['Kampala', 'Mbale'], required: true },
     created_at: { type: Date, default: Date.now }
 });
 
