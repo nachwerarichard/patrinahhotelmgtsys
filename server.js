@@ -249,14 +249,15 @@ app.put('/api/parcels/:id', async (req, res) => {
         const { id } = req.params;
         const updateData = req.body;
 
-        // If financials are being updated, we need to recalculate balance
+        // 1. Recalculate Financials ONLY if amount_paid is actually provided
         if (updateData["financials.amount_paid"] !== undefined) {
             const currentParcel = await Parcel.findById(id);
+            if (!currentParcel) return res.status(404).json({ error: "Parcel not found" });
+
             const total = currentParcel.financials.total_amount;
             const paid = updateData["financials.amount_paid"];
             updateData["financials.balance"] = total - paid;
             
-            // Set payment status
             if (updateData["financials.balance"] <= 0) {
                 updateData["financials.payment_status"] = 'Paid';
             } else if (paid > 0) {
@@ -264,27 +265,31 @@ app.put('/api/parcels/:id', async (req, res) => {
             }
         }
 
-        // Add to history log automatically if status changed
+        // 2. Build the update object carefully
+        const updateObject = { $set: updateData };
+
+        // 3. ONLY push to history if we have status info to avoid 500 errors
+        if (updateData.status) {
+            updateObject.$push = { 
+                status_history: {
+                    status: updateData.status,
+                    station: updateData.last_station || "Unknown",
+                    updated_by: updateData.recorded_by || "Staff",
+                    timestamp: new Date()
+                }
+            };
+        }
+
         const updatedParcel = await Parcel.findByIdAndUpdate(
             id,
-            { 
-                $set: updateData,
-                $push: { 
-                    status_history: {
-                        status: updateData.status,
-                        station: updateData.last_station,
-                        updated_by: updateData.recorded_by,
-                        timestamp: new Date()
-                    }
-                }
-            },
+            updateObject,
             { new: true, runValidators: true }
         );
 
-        if (!updatedParcel) return res.status(404).json({ error: "Parcel not found" });
         res.json(updatedParcel);
     } catch (err) {
-        res.status(400).json({ error: err.message });
+        console.error("Update Error:", err); // Log the real error to your Render console
+        res.status(500).json({ error: err.message });
     }
 });
 // Check your server.js for these exact paths
