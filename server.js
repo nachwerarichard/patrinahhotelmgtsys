@@ -81,7 +81,7 @@ const parcelSchema = new mongoose.Schema({
 
     // 1. SIMPLE TRACKING: Last station and last update time
     last_updated_at: { type: Date, default: Date.now },
-    last_station: { type: String, enum: ['Kampala - Taxi Park', 'Mbale - Bishop Wasikye Rd',' Kampala - Aponye' ,'Mbale- -DTB'] },
+    last_station: { type: String, enum: ['Kampala - Taxi Park', 'Mbale - Bishop Wasikye Rd',' Kampala - Aponye' ,'Mbale - DTB'] },
 
     // 2. DETAILED TRACKING: A history log of every move
     status_history: [{
