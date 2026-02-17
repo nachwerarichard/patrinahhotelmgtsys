@@ -112,17 +112,37 @@ const Customer = mongoose.models.Customer || mongoose.model('Customer', customer
 
 // Schema Definition
 const BookingSchema = new mongoose.Schema({
-    fullName: String,
-    phone: String,
+    fullName: { type: String, required: true },
+    phone: { type: String, required: true },
     idNumber: String,
-    origin: String,
-    destination: String,
-    departureTime: String,
-    amountPaid: Number,
-    paymentMethod: String,
-    status: String
+    origin: { 
+        type: String, 
+        enum: ['Mbale', 'Kampala', 'Jinja', 'Iganga', 'Mukono'],
+        required: true 
+    },
+    destination: { 
+        type: String, 
+        enum: ['Mbale', 'Kampala', 'Jinja', 'Iganga', 'Mukono'],
+        required: true 
+    },
+    departureTime: { 
+        type: String, 
+        enum: ['3:00am', '6:00am', '10:00am', '2:00pm', '6:00pm', '10:00pm'],
+        required: true 
+    },
+    amountPaid: { type: Number, required: true },
+    paymentMethod: { 
+        type: String, 
+        enum: ['cash', 'Airtel Pay', 'MTN Momo', 'Bank'],
+        default: 'cash' 
+    },
+    status: { 
+        type: String, 
+        enum: ['Booked', 'Travelled', 'Cancelled', 'No Show'],
+        default: 'Booked' 
+    },
+    bookingDate: { type: Date, default: Date.now } // Automatically gets the current time
 });
-
 const Booking = mongoose.model('Booking', BookingSchema);
 
 // --- ROUTES ---
