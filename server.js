@@ -175,8 +175,16 @@ app.delete('/api/bookings/:id', async (req, res) => {
     await Booking.findByIdAndDelete(req.params.id);
     res.json({ message: "Deleted successfully" });
 });
-
-app.listen(3000, () => console.log('Server running on port 3000'));
+// backend/routes/bookings.js (or server.js)
+app.get('/api/bookings/:id', async (req, res) => {
+    try {
+        const booking = await Booking.findById(req.params.id);
+        if (!booking) return res.status(404).json({ message: "Not found" });
+        res.json(booking);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
 // EDIT USER (General details)
 app.put('/api/users/:id', async (req, res) => {
     try {
