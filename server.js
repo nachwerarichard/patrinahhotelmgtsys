@@ -107,7 +107,56 @@ const Parcel = mongoose.model('Parcel', parcelSchema);
 });
 
 const Customer = mongoose.models.Customer || mongoose.model('Customer', customerSchema);
+// server.js
 
+
+// Schema Definition
+const BookingSchema = new mongoose.Schema({
+    fullName: String,
+    phone: String,
+    idNumber: String,
+    origin: String,
+    destination: String,
+    departureTime: String,
+    amountPaid: Number,
+    paymentMethod: String,
+    status: String
+});
+
+const Booking = mongoose.model('Booking', BookingSchema);
+
+// --- ROUTES ---
+
+// CREATE
+app.post('/api/bookings', async (req, res) => {
+    try {
+        const newBooking = new Booking(req.body);
+        await newBooking.save();
+        res.status(201).json(newBooking);
+    } catch (err) { res.status(400).send(err); }
+});
+
+// READ (All)
+app.get('/api/bookings', async (req, res) => {
+    const bookings = await Booking.find();
+    res.json(bookings);
+});
+
+// UPDATE
+app.put('/api/bookings/:id', async (req, res) => {
+    try {
+        const updated = await Booking.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        res.json(updated);
+    } catch (err) { res.status(400).send(err); }
+});
+
+// DELETE
+app.delete('/api/bookings/:id', async (req, res) => {
+    await Booking.findByIdAndDelete(req.params.id);
+    res.json({ message: "Deleted successfully" });
+});
+
+app.listen(3000, () => console.log('Server running on port 3000'));
 // EDIT USER (General details)
 app.put('/api/users/:id', async (req, res) => {
     try {
