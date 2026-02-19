@@ -656,6 +656,15 @@ app.get('/api/stats/financial', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+
+app.get('/api/audit-logs', async (req, res) => {
+    try {
+        const logs = await AuditLog.find().sort({ timestamp: -1 }).limit(100);
+        res.json(logs);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 // 4. Start Server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
