@@ -570,26 +570,40 @@ app.post('/register', async (req, res) => {
 });
 
 // --- Login Logic ---
+// --- Login Logic with Audit Logging ---
 app.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        // Find user
+        // 1. Find user
         const user = await User.findOne({ email });
         if (!user) return res.status(404).json({ message: "User not found" });
 
-        // Verify Password
+        // 2. Verify Password
         const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
+        if (!isMatch) {
+            // OPTIONAL: You can even log failed login attempts here for security
+            // await logActivity('LOGIN_FAILED', 'Auth', null, email, { reason: 'Invalid password' });
+            return res.status(400).json({ message: "Invalid credentials" });
+        }
 
-        // Return user data (excluding password)
+        // 3. LOG SUCCESSFUL LOGIN
+        // We use user.full_name as the performer and record their email in details
+        await logActivity('LOGIN', 'Authentication', user._id, user.full_name, { 
+            email: user.email,
+            role: user.role,
+            station: user.station 
+        });
+
+        // 4. Return user data (excluding password)
         const { password: _, ...userData } = user._doc;
         res.json(userData);
+
     } catch (err) {
+        console.error("Login Error:", err);
         res.status(500).json({ error: err.message });
     }
 });
-
 // --- Get All Users ---
 app.get('/users', async (req, res) => {
     try {
