@@ -145,6 +145,29 @@ const BookingSchema = new mongoose.Schema({
 });
 const Booking = mongoose.model('Booking', BookingSchema);
 
+const auditLogSchema = new mongoose.Schema({
+    action: { type: String, required: true }, // e.g., 'CREATE_PARCEL', 'DELETE_USER'
+    module: { type: String, required: true }, // e.g., 'Parcels', 'Users', 'Bookings'
+    performed_by: { type: String, required: true }, // User email or Name
+    details: { type: mongoose.Schema.Types.Mixed }, // Flexible object for IDs or changes
+    timestamp: { type: Date, default: Date.now }
+});
+
+const AuditLog = mongoose.model('AuditLog', auditLogSchema);
+
+const logActivity = async (action, module, user, details = {}) => {
+    try {
+        const log = new AuditLog({
+            action,
+            module,
+            performed_by: user || 'System/Unknown',
+            details
+        });
+        await log.save();
+    } catch (err) {
+        console.error("Audit Log Error:", err);
+    }
+};
 // --- ROUTES ---
 
 // CREATE
