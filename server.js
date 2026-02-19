@@ -155,19 +155,22 @@ const auditLogSchema = new mongoose.Schema({
 
 const AuditLog = mongoose.model('AuditLog', auditLogSchema);
 
-const logActivity = async (action, module, user, details = {}) => {
+const logActivity = async (action, module, performedBy, details = {}) => {
     try {
         const log = new AuditLog({
             action,
             module,
-            performed_by: user || 'System/Unknown',
+            performed_by: performedBy || 'System/Unknown',
             details
         });
+
         await log.save();
+        console.log("Audit log saved:", action);
     } catch (err) {
         console.error("Audit Log Error:", err);
     }
 };
+
 // --- ROUTES ---
 
 // CREATE
@@ -589,11 +592,17 @@ app.post('/login', async (req, res) => {
 
         // 3. LOG SUCCESSFUL LOGIN
         // We use user.full_name as the performer and record their email in details
-        await logActivity('LOGIN', 'Authentication', user._id, user.full_name, { 
-            email: user.email,
-            role: user.role,
-            station: user.station 
-        });
+        await logActivity(
+    'LOGIN',
+    'Authentication',
+    user.full_name,   // 👈 String
+    {
+        email: user.email,
+        role: user.role,
+        station: user.station
+    }
+);
+
 
         // 4. Return user data (excluding password)
         const { password: _, ...userData } = user._doc;
