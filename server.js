@@ -140,10 +140,11 @@ const BookingSchema = new mongoose.Schema({
         type: String, 
         enum: ['Booked', 'Travelled', 'Cancelled', 'No Show'],
         default: 'Booked' 
-    },
-    bookingDate: { type: Date, default: Date.now } // Automatically gets the current time
-});
+    }
+}, { timestamps: true });   // 👈 THIS enables createdAt & updatedAt
+
 const Booking = mongoose.model('Booking', BookingSchema);
+
 
 const auditLogSchema = new mongoose.Schema({
     action: { type: String, required: true }, // e.g., 'CREATE_PARCEL', 'DELETE_USER'
@@ -172,6 +173,22 @@ const logActivity = async (action, module, performedBy, details = {}) => {
 };
 
 // --- ROUTES ---
+app.get('/api/bookings/today', async (req, res) => {
+    const start = new Date();
+    start.setHours(0,0,0,0);
+
+    const end = new Date();
+    end.setHours(23,59,59,999);
+
+    const bookings = await Booking.find({
+        createdAt: {
+            $gte: start,
+            $lte: end
+        }
+    });
+
+    res.json(bookings);
+});
 
 // CREATE
 app.post('/api/bookings', async (req, res) => {
