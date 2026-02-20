@@ -490,20 +490,46 @@ app.post('/api/customers', async (req, res) => {
     try {
         const { full_name, phone, station } = req.body;
 
-        // findOneAndUpdate with 'upsert' means:
-        // If phone exists, update the name/station. 
-        // If phone doesn't exist, create a new record.
+        // 1️⃣ Check if customer already exists BEFORE update
+        const existingCustomer = await Customer.findOne({ phone });
+
+        // 2️⃣ Perform upsert
         const customer = await Customer.findOneAndUpdate(
-            { phone: phone }, 
-            { full_name, phone, station }, 
+            { phone },
+            { full_name, phone, station },
             { upsert: true, new: true, runValidators: true }
         );
 
+        // 3️⃣ Determine action type
+        const actionType = existingCustomer
+            ? 'UPDATE_CUSTOMER'
+            : 'CREATE_CUSTOMER';
+
+        // 4️⃣ 🔥 AUDIT LOG
+        await logActivity(
+            actionType,
+            'Customers',
+            full_name || 'System',
+            {
+                customerId: customer._id,
+                phone: customer.phone,
+                station: customer.station,
+                previousData: existingCustomer
+                    ? {
+                        full_name: existingCustomer.full_name,
+                        station: existingCustomer.station
+                      }
+                    : null
+            }
+        );
+
         res.json(customer);
+
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
+
 
 // Route to get all customers for your search datalists
 app.get('/api/customers', async (req, res) => {
@@ -516,28 +542,85 @@ app.get('/api/customers', async (req, res) => {
 });
 
 // --- DELETE: Remove a customer by ID ---
+// --- DELETE: Remove a customer by ID ---
 app.delete('/api/customers/:id', async (req, res) => {
     try {
+        const customer = await Customer.findById(req.params.id);
+
+        if (!customer) {
+            return res.status(404).json({ error: "Customer not found" });
+        }
+
         await Customer.findByIdAndDelete(req.params.id);
+
+        // 🔥 AUDIT LOG
+        await logActivity(
+            'DELETE_CUSTOMER',
+            'Customers',
+            customer.full_name || 'System',
+            {
+                customerId: customer._id,
+                full_name: customer.full_name,
+                phone: customer.phone,
+                station: customer.station
+            }
+        );
+
         res.json({ message: "Customer deleted successfully" });
+
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
+
+// --- PUT: Update customer details ---
 // --- PUT: Update customer details ---
 app.put('/api/customers/:id', async (req, res) => {
     try {
+        const oldCustomer = await Customer.findById(req.params.id);
+
+        if (!oldCustomer) {
+            return res.status(404).json({ error: "Customer not found" });
+        }
+
         const updatedCustomer = await Customer.findByIdAndUpdate(
-            req.params.id, 
-            req.body, 
-            { new: true } // Returns the modified document
+            req.params.id,
+            req.body,
+            { new: true, runValidators: true }
         );
+
+        // 🔥 AUDIT LOG
+        await logActivity(
+            'UPDATE_CUSTOMER',
+            'Customers',
+            updatedCustomer.full_name || 'System',
+            {
+                customerId: updatedCustomer._id,
+                changes: {
+                    full_name: {
+                        old: oldCustomer.full_name,
+                        new: updatedCustomer.full_name
+                    },
+                    phone: {
+                        old: oldCustomer.phone,
+                        new: updatedCustomer.phone
+                    },
+                    station: {
+                        old: oldCustomer.station,
+                        new: updatedCustomer.station
+                    }
+                }
+            }
+        );
+
         res.json(updatedCustomer);
+
     } catch (err) {
         res.status(400).json({ error: err.message });
     }
 });
+
 // GET: Fetch a single customer by ID
 app.get('/api/customers/:id', async (req, res) => {
     try {
@@ -555,24 +638,49 @@ app.get('/api/customers/:id', async (req, res) => {
 app.patch('/api/parcels/:id/status', async (req, res) => {
     try {
         const { status } = req.body;
-        // Validate that the status is one of your allowed enum values
-        const allowedStatuses = ['At Dispatch', 'In Transit', 'Ready for Pickup', 'Delivered'];
-        
+
+        const allowedStatuses = [
+            'At Dispatch',
+            'In Transit',
+            'Ready for Pickup',
+            'Delivered'
+        ];
+
         if (!allowedStatuses.includes(status)) {
             return res.status(400).json({ error: "Invalid status" });
         }
 
-        const updatedParcel = await Parcel.findByIdAndUpdate(
-            req.params.id, 
-            { status: status }, 
-            { new: true } // returns the updated document
+        // 1️⃣ Get current parcel (to know previous status)
+        const parcel = await Parcel.findById(req.params.id);
+        if (!parcel) {
+            return res.status(404).json({ error: "Parcel not found" });
+        }
+
+        const oldStatus = parcel.status;
+
+        // 2️⃣ Update status
+        parcel.status = status;
+        await parcel.save();
+
+        // 3️⃣ 🔥 AUDIT LOG
+        await logActivity(
+            'UPDATE_PARCEL_STATUS',
+            'Parcels',
+            req.body.updated_by || 'System',
+            {
+                parcelId: parcel._id,
+                from: oldStatus,
+                to: status
+            }
         );
 
-        res.json(updatedParcel);
+        res.json(parcel);
+
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
+
 // --- CRUD ENDPOINTS ---
 
 // GET: Fetch all parcels
@@ -589,14 +697,38 @@ app.get('/api/parcels', async (req, res) => {
 app.post('/api/parcels', async (req, res) => {
     try {
         const trackingNum = "TRK-" + Math.random().toString(36).substr(2, 7).toUpperCase();
-        const parcelData = { ...req.body, tracking_number: trackingNum };
+
+        const parcelData = {
+            ...req.body,
+            tracking_number: trackingNum
+        };
+
         const newParcel = new Parcel(parcelData);
         await newParcel.save();
+
+        // 🔥 AUDIT LOG
+        await logActivity(
+            'CREATE_WAYBILL',
+            'Parcels',
+            req.body.recorded_by || 'System',
+            {
+                parcelId: newParcel._id,
+                trackingNumber: trackingNum,
+                sender: newParcel.sender_name || null,
+                receiver: newParcel.receiver_name || null,
+                origin: newParcel.origin || null,
+                destination: newParcel.destination || null,
+                totalAmount: newParcel.total_amount || null
+            }
+        );
+
         res.status(201).json(newParcel);
+
     } catch (err) {
         res.status(400).json({ error: err.message });
     }
 });
+
 
 // PUT: Update an existing parcel (The Edit Endpoint)
 app.put('/api/parcels/:id', async (req, res) => {
@@ -699,12 +831,40 @@ app.put('/api/parcels/:id', async (req, res) => {
 // DELETE: Remove a parcel
 app.delete('/api/parcels/:id', async (req, res) => {
     try {
+        // 1️⃣ First find the parcel (so we know what we are deleting)
+        const parcel = await Parcel.findById(req.params.id);
+
+        if (!parcel) {
+            return res.status(404).json({ error: "Parcel not found" });
+        }
+
+        // 2️⃣ Delete it
         await Parcel.findByIdAndDelete(req.params.id);
+
+        // 3️⃣ Audit log AFTER successful delete
+        await logActivity(
+            'DELETE_WAYBILL',
+            'Parcels',
+            req.user?.full_name || 'System', // NEVER trust frontend
+            {
+                parcelId: parcel._id,
+                trackingNumber: parcel.tracking_number,
+                sender: parcel.sender_name || null,
+                receiver: parcel.receiver_name || null,
+                origin: parcel.origin || null,
+                destination: parcel.destination || null,
+                totalAmount: parcel.total_amount || null,
+                statusAtDeletion: parcel.status
+            }
+        );
+
         res.json({ message: "Parcel deleted successfully" });
+
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
+
 // 3. ROUTES
 
 // --- User Registration (Admin Only) ---
@@ -714,7 +874,9 @@ app.post('/register', async (req, res) => {
 
         // Check if user exists
         const existingUser = await User.findOne({ email });
-        if (existingUser) return res.status(400).json({ message: "Email already registered" });
+        if (existingUser) {
+            return res.status(400).json({ message: "Email already registered" });
+        }
 
         // Hash Password
         const salt = await bcrypt.genSalt(10);
@@ -729,7 +891,23 @@ app.post('/register', async (req, res) => {
         });
 
         await newUser.save();
+
+        // 🔥 AUDIT LOG
+        await logActivity(
+            'CREATE_USER',
+            'Users',
+            req.user?.full_name || 'System', // Never trust frontend
+            {
+                createdUserId: newUser._id,
+                fullName: newUser.full_name,
+                email: newUser.email,
+                role: newUser.role,
+                station: newUser.station
+            }
+        );
+
         res.status(201).json({ message: "Staff member registered successfully" });
+
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -789,23 +967,115 @@ app.get('/users', async (req, res) => {
 // --- Delete User ---
 app.delete('/users/:id', async (req, res) => {
     try {
+        // 🔐 Only Admin
+        if (req.user.role !== 'Admin') {
+            return res.status(403).json({ error: "Unauthorized" });
+        }
+
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
         await User.findByIdAndDelete(req.params.id);
+
+        // 🔥 AUDIT
+        await logActivity(
+            'DELETE_USER',
+            'Users',
+            req.user.full_name,
+            {
+                deletedUserId: user._id,
+                fullName: user.full_name,
+                email: user.email,
+                role: user.role,
+                station: user.station,
+                previousStatus: user.status
+            }
+        );
+
         res.json({ message: "User deleted" });
+
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
+
 // DEACTIVATE
 app.patch('/users/:id/deactivate', async (req, res) => {
-    await User.findByIdAndUpdate(req.params.id, { isActive: false, status: 'Deactivated' });
-    res.json({ message: "Deactivated" });
+    try {
+        if (req.user.role !== 'Admin') {
+            return res.status(403).json({ error: "Unauthorized" });
+        }
+
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        await User.findByIdAndUpdate(req.params.id, {
+            isActive: false,
+            status: 'Deactivated'
+        });
+
+        await logActivity(
+            'DEACTIVATE_USER',
+            'Users',
+            req.user.full_name,
+            {
+                affectedUserId: user._id,
+                fullName: user.full_name,
+                role: user.role,
+                station: user.station,
+                previousStatus: user.status
+            }
+        );
+
+        res.json({ message: "Deactivated" });
+
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
+
 
 // REACTIVATE
 app.patch('/users/:id/reactivate', async (req, res) => {
-    await User.findByIdAndUpdate(req.params.id, { isActive: true, status: 'Active' });
-    res.json({ message: "Reactivated" });
+    try {
+        if (req.user.role !== 'Admin') {
+            return res.status(403).json({ error: "Unauthorized" });
+        }
+
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        await User.findByIdAndUpdate(req.params.id, {
+            isActive: true,
+            status: 'Active'
+        });
+
+        await logActivity(
+            'REACTIVATE_USER',
+            'Users',
+            req.user.full_name,
+            {
+                affectedUserId: user._id,
+                fullName: user.full_name,
+                role: user.role,
+                station: user.station,
+                previousStatus: user.status
+            }
+        );
+
+        res.json({ message: "Reactivated" });
+
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
+
 app.get('/api/stats/financial', async (req, res) => {
     try {
         const stats = await Parcel.aggregate([
