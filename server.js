@@ -372,49 +372,6 @@ app.patch('/api/users/:id/transfer', async (req, res) => {
 });
 
 
-// PUT: Update a parcel by ID
-app.put('/api/parcels/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-
-        if (!mongoose.Types.ObjectId.isValid(id)) {
-            return res.status(400).json({ error: "Invalid ID format" });
-        }
-
-        const oldParcel = await Parcel.findById(id);
-        if (!oldParcel) {
-            return res.status(404).json({ error: "Parcel not found" });
-        }
-
-const updatedParcel = await Parcel.findByIdAndUpdate(
-    id,
-    updateObject,
-    { new: true, runValidators: true }
-);
-
-if (!updatedParcel) {
-    return res.status(404).json({ error: "Parcel not found" });
-}
-
-// 🔥 AUDIT LOG
-await logActivity(
-    'UPDATE_WAYBILL',
-    'Parcels',
-    updateData.recorded_by || 'System',
-    {
-        parcelId: updatedParcel._id,
-        updatedFields: updateData
-    }
-);
-
-res.json(updatedParcel);
-
-
-    } catch (err) {
-        console.error("Update Error:", err);
-        res.status(500).json({ error: err.message });
-    }
-});
 
 // 1. ADD ITEM TO EXISTING WAYBILL
 app.post('/api/parcels/:id/add-item', async (req, res) => {
@@ -526,55 +483,7 @@ app.get('/api/parcels/:id', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-// PUT: Update an existing parcel
-app.put('/api/parcels/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const updateData = req.body;
 
-        // 1. Recalculate Financials ONLY if amount_paid is actually provided
-        if (updateData["financials.amount_paid"] !== undefined) {
-            const currentParcel = await Parcel.findById(id);
-            if (!currentParcel) return res.status(404).json({ error: "Parcel not found" });
-
-            const total = currentParcel.financials.total_amount;
-            const paid = updateData["financials.amount_paid"];
-            updateData["financials.balance"] = total - paid;
-            
-            if (updateData["financials.balance"] <= 0) {
-                updateData["financials.payment_status"] = 'Paid';
-            } else if (paid > 0) {
-                updateData["financials.payment_status"] = 'Partial';
-            }
-        }
-
-        // 2. Build the update object carefully
-        const updateObject = { $set: updateData };
-
-        // 3. ONLY push to history if we have status info to avoid 500 errors
-        if (updateData.status) {
-            updateObject.$push = { 
-                status_history: {
-                    status: updateData.status,
-                    station: updateData.last_station || "Unknown",
-                    updated_by: updateData.recorded_by || "Staff",
-                    timestamp: new Date()
-                }
-            };
-        }
-
-        const updatedParcel = await Parcel.findByIdAndUpdate(
-            id,
-            updateObject,
-            { new: true, runValidators: true }
-        );
-
-        res.json(updatedParcel);
-    } catch (err) {
-        console.error("Update Error:", err); // Log the real error to your Render console
-        res.status(500).json({ error: err.message });
-    }
-});
 // Check your server.js for these exact paths
 // Route to handle auto-saving/updating customers
 app.post('/api/customers', async (req, res) => {
@@ -693,25 +602,99 @@ app.post('/api/parcels', async (req, res) => {
 app.put('/api/parcels/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        
-        // findByIdAndUpdate takes the ID, the new data, 
-        // and {new: true} returns the updated document instead of the old one
-        const updatedParcel = await Parcel.findByIdAndUpdate(
-            id, 
-            req.body, 
-            { new: true, runValidators: true }
-        );
+        const updateData = req.body;
 
-        if (!updatedParcel) {
+        // ✅ 1. Validate MongoDB ObjectId
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({ error: "Invalid parcel ID format" });
+        }
+
+        // ✅ 2. Check if parcel exists
+        const currentParcel = await Parcel.findById(id);
+        if (!currentParcel) {
             return res.status(404).json({ error: "Parcel not found" });
         }
 
+        /* ======================================================
+           ✅ 3. Financial Recalculation Logic
+           ====================================================== */
+        if (updateData["financials.amount_paid"] !== undefined) {
+
+            const totalAmount = currentParcel.financials?.total_amount || 0;
+            const paidAmount = Number(updateData["financials.amount_paid"]);
+
+            const balance = totalAmount - paidAmount;
+
+            updateData["financials.balance"] = balance;
+
+            if (balance <= 0) {
+                updateData["financials.payment_status"] = "Paid";
+            } else if (paidAmount > 0) {
+                updateData["financials.payment_status"] = "Partial";
+            } else {
+                updateData["financials.payment_status"] = "Unpaid";
+            }
+        }
+
+        /* ======================================================
+           ✅ 4. Build Safe Update Object
+           ====================================================== */
+        const updateObject = {
+            $set: updateData
+        };
+
+        /* ======================================================
+           ✅ 5. Push Status History If Status Changes
+           ====================================================== */
+        if (updateData.status) {
+            updateObject.$push = {
+                status_history: {
+                    status: updateData.status,
+                    station: updateData.last_station || "Unknown",
+                    updated_by: updateData.recorded_by || "System",
+                    timestamp: new Date()
+                }
+            };
+        }
+
+        /* ======================================================
+           ✅ 6. Update Parcel
+           ====================================================== */
+        const updatedParcel = await Parcel.findByIdAndUpdate(
+            id,
+            updateObject,
+            {
+                new: true,
+                runValidators: true
+            }
+        );
+
+        /* ======================================================
+           ✅ 7. Audit Logging
+           ====================================================== */
+        await logActivity(
+            "UPDATE_PARCEL",
+            "Parcels",
+            updateData.recorded_by || "System",
+            {
+                parcelId: updatedParcel._id,
+                updatedFields: updateData
+            }
+        );
+
+        /* ======================================================
+           ✅ 8. Return Updated Parcel
+           ====================================================== */
         res.json(updatedParcel);
+
     } catch (err) {
-        console.error("Update Error:", err);
-        res.status(400).json({ error: err.message });
+        console.error("Parcel Update Error:", err);
+        res.status(500).json({
+            error: "Failed to update parcel",
+            details: err.message
+        });
     }
-}); 
+});
 
 // DELETE: Remove a parcel
 app.delete('/api/parcels/:id', async (req, res) => {
