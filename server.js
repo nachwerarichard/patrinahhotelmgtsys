@@ -195,9 +195,27 @@ app.post('/api/bookings', async (req, res) => {
     try {
         const newBooking = new Booking(req.body);
         await newBooking.save();
+
+        // 🔥 AUDIT LOG
+        await logActivity(
+            'CREATE_BOOKING',
+            'Bookings',
+            req.body.fullName || 'Unknown User',
+            {
+                bookingId: newBooking._id,
+                origin: newBooking.origin,
+                destination: newBooking.destination,
+                amountPaid: newBooking.amountPaid
+            }
+        );
+
         res.status(201).json(newBooking);
-    } catch (err) { res.status(400).send(err); }
+
+    } catch (err) {
+        res.status(400).send(err);
+    }
 });
+
 
 // READ (All)
 app.get('/api/bookings', async (req, res) => {
@@ -208,16 +226,66 @@ app.get('/api/bookings', async (req, res) => {
 // UPDATE
 app.put('/api/bookings/:id', async (req, res) => {
     try {
-        const updated = await Booking.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        const updated = await Booking.findByIdAndUpdate(
+            req.params.id,
+            req.body,
+            { new: true }
+        );
+
+        if (!updated) {
+            return res.status(404).json({ message: "Booking not found" });
+        }
+
+        // 🔥 AUDIT LOG
+        await logActivity(
+            'UPDATE_BOOKING',
+            'Bookings',
+            req.body.fullName || 'Unknown User',
+            {
+                bookingId: updated._id,
+                updatedFields: req.body
+            }
+        );
+
         res.json(updated);
-    } catch (err) { res.status(400).send(err); }
+
+    } catch (err) {
+        res.status(400).send(err);
+    }
 });
+
 
 // DELETE
 app.delete('/api/bookings/:id', async (req, res) => {
-    await Booking.findByIdAndDelete(req.params.id);
-    res.json({ message: "Deleted successfully" });
+    try {
+        const booking = await Booking.findById(req.params.id);
+
+        if (!booking) {
+            return res.status(404).json({ message: "Booking not found" });
+        }
+
+        await Booking.findByIdAndDelete(req.params.id);
+
+        // 🔥 AUDIT LOG
+        await logActivity(
+            'DELETE_BOOKING',
+            'Bookings',
+            booking.fullName || 'Unknown User',
+            {
+                bookingId: booking._id,
+                origin: booking.origin,
+                destination: booking.destination,
+                amountPaid: booking.amountPaid
+            }
+        );
+
+        res.json({ message: "Deleted successfully" });
+
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
 });
+
 // backend/routes/bookings.js (or server.js)
 app.get('/api/bookings/:id', async (req, res) => {
     try {
@@ -232,55 +300,116 @@ app.get('/api/bookings/:id', async (req, res) => {
 app.put('/api/users/:id', async (req, res) => {
     try {
         const { full_name, email, station, role } = req.body;
+
+        const oldUser = await User.findById(req.params.id);
+        if (!oldUser) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
         const updatedUser = await User.findByIdAndUpdate(
-            req.params.id, 
+            req.params.id,
             { full_name, email, station, role },
             { new: true }
         );
+
+        // 🔥 AUDIT LOG
+        await logActivity(
+            'UPDATE_USER',
+            'Users',
+            full_name || 'System',
+            {
+                userId: updatedUser._id,
+                changes: {
+                    full_name: { old: oldUser.full_name, new: full_name },
+                    email: { old: oldUser.email, new: email },
+                    station: { old: oldUser.station, new: station },
+                    role: { old: oldUser.role, new: role }
+                }
+            }
+        );
+
         res.status(200).json(updatedUser);
+
     } catch (err) {
         res.status(500).json({ error: "Failed to update user" });
     }
 });
 
+
 // TRANSFER USER (Specific to Station)
 app.patch('/api/users/:id/transfer', async (req, res) => {
     try {
         const { station } = req.body;
+
+        const oldUser = await User.findById(req.params.id);
+        if (!oldUser) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
         const updatedUser = await User.findByIdAndUpdate(
-            req.params.id, 
+            req.params.id,
             { station },
             { new: true }
         );
+
+        // 🔥 AUDIT LOG
+        await logActivity(
+            'TRANSFER_USER',
+            'Users',
+            updatedUser.full_name || 'System',
+            {
+                userId: updatedUser._id,
+                from: oldUser.station,
+                to: station
+            }
+        );
+
         res.status(200).json(updatedUser);
+
     } catch (err) {
         res.status(500).json({ error: "Transfer failed" });
     }
 });
 
+
 // PUT: Update a parcel by ID
 app.put('/api/parcels/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        
-        // Ensure the ID is valid
+
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({ error: "Invalid ID format" });
         }
 
-        // We find the parcel and update it with the body content
-        // { new: true } returns the updated document instead of the old one
-        const updatedParcel = await Parcel.findByIdAndUpdate(
-            id, 
-            req.body, 
-            { new: true, runValidators: true }
-        );
-
-        if (!updatedParcel) {
+        const oldParcel = await Parcel.findById(id);
+        if (!oldParcel) {
             return res.status(404).json({ error: "Parcel not found" });
         }
 
-        res.json({ message: "Update successful", data: updatedParcel });
+const updatedParcel = await Parcel.findByIdAndUpdate(
+    id,
+    updateObject,
+    { new: true, runValidators: true }
+);
+
+if (!updatedParcel) {
+    return res.status(404).json({ error: "Parcel not found" });
+}
+
+// 🔥 AUDIT LOG
+await logActivity(
+    'UPDATE_WAYBILL',
+    'Parcels',
+    updateData.recorded_by || 'System',
+    {
+        parcelId: updatedParcel._id,
+        updatedFields: updateData
+    }
+);
+
+res.json(updatedParcel);
+
+
     } catch (err) {
         console.error("Update Error:", err);
         res.status(500).json({ error: err.message });
@@ -289,29 +418,46 @@ app.put('/api/parcels/:id', async (req, res) => {
 
 // 1. ADD ITEM TO EXISTING WAYBILL
 app.post('/api/parcels/:id/add-item', async (req, res) => {
-  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-        return res.status(400).json({ error: "Invalid ID format. Please use the Database ID." });
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+        return res.status(400).json({ error: "Invalid ID format." });
     }
+
     try {
         const parcel = await Parcel.findById(req.params.id);
         if (!parcel) return res.status(404).json({ error: "Waybill not found" });
 
-        const newItem = req.body; // Expects {description, quantity, rate, subtotal}
-        
-        // Add item to array
-        parcel.items.push(newItem);
+        const newItem = req.body;
 
-        // Recalculate Total and Balance
+        parcel.items.push(newItem);
         parcel.total_amount += newItem.subtotal;
         parcel.balance = parcel.total_amount - parcel.amount_paid;
 
-        // Update Payment Status automatically
         if (parcel.amount_paid <= 0) parcel.payment_status = 'Unpaid';
         else if (parcel.amount_paid < parcel.total_amount) parcel.payment_status = 'Partial';
         else parcel.payment_status = 'Paid';
 
         await parcel.save();
+
+        // 🔥 AUDIT LOG
+        await logActivity(
+            'ADD_ITEM_TO_WAYBILL',
+            'Parcels',
+            req.body.recorded_by || 'System',
+            {
+                parcelId: parcel._id,
+                itemAdded: {
+                    description: newItem.description,
+                    quantity: newItem.quantity,
+                    rate: newItem.rate,
+                    subtotal: newItem.subtotal
+                },
+                newTotal: parcel.total_amount,
+                newBalance: parcel.balance
+            }
+        );
+
         res.json(parcel);
+
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -319,23 +465,22 @@ app.post('/api/parcels/:id/add-item', async (req, res) => {
 
 // 2. ADD PAYMENT TO EXISTING WAYBILL
 app.post('/api/parcels/:id/add-payment', async (req, res) => {
-  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-        return res.status(400).json({ error: "Invalid ID format. Please use the Database ID." });
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+        return res.status(400).json({ error: "Invalid ID format." });
     }
+
     try {
         const parcel = await Parcel.findById(req.params.id);
         if (!parcel) return res.status(404).json({ error: "Waybill not found" });
 
         const { amount_paid, payment_method } = req.body;
 
-        // Add new payment to existing total paid
+        const oldPaid = parcel.amount_paid;
+
         parcel.amount_paid += Number(amount_paid);
         parcel.payment_method = payment_method;
-        
-        // Recalculate Balance
         parcel.balance = parcel.total_amount - parcel.amount_paid;
 
-        // Update Payment Status
         if (parcel.amount_paid >= parcel.total_amount) {
             parcel.payment_status = 'Paid';
         } else if (parcel.amount_paid > 0) {
@@ -343,7 +488,25 @@ app.post('/api/parcels/:id/add-payment', async (req, res) => {
         }
 
         await parcel.save();
+
+        // 🔥 AUDIT LOG
+        await logActivity(
+            'ADD_PAYMENT',
+            'Parcels',
+            req.body.recorded_by || 'System',
+            {
+                parcelId: parcel._id,
+                previousAmountPaid: oldPaid,
+                paymentAdded: amount_paid,
+                newAmountPaid: parcel.amount_paid,
+                paymentMethod: payment_method,
+                newBalance: parcel.balance,
+                paymentStatus: parcel.payment_status
+            }
+        );
+
         res.json(parcel);
+
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
