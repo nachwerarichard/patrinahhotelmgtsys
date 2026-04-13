@@ -912,45 +912,51 @@ app.post('/register', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-
-// --- Login Logic ---
-// --- Login Logic with Audit Logging ---
 app.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
 
+        // LOG 1: Check what the frontend is actually sending
+        console.log("--- Login Attempt ---");
+        console.log("Email received:", email);
+        console.log("Password provided:", password ? "[EXISTS]" : "[EMPTY]");
+
         // 1. Find user
         const user = await User.findOne({ email });
-        if (!user) return res.status(404).json({ message: "User not found" });
+        if (!user) {
+            console.warn(`Login Fail: User with email ${email} not found.`);
+            return res.status(404).json({ message: "User not found" });
+        }
 
         // 2. Verify Password
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
-            // OPTIONAL: You can even log failed login attempts here for security
-            // await logActivity('LOGIN_FAILED', 'Auth', null, email, { reason: 'Invalid password' });
+            console.warn(`Login Fail: Password mismatch for ${email}`);
+            // This is likely your 400 error cause
             return res.status(400).json({ message: "Invalid credentials" });
         }
 
         // 3. LOG SUCCESSFUL LOGIN
-        // We use user.full_name as the performer and record their email in details
+        console.log(`Login Success: ${user.full_name} (${user.email})`);
+        
         await logActivity(
-    'LOGIN',
-    'Authentication',
-    user.full_name,   // 👈 String
-    {
-        email: user.email,
-        role: user.role,
-        station: user.station
-    }
-);
-
+            'LOGIN',
+            'Authentication',
+            user.full_name,
+            {
+                email: user.email,
+                role: user.role,
+                station: user.station
+            }
+        );
 
         // 4. Return user data (excluding password)
         const { password: _, ...userData } = user._doc;
         res.json(userData);
 
     } catch (err) {
-        console.error("Login Error:", err);
+        // LOG 2: Catch technical crashes (DB connection, bcrypt errors, etc.)
+        console.error("CRITICAL LOGIN ERROR:", err);
         res.status(500).json({ error: err.message });
     }
 });
