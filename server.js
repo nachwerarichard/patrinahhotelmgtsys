@@ -1116,43 +1116,52 @@ app.get('/api/audit-logs', async (req, res) => {
 
 
 
-
 const createFirstAdmin = async () => {
     try {
-        // 1. Check if any admin already exists
-        const adminExists = await User.findOne({ role: 'admin' });
+        // 1. Check if this specific admin already exists by email
+        // We check by email because "role: admin" might find an old test user
+        const userExists = await User.findOne({ email: 'richard@gmail.com' });
 
-        if (adminExists) {
-            console.log('✅ Admin already exists. Skipping initialization.');
+        if (userExists) {
+            console.log('✅ Admin "richard@gmail.com" already exists. Skipping initialization.');
             return;
         }
 
-        // 2. Hash the password before saving
-        const saltRounds = 10;
-        const hashedPassword = await bcrypt.hash('admin', saltRounds);
+        console.log('Creating admin user...');
 
-        // 3. Create the admin user instance
+        // 2. Define the plain-text password and hash it
+        // This is the password you will type into the login form
+        const plainPassword = 'admin'; 
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(plainPassword, saltRounds);
+
+        // 3. Create the new User instance
         const firstAdmin = new User({
-            full_name: 'adminuser',
+            full_name: 'Richard Admin',
             email: 'richard@gmail.com',
-            password:hashedPassword,
+            password: hashedPassword, // Storing the encrypted version
             role: 'admin',
             station: 'Kampala - Taxi Park',
             isActive: true,
             status: 'Active'
         });
 
-        // 4. Save to Database
+        // 4. Save to MongoDB
         await firstAdmin.save();
+        
+        console.log('-----------------------------------------------');
         console.log('🚀 First admin user created successfully!');
+        console.log('Email: richard@gmail.com');
+        console.log('Password: ' + plainPassword);
+        console.log('-----------------------------------------------');
 
     } catch (error) {
         console.error('❌ Error creating admin:', error.message);
     }
 };
-
-// Execute the function
 createFirstAdmin();
+
+
 // 4. Start Server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
