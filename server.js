@@ -21,8 +21,8 @@ app.use(cors({
 
 // 1. Database Connection
 // Replace the URI below with your actual MongoDB Connection String
-const MONGO_URI = "mongodb+srv://nachwerarichy:parcelsys@hotelbarsys.mjsul7b.mongodb.net/?appName=hotelbarsys";
-
+//const MONGO_URI = "mongodb+srv://nachwerarichy:parcelsys@hotelbarsys.mjsul7b.mongodb.net/?appName=hotelbarsys";
+ const MONGO_URI=  "mongodb+srv://nachwerarichard:TQ4VX7zQZIxjCVzU@novuscloud.z4w1k8c.mongodb.net/couriersystem?appName=novuscloud";
 mongoose.connect(MONGO_URI)
     .then(() => console.log("✅ Connected to MongoDB"))
     .catch(err => console.error("❌ DB Connection Error:", err));
