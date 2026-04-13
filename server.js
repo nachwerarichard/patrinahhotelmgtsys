@@ -1107,6 +1107,46 @@ app.get('/api/audit-logs', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+
+
+
+
+const createFirstAdmin = async () => {
+    try {
+        // 1. Check if any admin already exists
+        const adminExists = await User.findOne({ role: 'admin' });
+
+        if (adminExists) {
+            console.log('✅ Admin already exists. Skipping initialization.');
+            return;
+        }
+
+        // 2. Hash the password before saving
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash('SuperSecurePassword123', saltRounds);
+
+        // 3. Create the admin user instance
+        const firstAdmin = new User({
+            full_name: 'System Administrator',
+            email: 'admin@system.com',
+            password: hashedPassword,
+            role: 'admin',
+            station: 'Kampala - Taxi Park',
+            isActive: true,
+            status: 'Active'
+        });
+
+        // 4. Save to Database
+        await firstAdmin.save();
+        console.log('🚀 First admin user created successfully!');
+
+    } catch (error) {
+        console.error('❌ Error creating admin:', error.message);
+    }
+};
+
+// Execute the function
+createFirstAdmin();
 // 4. Start Server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
