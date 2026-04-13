@@ -1127,9 +1127,9 @@ const createFirstAdmin = async () => {
 
         // 3. Create the admin user instance
         const firstAdmin = new User({
-            full_name: 'System Administrator',
-            email: 'admin@system.com',
-            password: hashedPassword,
+            full_name: 'admin',
+            email: 'adminsys@system.com',
+            password:admin,
             role: 'admin',
             station: 'Kampala - Taxi Park',
             isActive: true,
