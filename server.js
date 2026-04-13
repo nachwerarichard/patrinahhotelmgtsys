@@ -1129,13 +1129,13 @@ const createFirstAdmin = async () => {
 
         // 2. Hash the password before saving
         const saltRounds = 10;
-        const hashedPassword = await bcrypt.hash('SuperSecurePassword123', saltRounds);
+        const hashedPassword = await bcrypt.hash('admin', saltRounds);
 
         // 3. Create the admin user instance
         const firstAdmin = new User({
             full_name: 'adminuser',
             email: 'richard@gmail.com',
-            password:admin,
+            password:hashedPassword,
             role: 'admin',
             station: 'Kampala - Taxi Park',
             isActive: true,
