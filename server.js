@@ -1160,7 +1160,155 @@ const createFirstAdmin = async () => {
     }
 };
 createFirstAdmin();
+// ==========================================
+// 1. MONGOOSE SCHEMA & MODEL CONFIGURATION
+// ==========================================
 
+const expenseSchema = new mongoose.Schema({
+    expenseId: { 
+        type: String, 
+        required: true, 
+        unique: true,
+        default: () => "EXP-" + Math.floor(100000 + Math.random() * 900000)
+    },
+    date: { 
+        type: Date, 
+        required: true,
+        default: Date.now
+    },
+    description: { 
+        type: String, 
+        required: true, 
+        trim: true 
+    },
+    category: { 
+        type: String, 
+        required: true,
+        enum: ['Utilities', 'Office Supplies', 'Travel & Logistics', 'Software/SaaS', 'Marketing', 'Other']
+    },
+    merchant: { 
+        type: String, 
+        required: true, 
+        trim: true 
+    },
+    amount: { 
+        type: Number, 
+        required: true, 
+        min: 0 
+    },
+    status: { 
+        type: String, 
+        required: true,
+        enum: ['Pending', 'Approved', 'Rejected'],
+        default: 'Pending'
+    },
+    loggedBy: { 
+        type: String, 
+        required: true 
+    }
+}, { 
+    timestamps: true // Automatically tracks createdAt and updatedAt
+});
+
+const Expense = mongoose.model('Expense', expenseSchema);
+
+
+// ==========================================
+// 2. EXPRESS API ROUTES
+// ==========================================
+
+/**
+ * @route   POST /api/expenses
+ * @desc    Log a brand new expense item
+ */
+app.post('/api/expenses', async (req, res) => {
+    try {
+        const { date, description, category, merchant, amount, status, loggedBy } = req.body;
+        
+        const newExpense = new Expense({
+            date,
+            description,
+            category,
+            merchant,
+            amount,
+            status,
+            loggedBy
+        });
+
+        const savedExpense = await newExpense.save();
+        res.status(201).json({ success: true, data: savedExpense });
+    } catch (error) {
+        res.status(400).json({ success: false, error: error.message });
+    }
+});
+
+/**
+ * @route   GET /api/expenses
+ * @desc    Fetch all logged expenses (supports basic search query matching)
+ */
+app.get('/api/expenses', async (req, res) => {
+    try {
+        const { search } = req.query;
+        let queryCondition = {};
+
+        // If frontend passes a search term, filter across description, merchant, or category
+        if (search) {
+            const searchRegex = new RegExp(search, 'i');
+            queryCondition = {
+                $or: [
+                    { description: searchRegex },
+                    { merchant: searchRegex },
+                    { category: searchRegex }
+                ]
+            };
+        }
+
+        const expenses = await Expense.find(queryCondition).sort({ date: -1 });
+        res.status(200).json({ success: true, count: expenses.length, data: expenses });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
+ * @route   PUT /api/expenses/:id
+ * @desc    Update status or values of an existing expense document by MongoDB Object ID
+ */
+app.put('/api/expenses/:id', async (req, res) => {
+    try {
+        const updatedExpense = await Expense.findByIdAndUpdate(
+            req.params.id, 
+            req.body, 
+            { new: true, runValidators: true }
+        );
+
+        if (!updatedExpense) {
+            return res.status(404).json({ success: false, error: "Expense entry not found" });
+        }
+
+        res.status(200).json({ success: true, data: updatedExpense });
+    } catch (error) {
+        res.status(400).json({ success: false, error: error.message });
+    }
+});
+
+/**
+ * @route   DELETE /api/expenses/:id
+ * @desc    Remove an expense transaction log completely
+ */
+app.delete('/api/expenses/:id', async (req, res) => {
+    try {
+        const deletedExpense = await Expense.findByIdAndDelete(req.params.id);
+
+        if (!deletedExpense) {
+            return res.status(404).json({ success: false, error: "Expense entry not found" });
+        }
+
+        res.status(200).json({ success: true, message: "Expense record removed successfully" });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
 
 // 4. Start Server
 const PORT = process.env.PORT || 5000;
