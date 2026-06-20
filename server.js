@@ -27,19 +27,50 @@ mongoose.connect(MONGO_URI)
     .then(() => console.log("✅ Connected to MongoDB"))
     .catch(err => console.error("❌ DB Connection Error:", err));
 
-
-
 const userSchema = new mongoose.Schema({
-    full_name: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
-    role: { type: String, enum: ['admin', 'supervisor', 'clerk'], default: 'clerk' },
-    station: { type: String, enum: ['Kampala - Taxi Park', 'Mbale - Bishop Wasikye Rd',' Kampala - Aponye' ,'Mbale- -DTB'] },
-    // --- ADD THESE TWO FIELDS ---
-    isActive: { type: Boolean, default: true },
-    status: { type: String, enum: ['Active', 'Deactivated'], default: 'Active' },
-    // ----------------------------
-    createdAt: { type: Date, default: Date.now }
+    full_name: { 
+        type: String, 
+        required: true 
+    },
+    email: { 
+        type: String, 
+        required: true, 
+        unique: true,
+        lowercase: true, // Standardizes email lookups
+        trim: true 
+    },
+    password: { 
+        type: String, 
+        required: true 
+    },
+    role: { 
+        type: String, 
+        enum: ['admin', 'manager', 'standard', 'finance'], 
+        default: 'standard' // Defaults to normal staff member
+    },
+    station: { 
+        type: String, 
+        enum: [
+            'Kampala - Taxi Park', 
+            'Mbale - Bishop Wasikye Rd',
+            'Kampala - Aponye',
+            'Mbale - DTB' // Cleaned up double hyphen/spaces here
+        ],
+        required: true
+    },
+    isActive: { 
+        type: Boolean, 
+        default: true 
+    },
+    status: { 
+        type: String, 
+        enum: ['Active', 'Deactivated'], 
+        default: 'Active' 
+    },
+    createdAt: { 
+        type: Date, 
+        default: Date.now 
+    }
 });
 
 const User = mongoose.model('User', userSchema);
