@@ -221,17 +221,17 @@ app.get('/api/bookings/today', async (req, res) => {
     res.json(bookings);
 });
 
-// CREATE
+// CREATE BOOKING
 app.post('/api/bookings', async (req, res) => {
     try {
         const newBooking = new Booking(req.body);
         await newBooking.save();
 
-        // 🔥 AUDIT LOG
+        // ✅ AUDIT LOG
         await logActivity(
             'CREATE_BOOKING',
             'Bookings',
-            req.body.fullName || 'Unknown User',
+            req.user?.full_name || req.body.fullName || 'Unknown User',
             {
                 bookingId: newBooking._id,
                 origin: newBooking.origin,
@@ -241,12 +241,10 @@ app.post('/api/bookings', async (req, res) => {
         );
 
         res.status(201).json(newBooking);
-
     } catch (err) {
         res.status(400).send(err);
     }
 });
-
 
 // READ (All)
 app.get('/api/bookings', async (req, res) => {
@@ -254,70 +252,7 @@ app.get('/api/bookings', async (req, res) => {
     res.json(bookings);
 });
 
-// UPDATE
-app.put('/api/bookings/:id', async (req, res) => {
-    try {
-        const updated = await Booking.findByIdAndUpdate(
-            req.params.id,
-            req.body,
-            { new: true }
-        );
-
-        if (!updated) {
-            return res.status(404).json({ message: "Booking not found" });
-        }
-
-        // 🔥 AUDIT LOG
-        await logActivity(
-            'UPDATE_BOOKING',
-            'Bookings',
-            req.body.fullName || 'Unknown User',
-            {
-                bookingId: updated._id,
-                updatedFields: req.body
-            }
-        );
-
-        res.json(updated);
-
-    } catch (err) {
-        res.status(400).send(err);
-    }
-});
-
-
-// DELETE
-app.delete('/api/bookings/:id', async (req, res) => {
-    try {
-        const booking = await Booking.findById(req.params.id);
-
-        if (!booking) {
-            return res.status(404).json({ message: "Booking not found" });
-        }
-
-        await Booking.findByIdAndDelete(req.params.id);
-
-        // 🔥 AUDIT LOG
-        await logActivity(
-            'DELETE_BOOKING',
-            'Bookings',
-            booking.fullName || 'Unknown User',
-            {
-                bookingId: booking._id,
-                origin: booking.origin,
-                destination: booking.destination,
-                amountPaid: booking.amountPaid
-            }
-        );
-
-        res.json({ message: "Deleted successfully" });
-
-    } catch (err) {
-        res.status(500).json({ message: err.message });
-    }
-});
-
-// backend/routes/bookings.js (or server.js)
+// GET SINGLE BOOKING BY ID
 app.get('/api/bookings/:id', async (req, res) => {
     try {
         const booking = await Booking.findById(req.params.id);
@@ -327,403 +262,76 @@ app.get('/api/bookings/:id', async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 });
-// EDIT USER (General details)
-app.put('/api/users/:id', async (req, res) => {
-    try {
-        const { full_name, email, station, role } = req.body;
 
-        const oldUser = await User.findById(req.params.id);
-        if (!oldUser) {
-            return res.status(404).json({ error: "User not found" });
+// UPDATE BOOKING
+app.put('/api/bookings/:id', async (req, res) => {
+    try {
+        const oldBooking = await Booking.findById(req.params.id);
+        if (!oldBooking) {
+            return res.status(404).json({ message: "Booking not found" });
         }
 
-        const updatedUser = await User.findByIdAndUpdate(
-            req.params.id,
-            { full_name, email, station, role },
-            { new: true }
-        );
-
-        // 🔥 AUDIT LOG
-        await logActivity(
-            'UPDATE_USER',
-            'Users',
-            full_name || 'System',
-            {
-                userId: updatedUser._id,
-                changes: {
-                    full_name: { old: oldUser.full_name, new: full_name },
-                    email: { old: oldUser.email, new: email },
-                    station: { old: oldUser.station, new: station },
-                    role: { old: oldUser.role, new: role }
-                }
-            }
-        );
-
-        res.status(200).json(updatedUser);
-
-    } catch (err) {
-        res.status(500).json({ error: "Failed to update user" });
-    }
-});
-
-
-// TRANSFER USER (Specific to Station)
-app.patch('/api/users/:id/transfer', async (req, res) => {
-    try {
-        const { station } = req.body;
-
-        const oldUser = await User.findById(req.params.id);
-        if (!oldUser) {
-            return res.status(404).json({ error: "User not found" });
-        }
-
-        const updatedUser = await User.findByIdAndUpdate(
-            req.params.id,
-            { station },
-            { new: true }
-        );
-
-        // 🔥 AUDIT LOG
-        await logActivity(
-            'TRANSFER_USER',
-            'Users',
-            updatedUser.full_name || 'System',
-            {
-                userId: updatedUser._id,
-                from: oldUser.station,
-                to: station
-            }
-        );
-
-        res.status(200).json(updatedUser);
-
-    } catch (err) {
-        res.status(500).json({ error: "Transfer failed" });
-    }
-});
-
-
-
-// 1. ADD ITEM TO EXISTING WAYBILL
-app.post('/api/parcels/:id/add-item', async (req, res) => {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-        return res.status(400).json({ error: "Invalid ID format." });
-    }
-
-    try {
-        const parcel = await Parcel.findById(req.params.id);
-        if (!parcel) return res.status(404).json({ error: "Waybill not found" });
-
-        const newItem = req.body;
-
-        parcel.items.push(newItem);
-        parcel.total_amount += newItem.subtotal;
-        parcel.balance = parcel.total_amount - parcel.amount_paid;
-
-        if (parcel.amount_paid <= 0) parcel.payment_status = 'Unpaid';
-        else if (parcel.amount_paid < parcel.total_amount) parcel.payment_status = 'Partial';
-        else parcel.payment_status = 'Paid';
-
-        await parcel.save();
-
-        // 🔥 AUDIT LOG
-        await logActivity(
-            'ADD_ITEM_TO_WAYBILL',
-            'Parcels',
-            req.body.recorded_by || 'System',
-            {
-                parcelId: parcel._id,
-                itemAdded: {
-                    description: newItem.description,
-                    quantity: newItem.quantity,
-                    rate: newItem.rate,
-                    subtotal: newItem.subtotal
-                },
-                newTotal: parcel.total_amount,
-                newBalance: parcel.balance
-            }
-        );
-
-        res.json(parcel);
-
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// 2. ADD PAYMENT TO EXISTING WAYBILL
-app.post('/api/parcels/:id/add-payment', async (req, res) => {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-        return res.status(400).json({ error: "Invalid ID format." });
-    }
-
-    try {
-        const parcel = await Parcel.findById(req.params.id);
-        if (!parcel) return res.status(404).json({ error: "Waybill not found" });
-
-        const { amount_paid, payment_method } = req.body;
-
-        const oldPaid = parcel.amount_paid;
-
-        parcel.amount_paid += Number(amount_paid);
-        parcel.payment_method = payment_method;
-        parcel.balance = parcel.total_amount - parcel.amount_paid;
-
-        if (parcel.amount_paid >= parcel.total_amount) {
-            parcel.payment_status = 'Paid';
-        } else if (parcel.amount_paid > 0) {
-            parcel.payment_status = 'Partial';
-        }
-
-        await parcel.save();
-
-        // 🔥 AUDIT LOG
-        await logActivity(
-            'ADD_PAYMENT',
-            'Parcels',
-            req.body.recorded_by || 'System',
-            {
-                parcelId: parcel._id,
-                previousAmountPaid: oldPaid,
-                paymentAdded: amount_paid,
-                newAmountPaid: parcel.amount_paid,
-                paymentMethod: payment_method,
-                newBalance: parcel.balance,
-                paymentStatus: parcel.payment_status
-            }
-        );
-
-        res.json(parcel);
-
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// GET SINGLE PARCEL BY ID
-app.get('/api/parcels/:id', async (req, res) => {
-    try {
-        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-            return res.status(400).json({ error: "Invalid ID format" });
-        }
-        const parcel = await Parcel.findById(req.params.id);
-        if (!parcel) return res.status(404).json({ error: "Waybill not found" });
-        
-        res.json(parcel);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// Check your server.js for these exact paths
-// Route to handle auto-saving/updating customers
-app.post('/api/customers', async (req, res) => {
-    try {
-        const { full_name, phone, station } = req.body;
-
-        // 1️⃣ Check if customer already exists BEFORE update
-        const existingCustomer = await Customer.findOne({ phone });
-
-        // 2️⃣ Perform upsert
-        const customer = await Customer.findOneAndUpdate(
-            { phone },
-            { full_name, phone, station },
-            { upsert: true, new: true, runValidators: true }
-        );
-
-        // 3️⃣ Determine action type
-        const actionType = existingCustomer
-            ? 'UPDATE_CUSTOMER'
-            : 'CREATE_CUSTOMER';
-
-        // 4️⃣ 🔥 AUDIT LOG
-        await logActivity(
-            actionType,
-            'Customers',
-            full_name || 'System',
-            {
-                customerId: customer._id,
-                phone: customer.phone,
-                station: customer.station,
-                previousData: existingCustomer
-                    ? {
-                        full_name: existingCustomer.full_name,
-                        station: existingCustomer.station
-                      }
-                    : null
-            }
-        );
-
-        res.json(customer);
-
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-
-// Route to get all customers for your search datalists
-app.get('/api/customers', async (req, res) => {
-    try {
-        const customers = await Customer.find().sort({ full_name: 1 });
-        res.json(customers);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// --- DELETE: Remove a customer by ID ---
-// --- DELETE: Remove a customer by ID ---
-app.delete('/api/customers/:id', async (req, res) => {
-    try {
-        const customer = await Customer.findById(req.params.id);
-
-        if (!customer) {
-            return res.status(404).json({ error: "Customer not found" });
-        }
-
-        await Customer.findByIdAndDelete(req.params.id);
-
-        // 🔥 AUDIT LOG
-        await logActivity(
-            'DELETE_CUSTOMER',
-            'Customers',
-            customer.full_name || 'System',
-            {
-                customerId: customer._id,
-                full_name: customer.full_name,
-                phone: customer.phone,
-                station: customer.station
-            }
-        );
-
-        res.json({ message: "Customer deleted successfully" });
-
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-
-// --- PUT: Update customer details ---
-// --- PUT: Update customer details ---
-app.put('/api/customers/:id', async (req, res) => {
-    try {
-        const oldCustomer = await Customer.findById(req.params.id);
-
-        if (!oldCustomer) {
-            return res.status(404).json({ error: "Customer not found" });
-        }
-
-        const updatedCustomer = await Customer.findByIdAndUpdate(
+        const updated = await Booking.findByIdAndUpdate(
             req.params.id,
             req.body,
-            { new: true, runValidators: true }
+            { new: true }
         );
 
-        // 🔥 AUDIT LOG
+        // Map exact structural changes
+        const changes = {};
+        for (const key in req.body) {
+            if (req.body[key] !== oldBooking[key]) {
+                changes[key] = { old: oldBooking[key], new: updated[key] };
+            }
+        }
+
+        // ✅ AUDIT LOG
         await logActivity(
-            'UPDATE_CUSTOMER',
-            'Customers',
-            updatedCustomer.full_name || 'System',
+            'UPDATE_BOOKING',
+            'Bookings',
+            req.user?.full_name || req.body.fullName || 'Unknown User',
             {
-                customerId: updatedCustomer._id,
-                changes: {
-                    full_name: {
-                        old: oldCustomer.full_name,
-                        new: updatedCustomer.full_name
-                    },
-                    phone: {
-                        old: oldCustomer.phone,
-                        new: updatedCustomer.phone
-                    },
-                    station: {
-                        old: oldCustomer.station,
-                        new: updatedCustomer.station
-                    }
-                }
+                bookingId: updated._id,
+                changes: changes
             }
         );
 
-        res.json(updatedCustomer);
-
+        res.json(updated);
     } catch (err) {
-        res.status(400).json({ error: err.message });
+        res.status(400).send(err);
     }
 });
 
-// GET: Fetch a single customer by ID
-app.get('/api/customers/:id', async (req, res) => {
+// DELETE BOOKING
+app.delete('/api/bookings/:id', async (req, res) => {
     try {
-        const customer = await Customer.findById(req.params.id);
-        res.json(customer);
-    } catch (err) {
-        res.status(404).json({ error: "Customer not found" });
-    }
-});
-// --- RECEIVER ROUTES ---
-
-
-
-
-app.patch('/api/parcels/:id/status', async (req, res) => {
-    try {
-        const { status } = req.body;
-
-        const allowedStatuses = [
-            'At Dispatch',
-            'In Transit',
-            'Ready for Pickup',
-            'Delivered'
-        ];
-
-        if (!allowedStatuses.includes(status)) {
-            return res.status(400).json({ error: "Invalid status" });
+        const booking = await Booking.findById(req.params.id);
+        if (!booking) {
+            return res.status(404).json({ message: "Booking not found" });
         }
 
-        // 1️⃣ Get current parcel (to know previous status)
-        const parcel = await Parcel.findById(req.params.id);
-        if (!parcel) {
-            return res.status(404).json({ error: "Parcel not found" });
-        }
+        await Booking.findByIdAndDelete(req.params.id);
 
-        const oldStatus = parcel.status;
-
-        // 2️⃣ Update status
-        parcel.status = status;
-        await parcel.save();
-
-        // 3️⃣ 🔥 AUDIT LOG
+        // ✅ AUDIT LOG
         await logActivity(
-            'UPDATE_PARCEL_STATUS',
-            'Parcels',
-            req.body.updated_by || 'System',
+            'DELETE_BOOKING',
+            'Bookings',
+            req.user?.full_name || booking.fullName || 'Unknown User',
             {
-                parcelId: parcel._id,
-                from: oldStatus,
-                to: status
+                bookingId: booking._id,
+                origin: booking.origin,
+                destination: booking.destination,
+                amountPaid: booking.amountPaid
             }
         );
 
-        res.json(parcel);
-
+        res.json({ message: "Deleted successfully" });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ message: err.message });
     }
 });
 
-// --- CRUD ENDPOINTS ---
-
-// GET: Fetch all parcels
-app.get('/api/parcels', async (req, res) => {
-    try {
-        const parcels = await Parcel.find().sort({ created_at: -1 });
-        res.json(parcels);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
+// POST: Create a new parcel
 // POST: Create a new parcel
 app.post('/api/parcels', async (req, res) => {
     try {
@@ -737,7 +345,7 @@ app.post('/api/parcels', async (req, res) => {
         const newParcel = new Parcel(parcelData);
         await newParcel.save();
 
-        // 🔥 AUDIT LOG
+        // ✅ AUDIT LOG: Tracks creation with critical data snapshots
         await logActivity(
             'CREATE_WAYBILL',
             'Parcels',
@@ -761,31 +369,29 @@ app.post('/api/parcels', async (req, res) => {
 });
 
 
-// PUT: Update an existing parcel (The Edit Endpoint)
+// PUT: Update an existing parcel (With State Change Tracking)
 app.put('/api/parcels/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const updateData = req.body;
 
-        // ✅ 1. Validate MongoDB ObjectId
+        // 1. Validate MongoDB ObjectId
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({ error: "Invalid parcel ID format" });
         }
 
-        // ✅ 2. Check if parcel exists
+        // 2. Check if parcel exists (Keep reference for delta comparison)
         const currentParcel = await Parcel.findById(id);
         if (!currentParcel) {
             return res.status(404).json({ error: "Parcel not found" });
         }
 
         /* ======================================================
-           ✅ 3. Financial Recalculation Logic
+           3. Financial Recalculation Logic
            ====================================================== */
         if (updateData["financials.amount_paid"] !== undefined) {
-
             const totalAmount = currentParcel.financials?.total_amount || 0;
             const paidAmount = Number(updateData["financials.amount_paid"]);
-
             const balance = totalAmount - paidAmount;
 
             updateData["financials.balance"] = balance;
@@ -800,15 +406,12 @@ app.put('/api/parcels/:id', async (req, res) => {
         }
 
         /* ======================================================
-           ✅ 4. Build Safe Update Object
+           4. Build Safe Update Object & History
            ====================================================== */
         const updateObject = {
             $set: updateData
         };
 
-        /* ======================================================
-           ✅ 5. Push Status History If Status Changes
-           ====================================================== */
         if (updateData.status) {
             updateObject.$push = {
                 status_history: {
@@ -821,7 +424,19 @@ app.put('/api/parcels/:id', async (req, res) => {
         }
 
         /* ======================================================
-           ✅ 6. Update Parcel
+           5. Capture "Before" values for deep audit logging
+           ====================================================== */
+        const changes = {};
+        for (const key in updateData) {
+            // Evaluates dots notation safely if needed, basic mapping here
+            changes[key] = {
+                oldValue: currentParcel[key] !== undefined ? currentParcel[key] : 'Not Set',
+                newValue: updateData[key]
+            };
+        }
+
+        /* ======================================================
+           6. Update Parcel
            ====================================================== */
         const updatedParcel = await Parcel.findByIdAndUpdate(
             id,
@@ -833,7 +448,7 @@ app.put('/api/parcels/:id', async (req, res) => {
         );
 
         /* ======================================================
-           ✅ 7. Audit Logging
+           7. Comprehensive Audit Logging (Old vs New states)
            ====================================================== */
         await logActivity(
             "UPDATE_PARCEL",
@@ -841,13 +456,11 @@ app.put('/api/parcels/:id', async (req, res) => {
             updateData.recorded_by || "System",
             {
                 parcelId: updatedParcel._id,
-                updatedFields: updateData
+                trackingNumber: updatedParcel.tracking_number,
+                changes: changes // Contains structural state changes
             }
         );
 
-        /* ======================================================
-           ✅ 8. Return Updated Parcel
-           ====================================================== */
         res.json(updatedParcel);
 
     } catch (err) {
@@ -859,24 +472,25 @@ app.put('/api/parcels/:id', async (req, res) => {
     }
 });
 
+
 // DELETE: Remove a parcel
 app.delete('/api/parcels/:id', async (req, res) => {
     try {
-        // 1️⃣ First find the parcel (so we know what we are deleting)
+        // 1. First find the parcel (so we know what we are deleting)
         const parcel = await Parcel.findById(req.params.id);
 
         if (!parcel) {
             return res.status(404).json({ error: "Parcel not found" });
         }
 
-        // 2️⃣ Delete it
+        // 2. Delete it
         await Parcel.findByIdAndDelete(req.params.id);
 
-        // 3️⃣ Audit log AFTER successful delete
+        // 3. Audit log AFTER successful delete
         await logActivity(
             'DELETE_WAYBILL',
             'Parcels',
-            req.user?.full_name || 'System', // NEVER trust frontend
+            req.body.recorded_by || req.user?.full_name || 'System', // Fallback cascade
             {
                 parcelId: parcel._id,
                 trackingNumber: parcel.tracking_number,
@@ -923,11 +537,11 @@ app.post('/register', async (req, res) => {
 
         await newUser.save();
 
-        // 🔥 AUDIT LOG
+        // ✅ AUDIT LOG: Safe navigation falls back if auth middleware is omitted
         await logActivity(
             'CREATE_USER',
             'Users',
-            req.user?.full_name || 'System', // Never trust frontend
+            req.user?.full_name || 'System', 
             {
                 createdUserId: newUser._id,
                 fullName: newUser.full_name,
@@ -943,11 +557,12 @@ app.post('/register', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+
+// --- User Login ---
 app.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        // LOG 1: Check what the frontend is actually sending
         console.log("--- Login Attempt ---");
         console.log("Email received:", email);
         console.log("Password provided:", password ? "[EXISTS]" : "[EMPTY]");
@@ -956,14 +571,31 @@ app.post('/login', async (req, res) => {
         const user = await User.findOne({ email });
         if (!user) {
             console.warn(`Login Fail: User with email ${email} not found.`);
-            return res.status(404).json({ message: "User not found" });
+            
+            // 🛑 OPTIONAL AUDIT: Tracks malicious or failed login tracking attempts
+            await logActivity(
+                'FAILED_LOGIN_ATTEMPT',
+                'Authentication',
+                'System/Anonymous',
+                { attemptedEmail: email, reason: 'User not found' }
+            );
+
+            return res.status(442 || 404).json({ message: "User not found" }); 
         }
 
         // 2. Verify Password
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
             console.warn(`Login Fail: Password mismatch for ${email}`);
-            // This is likely your 400 error cause
+
+            // 🛑 OPTIONAL AUDIT: Tracks potential brute force attacks
+            await logActivity(
+                'FAILED_LOGIN_ATTEMPT',
+                'Authentication',
+                user.full_name,
+                { attemptedEmail: email, reason: 'Invalid password credentials' }
+            );
+
             return res.status(400).json({ message: "Invalid credentials" });
         }
 
@@ -986,11 +618,11 @@ app.post('/login', async (req, res) => {
         res.json(userData);
 
     } catch (err) {
-        // LOG 2: Catch technical crashes (DB connection, bcrypt errors, etc.)
         console.error("CRITICAL LOGIN ERROR:", err);
         res.status(500).json({ error: err.message });
     }
 });
+
 // --- Get All Users ---
 app.get('/users', async (req, res) => {
     try {
@@ -1005,7 +637,7 @@ app.get('/users', async (req, res) => {
 app.delete('/users/:id', async (req, res) => {
     try {
         // 🔐 Only Admin
-        if (req.user.role !== 'Admin') {
+        if (!req.user || req.user.role !== 'Admin') {
             return res.status(403).json({ error: "Unauthorized" });
         }
 
@@ -1016,7 +648,7 @@ app.delete('/users/:id', async (req, res) => {
 
         await User.findByIdAndDelete(req.params.id);
 
-        // 🔥 AUDIT
+        // ✅ AUDIT LOG
         await logActivity(
             'DELETE_USER',
             'Users',
@@ -1027,7 +659,7 @@ app.delete('/users/:id', async (req, res) => {
                 email: user.email,
                 role: user.role,
                 station: user.station,
-                previousStatus: user.status
+                previousStatus: user.status || 'Unknown'
             }
         );
 
@@ -1038,10 +670,10 @@ app.delete('/users/:id', async (req, res) => {
     }
 });
 
-// DEACTIVATE
+// --- Deactivate User ---
 app.patch('/users/:id/deactivate', async (req, res) => {
     try {
-        if (req.user.role !== 'Admin') {
+        if (!req.user || req.user.role !== 'Admin') {
             return res.status(403).json({ error: "Unauthorized" });
         }
 
@@ -1055,6 +687,7 @@ app.patch('/users/:id/deactivate', async (req, res) => {
             status: 'Deactivated'
         });
 
+        // ✅ AUDIT LOG
         await logActivity(
             'DEACTIVATE_USER',
             'Users',
@@ -1064,7 +697,7 @@ app.patch('/users/:id/deactivate', async (req, res) => {
                 fullName: user.full_name,
                 role: user.role,
                 station: user.station,
-                previousStatus: user.status
+                previousStatus: user.status || 'Active'
             }
         );
 
@@ -1076,10 +709,10 @@ app.patch('/users/:id/deactivate', async (req, res) => {
 });
 
 
-// REACTIVATE
+// --- Reactivate User ---
 app.patch('/users/:id/reactivate', async (req, res) => {
     try {
-        if (req.user.role !== 'Admin') {
+        if (!req.user || req.user.role !== 'Admin') {
             return res.status(403).json({ error: "Unauthorized" });
         }
 
@@ -1093,6 +726,7 @@ app.patch('/users/:id/reactivate', async (req, res) => {
             status: 'Active'
         });
 
+        // ✅ AUDIT LOG
         await logActivity(
             'REACTIVATE_USER',
             'Users',
@@ -1102,7 +736,7 @@ app.patch('/users/:id/reactivate', async (req, res) => {
                 fullName: user.full_name,
                 role: user.role,
                 station: user.station,
-                previousStatus: user.status
+                previousStatus: user.status || 'Deactivated'
             }
         );
 
@@ -1267,6 +901,22 @@ app.post('/api/expenses', async (req, res) => {
         });
 
         const savedExpense = await newExpense.save();
+
+        // ✅ AUDIT LOG: Track expense creation
+        await logActivity(
+            'CREATE_EXPENSE',
+            'Expenses',
+            req.user?.full_name || loggedBy || 'System',
+            {
+                expenseId: savedExpense._id,
+                amount: savedExpense.amount,
+                category: savedExpense.category,
+                merchant: savedExpense.merchant,
+                description: savedExpense.description,
+                status: savedExpense.status
+            }
+        );
+
         res.status(201).json({ success: true, data: savedExpense });
     } catch (error) {
         res.status(400).json({ success: false, error: error.message });
@@ -1282,7 +932,6 @@ app.get('/api/expenses', async (req, res) => {
         const { search } = req.query;
         let queryCondition = {};
 
-        // If frontend passes a search term, filter across description, merchant, or category
         if (search) {
             const searchRegex = new RegExp(search, 'i');
             queryCondition = {
@@ -1307,15 +956,44 @@ app.get('/api/expenses', async (req, res) => {
  */
 app.put('/api/expenses/:id', async (req, res) => {
     try {
+        const { id } = req.params;
+        const updateData = req.body;
+
+        // 1. Fetch current expense state before making changes
+        const currentExpense = await Expense.findById(id);
+        if (!currentExpense) {
+            return res.status(404).json({ success: false, error: "Expense entry not found" });
+        }
+
+        // 2. Map differences / historical data comparison
+        const changes = {};
+        for (const key in updateData) {
+            if (updateData[key] !== currentExpense[key]) {
+                changes[key] = {
+                    oldValue: currentExpense[key] !== undefined ? currentExpense[key] : 'Not Set',
+                    newValue: updateData[key]
+                };
+            }
+        }
+
+        // 3. Update the document
         const updatedExpense = await Expense.findByIdAndUpdate(
-            req.params.id, 
-            req.body, 
+            id, 
+            updateData, 
             { new: true, runValidators: true }
         );
 
-        if (!updatedExpense) {
-            return res.status(404).json({ success: false, error: "Expense entry not found" });
-        }
+        // 4. ✅ AUDIT LOG: Log dynamic updates with state mutations
+        await logActivity(
+            'UPDATE_EXPENSE',
+            'Expenses',
+            req.user?.full_name || updateData.loggedBy || 'System',
+            {
+                expenseId: updatedExpense._id,
+                merchant: updatedExpense.merchant,
+                changes: changes
+            }
+        );
 
         res.status(200).json({ success: true, data: updatedExpense });
     } catch (error) {
@@ -1329,11 +1007,29 @@ app.put('/api/expenses/:id', async (req, res) => {
  */
 app.delete('/api/expenses/:id', async (req, res) => {
     try {
-        const deletedExpense = await Expense.findByIdAndDelete(req.params.id);
-
-        if (!deletedExpense) {
+        // 1. Find the item to preserve structural information for logs
+        const expense = await Expense.findById(req.params.id);
+        if (!expense) {
             return res.status(404).json({ success: false, error: "Expense entry not found" });
         }
+
+        // 2. Execute deletion
+        await Expense.findByIdAndDelete(req.params.id);
+
+        // 3. ✅ AUDIT LOG: Record precisely what was thrown away
+        await logActivity(
+            'DELETE_EXPENSE',
+            'Expenses',
+            req.user?.full_name || 'System',
+            {
+                expenseId: expense._id,
+                amount: expense.amount,
+                category: expense.category,
+                merchant: expense.merchant,
+                description: expense.description,
+                statusAtDeletion: expense.status
+            }
+        );
 
         res.status(200).json({ success: true, message: "Expense record removed successfully" });
     } catch (error) {
