@@ -548,7 +548,7 @@ app.post('/api/customers', async (req, res) => {
             actionType,
             'Customers',
                         req.body.recorded_by || 'System',
-,
+
             {
                 customerId: customer._id,
                 phone: customer.phone,
