@@ -67,6 +67,8 @@ const userSchema = new mongoose.Schema({
         enum: ['Active', 'Deactivated'], 
         default: 'Active' 
     },
+        recorded_by: { type: String, default: 'System' },
+
     createdAt: { 
         type: Date, 
         default: Date.now 
@@ -134,6 +136,8 @@ const Parcel = mongoose.model('Parcel', parcelSchema);
     phone: { type: String, required: true },
     id_number: { type: String }, 
     station: { type: String, enum: ['Kampala', 'Mbale'], required: true },
+        recorded_by: { type: String, default: 'System' },
+
     created_at: { type: Date, default: Date.now }
 });
 
@@ -167,6 +171,8 @@ const BookingSchema = new mongoose.Schema({
         enum: ['cash', 'Airtel Pay', 'MTN Momo', 'Bank'],
         default: 'cash' 
     },
+        recorded_by: { type: String, default: 'System' },
+
     status: { 
         type: String, 
         enum: ['Booked', 'Travelled', 'Cancelled', 'No Show'],
@@ -182,6 +188,7 @@ const auditLogSchema = new mongoose.Schema({
     module: { type: String, required: true }, // e.g., 'Parcels', 'Users', 'Bookings'
     performed_by: { type: String, required: true }, // User email or Name
     details: { type: mongoose.Schema.Types.Mixed }, // Flexible object for IDs or changes
+
     timestamp: { type: Date, default: Date.now }
 });
 
@@ -540,7 +547,8 @@ app.post('/api/customers', async (req, res) => {
         await logActivity(
             actionType,
             'Customers',
-            full_name || 'System',
+                        req.body.recorded_by || 'System',
+,
             {
                 customerId: customer._id,
                 phone: customer.phone,
@@ -588,7 +596,7 @@ app.delete('/api/customers/:id', async (req, res) => {
         await logActivity(
             'DELETE_CUSTOMER',
             'Customers',
-            customer.full_name || 'System',
+            req.body.recorded_by || 'System',
             {
                 customerId: customer._id,
                 full_name: customer.full_name,
@@ -625,7 +633,7 @@ app.put('/api/customers/:id', async (req, res) => {
         await logActivity(
             'UPDATE_CUSTOMER',
             'Customers',
-            updatedCustomer.full_name || 'System',
+            req.body.recorded_by || 'System',
             {
                 customerId: updatedCustomer._id,
                 changes: {
@@ -876,7 +884,7 @@ app.delete('/api/parcels/:id', async (req, res) => {
         await logActivity(
             'DELETE_WAYBILL',
             'Parcels',
-            req.user?.full_name || 'System', // NEVER trust frontend
+            req.body.recorded_by || 'System', // NEVER trust frontend
             {
                 parcelId: parcel._id,
                 trackingNumber: parcel.tracking_number,
@@ -927,7 +935,7 @@ app.post('/register', async (req, res) => {
         await logActivity(
             'CREATE_USER',
             'Users',
-            req.user?.full_name || 'System', // Never trust frontend
+            req.body.recorded_by || 'System', // Never trust frontend
             {
                 createdUserId: newUser._id,
                 fullName: newUser.full_name,
@@ -973,7 +981,7 @@ app.post('/login', async (req, res) => {
         await logActivity(
             'LOGIN',
             'Authentication',
-            user.full_name,
+            req.body.recorded_by || 'System',
             {
                 email: user.email,
                 role: user.role,
@@ -1020,7 +1028,7 @@ app.delete('/users/:id', async (req, res) => {
         await logActivity(
             'DELETE_USER',
             'Users',
-            req.user.full_name,
+            req.body.recorded_by || 'System',
             {
                 deletedUserId: user._id,
                 fullName: user.full_name,
@@ -1058,7 +1066,7 @@ app.patch('/users/:id/deactivate', async (req, res) => {
         await logActivity(
             'DEACTIVATE_USER',
             'Users',
-            req.user.full_name,
+            req.body.recorded_by || 'System',
             {
                 affectedUserId: user._id,
                 fullName: user.full_name,
@@ -1096,7 +1104,7 @@ app.patch('/users/:id/reactivate', async (req, res) => {
         await logActivity(
             'REACTIVATE_USER',
             'Users',
-            req.user.full_name,
+            req.body.recorded_by || 'System',
             {
                 affectedUserId: user._id,
                 fullName: user.full_name,
@@ -1233,6 +1241,7 @@ const expenseSchema = new mongoose.Schema({
         enum: ['Pending', 'Approved', 'Rejected'],
         default: 'Pending'
     },
+
     loggedBy: { 
         type: String, 
         required: true 
@@ -1272,7 +1281,7 @@ app.post('/api/expenses', async (req, res) => {
         const savedExpense = await newExpense.save();
 
         // Target active user if auth middleware exists, fallback safely
-        const actor = req.user?.full_name || loggedBy || 'System';
+        const actor = req.body.loggedBy || 'System';
 
         // 🔥 AUDIT LOG
         await logActivity(
