@@ -238,7 +238,7 @@ app.post('/api/bookings', async (req, res) => {
         await logActivity(
             'CREATE_BOOKING',
             'Bookings',
-            req.body.fullName || 'Unknown User',
+            req.body.recorded_by || 'Unknown User',
             {
                 bookingId: newBooking._id,
                 origin: newBooking.origin,
@@ -278,7 +278,7 @@ app.put('/api/bookings/:id', async (req, res) => {
         await logActivity(
             'UPDATE_BOOKING',
             'Bookings',
-            req.body.fullName || 'Unknown User',
+            req.body.recorded_by || 'Unknown User',
             {
                 bookingId: updated._id,
                 updatedFields: req.body
@@ -308,7 +308,7 @@ app.delete('/api/bookings/:id', async (req, res) => {
         await logActivity(
             'DELETE_BOOKING',
             'Bookings',
-            booking.fullName || 'Unknown User',
+            booking.recorded_by || 'Unknown User',
             {
                 bookingId: booking._id,
                 origin: booking.origin,
@@ -354,7 +354,7 @@ app.put('/api/users/:id', async (req, res) => {
         await logActivity(
             'UPDATE_USER',
             'Users',
-            full_name || 'System',
+            req.body.recorded_by || 'System',
             {
                 userId: updatedUser._id,
                 changes: {
@@ -394,7 +394,7 @@ app.patch('/api/users/:id/transfer', async (req, res) => {
         await logActivity(
             'TRANSFER_USER',
             'Users',
-            updatedUser.full_name || 'System',
+            req.body.recorded_by || 'System',
             {
                 userId: updatedUser._id,
                 from: oldUser.station,
@@ -1241,7 +1241,10 @@ const expenseSchema = new mongoose.Schema({
         enum: ['Pending', 'Approved', 'Rejected'],
         default: 'Pending'
     },
-
+    recorded_by: { 
+        type: String, 
+        required: true 
+    },
     loggedBy: { 
         type: String, 
         required: true 
@@ -1281,7 +1284,7 @@ app.post('/api/expenses', async (req, res) => {
         const savedExpense = await newExpense.save();
 
         // Target active user if auth middleware exists, fallback safely
-        const actor = req.body.loggedBy || 'System';
+        const actor = req.body.recorded_by || 'System';
 
         // 🔥 AUDIT LOG
         await logActivity(
@@ -1351,7 +1354,7 @@ app.put('/api/expenses/:id', async (req, res) => {
             { new: true, runValidators: true }
         );
 
-        const actor = req.user?.full_name || updatedExpense.loggedBy || 'System';
+        const actor = req.body.recorded_by || updatedExpense.recorded_by || 'System';
 
         // 3️⃣ 🔥 AUDIT LOG (Saves differential changes)
         await logActivity(
